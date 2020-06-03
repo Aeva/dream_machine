@@ -1,0 +1,95 @@
+
+things that I think are data, not code:
+(in as much as code is not data, which it is)
+
+ - render passes
+   - drawspatch type
+   - shader sources
+   - pipeline state
+   - buffer inputs
+   - buffer outputs
+
+ - samplers
+
+ - textures
+   - formatting
+   - resolution
+   - usage
+   - clear color
+
+ - misc buffers
+   - eg vertices, structured buffers, etc
+
+ - when to perform state transitions
+   - resource barriers
+   - residency management
+
+ - graph connections
+
+
+things to generate:
+
+ - shader inputs
+ - namespaced code (or perhaps a "class") with the following handles:
+   1. resize / suspend / resume / restart / etc
+   2. upload
+   3. draw
+ - optional shell application (eg, glfw, d3d12 window, webgl, byte?)
+ - optional python bindings?
+   - jit? :D
+ - what about user input events?
+
+
+various questions:
+
+ - how does buffer data work?
+   - maybe each data source has their own create/upload/delete functions
+   - for array of struct buffers, this could generate a struct that has the
+     correct padding and order, or maybe the members are all pointers.
+     
+ - how does rendering work?
+   - I think the actual "draw a frame" part should be compiled down to a single
+     call, so, there'd need to be something for saying what paths are actually
+     active, how many draws to call, and what data to actually use
+
+ - API specific features?
+   - OpenGL "Image Load/Store" semantics and OpenGL struct packing rules come
+     to mind.  Not really sure.  I'll have to experiment.
+
+ - shader preprocessor?
+   - gl include unfortunately can't be readily assumed to be present.  maybe use
+     llvm's C preprocessor?
+
+ - custom GL etc hooks?
+   - eg if someone wants to bolt on dearimgui or something?
+   - I think this might be better done by adding new templates for custom
+     "drawspatch" modes than to expose user callbacks in the callbacks.
+
+ - scope creep?
+   - I *really* want to support DXR eventually
+   - once D3D12 is in here, it doesn't seem unreasonable to have vulkan?
+   - regular GL can probably be dropped once vulkan is in?
+   - webgl and ES2 (for android?) might be worth having though, and imo, should
+     be easier than the explicit APIs at least.
+   - I want this to be flexible enough that you could bolt a game onto it if the
+     game was designed right.
+     - I don't really want this to be a full featured rendering engine, and that
+       this should primarily be a tool for rapid prototyping.
+
+ - should the design assume C++ or C?
+   - I think C++, that way the API can accept standard containers as args
+     (or anything w/ a compatible interface?).  User uses the generated structs
+     and can then keep them in a vector or something?
+
+
+
+Some revised ideas / constraints:
+ - render passes could be made to be conditional, so you can switch them on / off
+   at run time
+ - render passes never issue more than one draw call
+   - instanced drawing counts as a draw call
+ - if something has to be complicated, make a custom drawspatch template and diy
+ - wild cards in shader source passes
+   - available shaders queried at compile time, use the same generate include,
+     must be activated separately by name at run time
+
