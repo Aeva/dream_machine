@@ -82,7 +82,6 @@ various questions:
      and can then keep them in a vector or something?
 
 
-
 Some revised ideas / constraints:
  - render passes could be made to be conditional, so you can switch them on / off
    at run time
@@ -93,3 +92,11 @@ Some revised ideas / constraints:
    - available shaders queried at compile time, use the same generate include,
      must be activated separately by name at run time
 
+
+so what should this look like?
+ - the "data" is python code
+ - python classes for the different data types
+   - this allows for "reasonable defaults" as well as different common presets
+     eg for samplers or for pipeline states
+ - easy data URIs for prefilling data - eg connect a png to an srv, prefill a buffer
+   from json data, whatever
