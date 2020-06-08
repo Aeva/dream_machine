@@ -1,17 +1,21 @@
 
-import graffeine
-
-
-class TestNode1(graffeine.DrawCall):
-    size = (256, 256)
-    rtv0 = graffeine.ColorTarget()
-
-
-class TestNode2(graffeine.DrawCall):
-    size = (512, 512)
-    srv = graffeine.TextureView(TestNode1.rtv0)
-    rvt0 = graffeine.ColorTarget()
+import os
+from graffeine.template_tools import *
 
 
 if __name__ == "__main__":
-    graffeine.compile("fnord", TestNode1, TestNode2)
+    src = \
+    [
+        cpp_include('<iostream>'),
+        cpp_def_fn(
+            "int", "main", [],
+            [
+                cpp_def_var("const char*", "Name", '"Eris"'),
+                'std::cout << "Hello " << Name << "!\\n";',
+                "return 0;",
+            ]),
+        "",
+    ]
+    with open("generated.cpp", "w") as outfile:
+        outfile.write("\n".join(src))
+    os.system("g++ generated.cpp")
