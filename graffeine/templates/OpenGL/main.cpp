@@ -3,9 +3,9 @@
 #include <GLFW/glfw3.h>
 
 
-const char* WindowTitle = "Hello World!";
-int ScreenWidth = 512;
-int ScreenHeight = 512;
+const char* WindowTitle = "「window_title」";
+int ScreenWidth = 「window_width」;
+int ScreenHeight = 「window_height」;
 float ScreenScaleX = 1.0;
 float ScreenScaleY = 1.0;
 bool WindowIsDirty = true;
@@ -51,13 +51,13 @@ void WindowContentScaleCallback(GLFWwindow* Window, float ScaleX, float ScaleY)
 
 void InitialSetup()
 {
-		// test
+	「initial_setup_hook」
 }
 
 
 void DrawFrame(int FrameIndex, double ElapsedTime)
 {
-		// test
+	「draw_frame_hook」
 }
 
 
@@ -72,9 +72,9 @@ int main()
 		return 1;
 	}
 
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
-	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 「hint_version_major」);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 「hint_version_minor」);
+	glfwWindowHint(GLFW_OPENGL_PROFILE, 「hint_profile」);
 #if DEBUG_BUILD
 	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
 #endif // DEBUG_BUILD
