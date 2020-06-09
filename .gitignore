@@ -1,3 +1,6 @@
 __pycache__
-a.out
 .mypy_cache
+/*.out
+/*.exe
+/*.pdb
+/*.dll
