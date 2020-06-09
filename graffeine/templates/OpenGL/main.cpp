@@ -115,7 +115,7 @@ int main()
 
 	InitialSetup();
 
-	while (true)
+	while (!glfwWindowShouldClose(Window))
 	{
 		static int FrameIndex = 0;
 		static double ElapsedTime = 0.0;

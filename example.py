@@ -22,4 +22,4 @@ if __name__ == "__main__":
     with open("generated.cpp", "w", encoding="utf-8") as outfile:
         outfile.write(str(program))
 
-    build("generated.cpp")
+    build("generated.cpp", "generated.exe")
