@@ -1,115 +1,99 @@
 
-from graffeine.templates import SyntaxExpander, external
-from graffeine.build import build
+from typing import Iterable, Set, Tuple, List, Sequence
+from syntax_expanders import *
 
 
-class OpenGLWindow(SyntaxExpander):
-    template = external("OpenGL/main.cpp")
-    indent = ("initial_setup_hook", "draw_frame_hook")
+class ShaderStage:
+    """
+    Immutable data corresponding roughly to the parameters for the OpenGL API
+    calls "glCreateShader" and "glShaderSource".
+    """
+    def __init__(self, stage: str, path: str) -> None:
+        assert(stage in ["vertex", "fragment"])
+        self.path = path
+        self.stage = f"GL_{stage.upper()}_SHADER"
 
+    def __str__(self):
+        return str((self.path, self.stage))
 
-class ShaderHandles(SyntaxExpander):
-    template = """
-GLuint Shaders[「shader_count」] = { 0 };
-GLuint ShaderPrograms[「program_count」] = { 0 };
-""".strip()
+    def __hash__(self):
+        return hash(str(self))
 
+    def __eq__(self, other):
+        return str(self) == str(other)
 
-class CompileShader(SyntaxExpander):
-    template = "Shaders[「index」] = CompileShader(\"「path」\", 「stage」);"
-
-
-class LinkShaders(SyntaxExpander):
-    template = """
-{
-	GLuint Stages[「shader_count」] = { 「shaders」 };
-	ShaderPrograms[「index」] = LinkShaders(\"「name」\", &Stages[0], 「shader_count」);
-}
-""".strip()
-    def __init__(self, name, index, shaders):
-        SyntaxExpander.__init__(self)
-        self.name = name
-        self.index = str(index)
-        self.shader_count = str(len(shaders))
-        self.shaders = ", ".join([f"Shaders[{shader}]" for shader in shaders])
-
-
-class ChangeProgram(SyntaxExpander):
-    template = "glUseProgram(ShaderPrograms[「index」]);"
-
-
-class ColorClear(SyntaxExpander):
-    template="glClearColor(「color」);\nglClear(GL_COLOR_BUFFER_BIT);"
-    def __init__(self, red, green, blue, alpha=1.0):
-        SyntaxExpander.__init__(self)
-        self.color = ", ".join(map(str, [red, green, blue, alpha]))
-
-
-class DepthClear(SyntaxExpander):
-    template = "glClearDepth(「depth」);\nglClear(GL_DEPTH_BUFFER_BIT);"
-
-
-class Capability(SyntaxExpander):
-    template = "gl「state_prefix」able(「capability」);"
-    def __init__(self, capability, state):
-        SyntaxExpander.__init__(self)
-        self.state_prefix = "En" if state else "Dis"
-        self.capability = capability
-
-
-class DefaultVAO(SyntaxExpander):
-    template = """
-{
-	GLuint vao;
-	glGenVertexArrays(1, &vao);
-	glBindVertexArray(vao);
-}
-""".strip()
-
-
-class InstancedDraw(SyntaxExpander):
-    template = "glDrawArraysInstanced(GL_TRIANGLES, 0, 「vertices」, 「instances」);"
-
-
-class Drawspatch(SyntaxExpander):
-    template = """
-{
-	glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "「name」");
-	「setup」
-	「draw」
-	glPopDebugGroup();
-}
-""".strip()
+    def __lt__(self, other):
+        return str(self) < str(other)
 
 
 class ShaderProgram:
-    accumulated_shaders = set()
-    def __init__(self, name, **shader):
+    """
+    This contains a set of ShaderStage objects and a handy name.  The provided
+    name is used to fill out debug events, and to identify linker info log
+    entries.
+
+    The provided shader stages can be whatever, but there should only be one
+    shader per each shader stage type.  Additionally, the stages should form
+    a valid pipeline.
+    """
+    def __init__(self, name: str, *shaders: ShaderStage) -> None:
         self.name = name
-        self.shaders = []
-        for stage, path in shader.items():
-            assert(stage in ["vertex", "fragment"])
-            shader = (path, f"GL_{stage.upper()}_SHADER")
-            self.accumulated_shaders.add(shader)
-            self.shaders.append(shader)
-        self.shaders.sort()
+        self.shaders = set(shaders)
+        self.stages = tuple(sorted(set([shader.stage for shader in self.shaders])))
+        self.validate()
+
+    def validate(self) -> None:
+        # if this fails, we have multile shaders using the same stage.
+        assert(len(self.stages) == len(self.shaders))
+        if self.stages.count("GL_COMPUTE_SHADER") > 0:
+            # if this fails, we have a mix of compute and non-compute shaders
+            # in the program.
+            assert(len(self.stages) == 1)
 
 
-def solve_shader_compilation():
-    all_shaders = sorted(ShaderProgram.accumulated_shaders)
-    return [CompileShader(index = index, path = source[0], stage = source[1]) for index, source in enumerate(all_shaders)]
+def unique_shaders(programs: List[ShaderProgram]) -> Tuple[ShaderStage, ...]:
+    """
+    This function takes a list of all ShaderProgram objects to be used, and
+    produces a sorted tuple of all unique ShaderStage objects used by the
+    programs.
+    """
+    shaders: Set[ShaderStage] = set()
+    for program in programs:
+        shaders = shaders.union(program.shaders)
+    return tuple(sorted(shaders))
 
 
-def solve_shader_linking(programs):
-    all_shaders = {source:index for index, source in enumerate(sorted(ShaderProgram.accumulated_shaders))}
-    links = []
-    for index, program in enumerate(programs):
-        shaders = [all_shaders[shader] for shader in program.shaders]
-        links.append(LinkShaders(program.name, index, shaders))
-    return links
+def solve_shaders(programs: List[ShaderProgram]) -> Tuple[ShaderHandles, List[SyntaxExpander]]:
+    """
+    This function receives a list of all shader programs used by the generated
+    program.  This function returns a ShaderHandles expander (which should go
+    in the generated program's global scope), and a list of CompileShader and
+    LinkShaders expanders (which produce code that should be called after the
+    OpenGL context is initialized, but before the shaders are to be used).
+    """
+
+    def solve_shader_compilation(shaders: Tuple[ShaderStage,...]):
+        return [CompileShader(*args) for args in enumerate(shaders)]
+
+    def solve_shader_linking(shaders: Tuple[ShaderStage,...], programs: List[ShaderProgram]):
+        handle_map = {shader:index for index, shader in enumerate(shaders)}
+        links = []
+        for index, program in enumerate(programs):
+            shader_handles = [handle_map[shader] for shader in program.shaders]
+            links.append(LinkShaders(program.name, index, shader_handles))
+        return links
+
+    shaders = unique_shaders(programs)
+    compiles: List[SyntaxExpander] = solve_shader_compilation(shaders)
+    links: List[SyntaxExpander] = solve_shader_linking(shaders, programs)
+    return ShaderHandles(shader_count = len(shaders), program_count=len(programs)), compiles + links
 
 
-def splat(index, program):
+def splat(index:int , program:ShaderProgram) -> SyntaxExpander:
+    """
+    Creates a Drawspatch expander corresponding to a draw call of six verts
+    which is for producing a full screen draw.
+    """
     return Drawspatch(
         name = program.name,
         setup = ChangeProgram(index),
@@ -118,12 +102,40 @@ def splat(index, program):
 
 if __name__ == "__main__":
     shader_programs = [
-        ShaderProgram("draw red", vertex="splat.vs.glsl", fragment="red.fs.glsl"),
-        ShaderProgram("draw blue", vertex="splat.vs.glsl", fragment="blue.fs.glsl"),
+        ShaderProgram("draw red", ShaderStage("vertex", "shaders/splat.vs.glsl"), ShaderStage("fragment", "shaders/red.fs.glsl")),
+        ShaderProgram("draw blue", ShaderStage("vertex", "shaders/splat.vs.glsl"), ShaderStage("fragment", "shaders/blue.fs.glsl"))
     ]
-    shader_compiles = solve_shader_compilation()
-    shader_links = solve_shader_linking(shader_programs)
+    shader_handles, build_shaders = solve_shaders(shader_programs)
 
+    # expressions to expand into the global scope hook
+    globals:List[SyntaxExpander] = \
+    [
+        shader_handles
+    ]
+
+    # expressions to be called after GL is intialized but before rendering starts
+    setup:List[SyntaxExpander] = \
+    [
+        DefaultVAO(),
+        Capability("GL_DEPTH_TEST", False),
+        Capability("GL_CULL_FACE", False),
+        WrapCpp([
+            "glClipControl(GL_LOWER_LEFT, GL_NEGATIVE_ONE_TO_ONE);",
+            "glDepthRange(1.0, 0.0);",
+            "glFrontFace(GL_CCW);"
+        ]),
+    ]
+    setup += build_shaders
+
+    # expressions to be called every frame to draw
+    render:List[SyntaxExpander] = \
+    [
+        ColorClear(0.5, 0.5, 0.5),
+        DepthClear(0.0),
+    ]
+    render +=  list(map(lambda x: splat(*x), enumerate(shader_programs)))
+
+    # generate the program
     program = OpenGLWindow()
     program.window_title = "Hello World!"
     program.window_width = 512
@@ -131,29 +143,9 @@ if __name__ == "__main__":
     program.hint_version_major = 4
     program.hint_version_minor = 2
     program.hint_profile = "GLFW_OPENGL_CORE_PROFILE"
-    program.globals = \
-    [
-        ShaderHandles(shader_count = len(ShaderProgram.accumulated_shaders), program_count=len(shader_programs))
-    ]
-
-    program.initial_setup_hook = \
-        shader_compiles + \
-        shader_links + \
-    [
-        DefaultVAO(),
-        Capability("GL_DEPTH_TEST", False),
-        Capability("GL_CULL_FACE", False),
-"""
-glClipControl(GL_LOWER_LEFT, GL_NEGATIVE_ONE_TO_ONE);
-glDepthRange(1.0, 0.0);
-glFrontFace(GL_CCW);
-""".strip()
-    ]
-
-    program.draw_frame_hook = [
-        ColorClear(0.5, 0.5, 0.5),
-        DepthClear(0.0),
-    ] + list(map(lambda x: splat(*x), enumerate(shader_programs)))
+    program.globals = globals
+    program.initial_setup_hook = setup
+    program.draw_frame_hook = render
 
     with open("generated.cpp", "w", encoding="utf-8") as outfile:
         outfile.write(str(program))

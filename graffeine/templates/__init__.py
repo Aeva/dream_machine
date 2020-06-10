@@ -1,7 +1,7 @@
 ﻿
 import re
 import os
-from typing import Iterable, Tuple, Optional
+from typing import Iterable, Tuple, Optional, Any
 from collections.abc import Iterable
 
 
@@ -68,24 +68,24 @@ class SyntaxExpander(metaclass=SyntaxExpanderMeta):
         for key, value in kwargs.items():
             self[key] = value
 
-    def __getitem__(self, key: str) -> str:
+    def __getitem__(self, key: str):
         if not key in self.params:
             raise KeyError(f"key \"{key}\" is not valid for {type(self)}")
         return self._dict[key]
 
-    def __setitem__(self, key: str, value: str) -> str:
+    def __setitem__(self, key: str, value: Any):
         if not key in self.params:
             raise KeyError(f"key \"{key}\" is not valid for {type(self).__name__}")
         self._dict[key] = value
         return value
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str):
         if name in self.params:
             return self[name]
         else:
             raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
 
-    def __setattr__(self, name, value):
+    def __setattr__(self, name: str, value: Any):
         if name in self.params:
             self[name] = value
         else:

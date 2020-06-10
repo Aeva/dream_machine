@@ -150,17 +150,6 @@ void WindowContentScaleCallback(GLFWwindow* Window, float ScaleX, float ScaleY)
 
 void InitialSetup()
 {
-	Shaders[0] = CompileShader("blue.fs.glsl", GL_FRAGMENT_SHADER);
-	Shaders[1] = CompileShader("red.fs.glsl", GL_FRAGMENT_SHADER);
-	Shaders[2] = CompileShader("splat.vs.glsl", GL_VERTEX_SHADER);
-	{
-		GLuint Stages[2] = { Shaders[1], Shaders[2] };
-		ShaderPrograms[0] = LinkShaders("draw red", &Stages[0], 2);
-	}
-	{
-		GLuint Stages[2] = { Shaders[0], Shaders[2] };
-		ShaderPrograms[1] = LinkShaders("draw blue", &Stages[0], 2);
-	}
 	{
 		GLuint vao;
 		glGenVertexArrays(1, &vao);
@@ -171,6 +160,17 @@ void InitialSetup()
 	glClipControl(GL_LOWER_LEFT, GL_NEGATIVE_ONE_TO_ONE);
 	glDepthRange(1.0, 0.0);
 	glFrontFace(GL_CCW);
+	Shaders[0] = CompileShader("shaders/blue.fs.glsl", GL_FRAGMENT_SHADER);
+	Shaders[1] = CompileShader("shaders/red.fs.glsl", GL_FRAGMENT_SHADER);
+	Shaders[2] = CompileShader("shaders/splat.vs.glsl", GL_VERTEX_SHADER);
+	{
+		GLuint Stages[2] = { Shaders[1], Shaders[2] };
+		ShaderPrograms[0] = LinkShaders("draw red", &Stages[0], 2);
+	}
+	{
+		GLuint Stages[2] = { Shaders[2], Shaders[0] };
+		ShaderPrograms[1] = LinkShaders("draw blue", &Stages[0], 2);
+	}
 }
 
 
