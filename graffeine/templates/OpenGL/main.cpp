@@ -1,4 +1,7 @@
-﻿#include <iostream>
+﻿#include <fstream>
+#include <iostream>
+#include <string>
+#include <stdlib.h>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
@@ -12,16 +15,111 @@ bool WindowIsDirty = true;
 GLFWwindow* Window;
 
 
+「globals」
+
+
 void HaltAndCatchFire()
 {
 	__fastfail(7);
 }
 
 
+void ReadFile(std::string& Source, std::string Path)
+{
+	std::ifstream File(Path);
+	if (!File.is_open())
+	{
+		std::cout << "Error: cannot open file \"" << Path << "\"\n";
+		HaltAndCatchFire();
+	}
+	std::string Line;
+	while (getline(File, Line))
+	{
+		Source += Line + "\n";
+	}
+}
+
+
+GLuint CompileShader(std::string Path, GLenum ShaderType)
+{
+	std::cout << "compiling shader: " << Path << "\n";
+	std::string Source;
+	ReadFile(Source, Path);
+	GLuint Handle = glCreateShader(ShaderType);
+	const char* SourcePtr = Source.c_str();
+	glShaderSource(Handle, 1, &SourcePtr, nullptr);
+	glCompileShader(Handle);
+	{
+		GLint LogLength;
+		glGetShaderiv(Handle, GL_INFO_LOG_LENGTH, &LogLength);
+		if (LogLength > 0)
+		{
+			char* InfoLog = (char*)malloc(sizeof(char) * LogLength);
+			glGetShaderInfoLog(Handle, LogLength, nullptr, InfoLog);
+			std::cout \
+				<< "Shader info log for \"" << Path << "\":\n"
+				<< InfoLog << "\n\n";
+			free(InfoLog);
+		}
+		GLint Status;
+		glGetShaderiv(Handle, GL_COMPILE_STATUS, &Status);
+		if (Status == GL_FALSE)
+		{
+			std::cout << "Failed to compile shader \"" << Path << "\"!\n";
+			glDeleteShader(Handle);
+			HaltAndCatchFire();
+		}
+	}
+	return Handle;
+}
+
+
+GLuint LinkShaders(std::string Name, GLuint* Shaders, int ShaderCount)
+{
+	std::cout << "linking shader program: " << Name << "\n";
+	GLuint Handle = glCreateProgram();
+	for (int i = 0; i < ShaderCount; ++i)
+	{
+		glAttachShader(Handle, Shaders[i]);
+	}
+	glLinkProgram(Handle);
+	{
+		GLint LogLength;
+		glGetProgramiv(Handle, GL_INFO_LOG_LENGTH, &LogLength);
+		if (LogLength > 0)
+		{
+			char* InfoLog = (char*)malloc(sizeof(char) * LogLength);
+			glGetProgramInfoLog(Handle, LogLength, nullptr, InfoLog);
+			std::cout \
+				<< "Shader linking info log for program \"" << Name << "\":\n"
+				<< InfoLog << "\n\n";
+			free(InfoLog);
+		}
+		GLint Status;
+		glGetProgramiv(Handle, GL_LINK_STATUS, &Status);
+		if (Status == GL_FALSE)
+		{
+			std::cout << "Failed to link shader program \"" << Name << "\"!\n";
+			glDeleteProgram(Handle);
+			for (int i = 0; i < ShaderCount; ++i)
+			{
+				glDeleteShader(Shaders[i]);
+			}
+			HaltAndCatchFire();
+		}
+	}
+	for (int i = 0; i < ShaderCount; ++i)
+	{
+		glDetachShader(Handle, Shaders[i]);
+	}
+	return Handle;
+}
+
+
 #if DEBUG_BUILD
 void ErrorCallback(int Error, const char* Description)
 {
-	std::cout << "OpenGL Error: " << Description << '\\n';
+	std::cout << "OpenGL Error: " << Description << '\n';
 	HaltAndCatchFire();
 }
 #endif // DEBUG_BUILD
@@ -51,13 +149,13 @@ void WindowContentScaleCallback(GLFWwindow* Window, float ScaleX, float ScaleY)
 
 void InitialSetup()
 {
-	「initial_setup_hook」
+「initial_setup_hook」
 }
 
 
 void DrawFrame(int FrameIndex, double ElapsedTime)
 {
-	「draw_frame_hook」
+「draw_frame_hook」
 }
 
 
@@ -68,7 +166,7 @@ int main()
 #endif // DEBUG_BUILD
 	if (!glfwInit())
 	{
-		std::cout << "Fatal Error: GLFW failed to initialize!\\n";
+		std::cout << "Fatal Error: GLFW failed to initialize!\n";
 		return 1;
 	}
 
@@ -88,7 +186,7 @@ int main()
 	Window = glfwCreateWindow(ScreenWidth, ScreenHeight, WindowTitle, NULL, NULL);
 	if (!Window)
 	{
-		std::cout << "Fatal Error: failed to create a window\\n";
+		std::cout << "Fatal Error: glfw failed to create a window!\n";
 		glfwTerminate();
 		return 1;
 	}
@@ -103,14 +201,14 @@ int main()
 
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
 	{
-		std::cout << "Failed to initialize OpenGL context" << std::endl;
+		std::cout << "Failed to initialize OpenGL context!\n";
 		glfwDestroyWindow(Window);
 		glfwTerminate();
 		return 1;
 	}
 	else
 	{
-		std::cout << "Found OpenGL version " << GLVersion.major << "." << GLVersion.minor << "\\n";
+		std::cout << "Found OpenGL version " << GLVersion.major << "." << GLVersion.minor << "\n";
 	}
 
 	InitialSetup();

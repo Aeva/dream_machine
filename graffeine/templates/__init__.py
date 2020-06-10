@@ -46,9 +46,10 @@ def indent(text: str) -> str:
 class SyntaxExpanderMeta(type):
     def __new__(cls, name, bases, dct):
         newclass = super().__new__(cls, name, bases, dct)
-        if newclass.template:
-            newclass.params = tuple(sorted(set(re.findall(r"「([a-zA-Z]\w+)」", newclass.template))))
-            newclass.template = rewrite(newclass.template)
+        template = dct.get("template")
+        if template:
+            newclass.params = tuple(sorted(set(re.findall(r"「([a-zA-Z]\w+)」", template))))
+            newclass.template = rewrite(template)
         return newclass
 
 

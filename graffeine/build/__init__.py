@@ -20,7 +20,7 @@ def find_exe(name):
 
 def build(source_path, out_path=None, copy_dlls=True):
     cc = find_exe("clang++")
-    defines = ["GLFW_DLL", "WIN32_LEAN_AND_MEAN"]
+    defines = ["GLFW_DLL", "WIN32_LEAN_AND_MEAN", "DEBUG_BUILD"]
     includes = glob(os.path.join(os.path.dirname(__file__), "**", "include"))
     libs = glob(os.path.join(os.path.dirname(__file__), "**", "lib"))
     sources = [source_path]
