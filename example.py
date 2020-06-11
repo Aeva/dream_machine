@@ -1,4 +1,5 @@
 
+import re
 from typing import Iterable, Set, Tuple, List, Sequence
 from syntax_expanders import *
 
@@ -98,6 +99,48 @@ def splat(index:int , program:ShaderProgram) -> SyntaxExpander:
         name = program.name,
         setup = ChangeProgram(index),
         draw = InstancedDraw(vertices=6, instances=1))
+
+
+class UniformParam:
+    def __init__(self, _type:str, name:str) -> None:
+        valid_types = {
+            "int" : ("int", 1, 1),
+            "float" : ("float", 1, 1),
+            "vec2" : ("float", 2, 2),
+            "vec3" : ("float", 3, 4),
+            "vec4" : ("float", 4, 4),
+            "mat2" : ("float", 8, 4),  # "words" field is prealigned to simplify array rules
+            "mat3" : ("float", 12, 4), # "words" field is prealigned to simplify array rules
+            "mat4" : ("float", 16, 4),
+        }
+        if _type in valid_types:
+            self.name:str = name
+            self.type:str = _type
+            self.component:str = valid_types[_type][0]
+            self.words:int = valid_types[_type][1]
+            self.align:int = valid_types[_type][2]
+            self.vector:bool = _type.startswith("vec")
+            self.matrix:bool = _type.startswith("mat")
+            self.scalar:bool = not (self.vector or self.matrix)
+        else:
+            raise TypeError("Unsupported uniform interface member type: f{_type}")
+
+
+class UniformInterface:
+    def __init__(self, *params:UniformParam) -> None:
+        assert(len(params) > 1)
+        def div_up(n:int, d:int)->int:
+            return (n + d -1) // d
+        def align(offset:int, alignment:int) -> int:
+            return div_up(offset, alignment) * alignment
+        first = params[0]
+        self.layout = [(0, first)]
+        offset:int = first.words
+        for param in params[1:]:
+            offset = align(offset, param.align)
+            self.layout.append((offset, param))
+            offset += param.words
+        assert(len(set([param.name for param in params])) == len(params)) # duplicate names
 
 
 if __name__ == "__main__":
