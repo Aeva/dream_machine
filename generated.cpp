@@ -164,11 +164,11 @@ void InitialSetup()
 	Shaders[1] = CompileShader("shaders/red.fs.glsl", GL_FRAGMENT_SHADER);
 	Shaders[2] = CompileShader("shaders/splat.vs.glsl", GL_VERTEX_SHADER);
 	{
-		GLuint Stages[2] = { Shaders[1], Shaders[2] };
+		GLuint Stages[2] = { Shaders[2], Shaders[1] };
 		ShaderPrograms[0] = LinkShaders("draw red", &Stages[0], 2);
 	}
 	{
-		GLuint Stages[2] = { Shaders[2], Shaders[0] };
+		GLuint Stages[2] = { Shaders[0], Shaders[2] };
 		ShaderPrograms[1] = LinkShaders("draw blue", &Stages[0], 2);
 	}
 }
