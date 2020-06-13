@@ -1,104 +1,10 @@
 
 import re
-from typing import Union, Iterable, Set, Tuple, Dict, List, Sequence
-from syntax_expanders import *
-
-
-class ShaderStage:
-    """
-    Immutable data corresponding roughly to the parameters for the OpenGL API
-    calls "glCreateShader" and "glShaderSource".
-    """
-    def __init__(self, stage: str, path: str) -> None:
-        assert(stage in ["vertex", "fragment"])
-        self.path = path
-        self.stage = f"GL_{stage.upper()}_SHADER"
-
-    def __str__(self):
-        return str((self.path, self.stage))
-
-    def __hash__(self):
-        return hash(str(self))
-
-    def __eq__(self, other):
-        return str(self) == str(other)
-
-    def __lt__(self, other):
-        return str(self) < str(other)
-
-
-class ShaderProgram:
-    """
-    This contains a set of ShaderStage objects and a handy name.  The provided
-    name is used to fill out debug events, and to identify linker info log
-    entries.
-
-    The provided shader stages can be whatever, but there should only be one
-    shader per each shader stage type.  Additionally, the stages should form
-    a valid pipeline.
-    """
-    def __init__(self, name: str, *shaders: ShaderStage) -> None:
-        self.name = name
-        self.shaders = set(shaders)
-        self.stages = tuple(sorted(set([shader.stage for shader in self.shaders])))
-        self.validate()
-
-    def validate(self) -> None:
-        # if this fails, we have multile shaders using the same stage.
-        assert(len(self.stages) == len(self.shaders))
-        if self.stages.count("GL_COMPUTE_SHADER") > 0:
-            # if this fails, we have a mix of compute and non-compute shaders
-            # in the program.
-            assert(len(self.stages) == 1)
-
-
-def unique_shaders(programs: List[ShaderProgram]) -> Tuple[ShaderStage, ...]:
-    """
-    This function takes a list of all ShaderProgram objects to be used, and
-    produces a sorted tuple of all unique ShaderStage objects used by the
-    programs.
-    """
-    shaders: Set[ShaderStage] = set()
-    for program in programs:
-        shaders = shaders.union(program.shaders)
-    return tuple(sorted(shaders))
-
-
-def solve_shaders(programs: List[ShaderProgram]) -> Tuple[ShaderHandles, List[SyntaxExpander]]:
-    """
-    This function receives a list of all shader programs used by the generated
-    program.  This function returns a ShaderHandles expander (which should go
-    in the generated program's global scope), and a list of CompileShader and
-    LinkShaders expanders (which produce code that should be called after the
-    OpenGL context is initialized, but before the shaders are to be used).
-    """
-
-    def solve_shader_compilation(shaders: Tuple[ShaderStage,...]):
-        return [CompileShader(*args) for args in enumerate(shaders)]
-
-    def solve_shader_linking(shaders: Tuple[ShaderStage,...], programs: List[ShaderProgram]):
-        handle_map = {shader:index for index, shader in enumerate(shaders)}
-        links = []
-        for index, program in enumerate(programs):
-            shader_handles = [handle_map[shader] for shader in program.shaders]
-            links.append(LinkShaders(program.name, index, shader_handles))
-        return links
-
-    shaders = unique_shaders(programs)
-    compiles: List[SyntaxExpander] = solve_shader_compilation(shaders)
-    links: List[SyntaxExpander] = solve_shader_linking(shaders, programs)
-    return ShaderHandles(shader_count = len(shaders), program_count=len(programs)), compiles + links
-
-
-def splat(index:int , program:ShaderProgram) -> SyntaxExpander:
-    """
-    Creates a Drawspatch expander corresponding to a draw call of six verts
-    which is for producing a full screen draw.
-    """
-    return Drawspatch(
-        name = program.name,
-        setup = ChangeProgram(index),
-        draw = InstancedDraw(vertices=6, instances=1))
+from typing import *
+from misc import *
+from drawing import *
+from shader_compilation import *
+from graffeine.build import build
 
 
 def div_up(n:int, d:int)->int:
