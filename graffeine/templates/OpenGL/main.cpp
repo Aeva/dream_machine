@@ -1,6 +1,8 @@
 ﻿#include <fstream>
 #include <iostream>
+#include <array>
 #include <string>
+#include <cstdint>
 #include <stdlib.h>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>

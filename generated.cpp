@@ -1,6 +1,8 @@
 ﻿#include <fstream>
 #include <iostream>
+#include <array>
 #include <string>
+#include <cstdint>
 #include <stdlib.h>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -17,6 +19,95 @@ GLFWwindow* Window;
 
 GLuint Shaders[3] = { 0 };
 GLuint ShaderPrograms[2] = { 0 };
+GLuint BufferHandles[2] = { 0 };
+/*
+	struct Fnord
+	{
+		bvec3 eggs;
+		float cheese;
+		ivec2 butter;
+		mat3 milk;
+		bool kale;
+		vec3 oranges[3];
+		int lemons;
+	};
+*/
+/*
+	struct Meep
+	{
+		Fnord wat;
+		Fnord fhqwhgads[2];
+	};
+*/
+struct Fnord
+{
+	std::array<std::int32_t, 3> eggs;
+	float cheese;
+	std::array<int, 2> butter;
+	std::array<std::array<float, 3>, 3> milk;
+	bool kale;
+	std::array<std::array<float, 3>, 3> oranges;
+	int lemons;
+};
+struct Meep
+{
+	Fnord wat;
+	std::array<Fnord, 2> fhqwhgads;
+};
+void UploadStructFnord (GLuint Handle, Fnord& Data)
+{
+	void* Mapped = glMapNamedBufferRange(Handle, 0, 40, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT );
+	*((std::array<std::int32_t, 3>*)(Mapped) + 0) = (std::array<std::int32_t, 3>)Data.eggs;
+	*((float*)(Mapped) + 3) = (float)Data.cheese;
+	*((std::array<std::int32_t, 2>*)(Mapped) + 4) = (std::array<std::int32_t, 2>)Data.butter;
+	*((std::array<float, 3>*)(Mapped) + 8) = (std::array<float, 3>)Data.milk[0];
+	*((std::array<float, 3>*)(Mapped) + 12) = (std::array<float, 3>)Data.milk[1];
+	*((std::array<float, 3>*)(Mapped) + 16) = (std::array<float, 3>)Data.milk[2];
+	*((std::int32_t*)(Mapped) + 20) = (std::int32_t)Data.kale;
+	*((std::array<float, 3>*)(Mapped) + 24) = (std::array<float, 3>)Data.oranges[0];
+	*((std::array<float, 3>*)(Mapped) + 28) = (std::array<float, 3>)Data.oranges[1];
+	*((std::array<float, 3>*)(Mapped) + 32) = (std::array<float, 3>)Data.oranges[2];
+	*((std::int32_t*)(Mapped) + 36) = (std::int32_t)Data.lemons;
+	glUnmapNamedBuffer(Handle);
+}
+void UploadStructMeep (GLuint Handle, Meep& Data)
+{
+	void* Mapped = glMapNamedBufferRange(Handle, 0, 48, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT );
+	*((std::array<std::int32_t, 3>*)(Mapped) + 0) = (std::array<std::int32_t, 3>)Data.wat.eggs;
+	*((float*)(Mapped) + 3) = (float)Data.wat.cheese;
+	*((std::array<std::int32_t, 2>*)(Mapped) + 4) = (std::array<std::int32_t, 2>)Data.wat.butter;
+	*((std::array<float, 3>*)(Mapped) + 8) = (std::array<float, 3>)Data.wat.milk[0];
+	*((std::array<float, 3>*)(Mapped) + 12) = (std::array<float, 3>)Data.wat.milk[1];
+	*((std::array<float, 3>*)(Mapped) + 16) = (std::array<float, 3>)Data.wat.milk[2];
+	*((std::int32_t*)(Mapped) + 20) = (std::int32_t)Data.wat.kale;
+	*((std::array<float, 3>*)(Mapped) + 24) = (std::array<float, 3>)Data.wat.oranges[0];
+	*((std::array<float, 3>*)(Mapped) + 28) = (std::array<float, 3>)Data.wat.oranges[1];
+	*((std::array<float, 3>*)(Mapped) + 32) = (std::array<float, 3>)Data.wat.oranges[2];
+	*((std::int32_t*)(Mapped) + 36) = (std::int32_t)Data.wat.lemons;
+	*((std::array<std::int32_t, 3>*)(Mapped) + 40) = (std::array<std::int32_t, 3>)Data.fhqwhgads[0].eggs;
+	*((float*)(Mapped) + 43) = (float)Data.fhqwhgads[0].cheese;
+	*((std::array<std::int32_t, 2>*)(Mapped) + 44) = (std::array<std::int32_t, 2>)Data.fhqwhgads[0].butter;
+	*((std::array<float, 3>*)(Mapped) + 48) = (std::array<float, 3>)Data.fhqwhgads[0].milk[0];
+	*((std::array<float, 3>*)(Mapped) + 52) = (std::array<float, 3>)Data.fhqwhgads[0].milk[1];
+	*((std::array<float, 3>*)(Mapped) + 56) = (std::array<float, 3>)Data.fhqwhgads[0].milk[2];
+	*((std::int32_t*)(Mapped) + 60) = (std::int32_t)Data.fhqwhgads[0].kale;
+	*((std::array<float, 3>*)(Mapped) + 64) = (std::array<float, 3>)Data.fhqwhgads[0].oranges[0];
+	*((std::array<float, 3>*)(Mapped) + 68) = (std::array<float, 3>)Data.fhqwhgads[0].oranges[1];
+	*((std::array<float, 3>*)(Mapped) + 72) = (std::array<float, 3>)Data.fhqwhgads[0].oranges[2];
+	*((std::int32_t*)(Mapped) + 76) = (std::int32_t)Data.fhqwhgads[0].lemons;
+	*((std::array<std::int32_t, 3>*)(Mapped) + 80) = (std::array<std::int32_t, 3>)Data.fhqwhgads[1].eggs;
+	*((float*)(Mapped) + 83) = (float)Data.fhqwhgads[1].cheese;
+	*((std::array<std::int32_t, 2>*)(Mapped) + 84) = (std::array<std::int32_t, 2>)Data.fhqwhgads[1].butter;
+	*((std::array<float, 3>*)(Mapped) + 88) = (std::array<float, 3>)Data.fhqwhgads[1].milk[0];
+	*((std::array<float, 3>*)(Mapped) + 92) = (std::array<float, 3>)Data.fhqwhgads[1].milk[1];
+	*((std::array<float, 3>*)(Mapped) + 96) = (std::array<float, 3>)Data.fhqwhgads[1].milk[2];
+	*((std::int32_t*)(Mapped) + 100) = (std::int32_t)Data.fhqwhgads[1].kale;
+	*((std::array<float, 3>*)(Mapped) + 104) = (std::array<float, 3>)Data.fhqwhgads[1].oranges[0];
+	*((std::array<float, 3>*)(Mapped) + 108) = (std::array<float, 3>)Data.fhqwhgads[1].oranges[1];
+	*((std::array<float, 3>*)(Mapped) + 112) = (std::array<float, 3>)Data.fhqwhgads[1].oranges[2];
+	*((std::int32_t*)(Mapped) + 116) = (std::int32_t)Data.fhqwhgads[1].lemons;
+	glUnmapNamedBuffer(Handle);
+}
 
 
 void HaltAndCatchFire()
@@ -160,17 +251,20 @@ void InitialSetup()
 	glClipControl(GL_LOWER_LEFT, GL_NEGATIVE_ONE_TO_ONE);
 	glDepthRange(1.0, 0.0);
 	glFrontFace(GL_CCW);
+	glCreateBuffers(2, &BufferHandles[0]);
 	Shaders[0] = CompileShader("shaders/blue.fs.glsl", GL_FRAGMENT_SHADER);
 	Shaders[1] = CompileShader("shaders/red.fs.glsl", GL_FRAGMENT_SHADER);
 	Shaders[2] = CompileShader("shaders/splat.vs.glsl", GL_VERTEX_SHADER);
 	{
-		GLuint Stages[2] = { Shaders[2], Shaders[1] };
+		GLuint Stages[2] = { Shaders[1], Shaders[2] };
 		ShaderPrograms[0] = LinkShaders("draw red", &Stages[0], 2);
 	}
 	{
 		GLuint Stages[2] = { Shaders[0], Shaders[2] };
 		ShaderPrograms[1] = LinkShaders("draw blue", &Stages[0], 2);
 	}
+	glNamedBufferStorage(0, 40, nullptr, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT);
+	glNamedBufferStorage(1, 48, nullptr, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT);
 }
 
 
