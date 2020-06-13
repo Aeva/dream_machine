@@ -18,7 +18,7 @@ def find_exe(name):
     raise RuntimeError(f"Can't find {name}.  Is it in your PATH env var?")
 
 
-def build(source_path, out_path=None, copy_dlls=True):
+def build(source_path, out_path=None, copy_dlls=True, debug=False):
     cc = find_exe("clang++")
     defines = ["GLFW_DLL", "WIN32_LEAN_AND_MEAN", "DEBUG_BUILD"]
     includes = glob(os.path.join(os.path.dirname(__file__), "**", "include"))
@@ -29,6 +29,8 @@ def build(source_path, out_path=None, copy_dlls=True):
     dlls = ["glfw3.dll"]
 
     args = [cc]
+    if debug:
+        args += ["-O0", "-g", "-gcodeview", "-DDEBUG_BUILD"]
     args += [f"-D{p}" for p in defines]
     args += [f"-I{p}" for p in includes]
     args += [f"-L{p}" for p in libs]

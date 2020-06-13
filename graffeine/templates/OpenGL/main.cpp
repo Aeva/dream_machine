@@ -8,6 +8,12 @@
 #include <GLFW/glfw3.h>
 
 
+void HaltAndCatchFire()
+{
+	__fastfail(7);
+}
+
+
 namespace Glsl
 {
 	using uint = unsigned int;
@@ -68,12 +74,6 @@ namespace Upload
 		*((UploadType*)(MappedBuffer + Offset)) = (UploadType)Data;
 	}
 「uploaders」
-}
-
-
-void HaltAndCatchFire()
-{
-	__fastfail(7);
 }
 
 
@@ -175,6 +175,19 @@ void ErrorCallback(int Error, const char* Description)
 	std::cout << "OpenGL Error: " << Description << '\n';
 	HaltAndCatchFire();
 }
+
+
+void DebugCallback(
+	GLenum Source,
+	GLenum Type,
+	GLuint Id,
+	GLenum Severity,
+	GLsizei MessageLength,
+	const GLchar* ErrorMessage,
+	const void* UserParam)
+{
+	std::cout << ErrorMessage << "\n";
+}
 #endif // DEBUG_BUILD
 
 
@@ -263,6 +276,29 @@ int main()
 	{
 		std::cout << "Found OpenGL version " << GLVersion.major << "." << GLVersion.minor << "\n";
 	}
+
+#if DEBUG_BUILD
+	if (GLAD_GL_ARB_debug_output)
+	{
+		GLint ContextFlags;
+		glGetIntegerv(GL_CONTEXT_FLAGS, &ContextFlags);
+		if (ContextFlags & GL_CONTEXT_FLAG_DEBUG_BIT)
+		{
+			glEnable(GL_DEBUG_OUTPUT);
+			glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+			glDebugMessageCallbackARB(&DebugCallback, nullptr);
+			glDebugMessageControlARB(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
+		}
+		else
+		{
+			std::cout << "Debug context not available!\n";
+		}
+	}
+	else
+	{
+		std::cout << "Debug output extension not available!\n";
+	}
+#endif
 
 	InitialSetup();
 

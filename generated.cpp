@@ -8,6 +8,12 @@
 #include <GLFW/glfw3.h>
 
 
+void HaltAndCatchFire()
+{
+	__fastfail(7);
+}
+
+
 namespace Glsl
 {
 	using uint = unsigned int;
@@ -86,6 +92,11 @@ namespace Upload
 	void Fnord (GLuint Handle, Glsl::Fnord& Data)
 	{
 		char* Mapped = (char*)glMapNamedBufferRange(Handle, 0, 40, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT );
+		if (Mapped == nullptr)
+		{
+			std::cout << "Fatal error in function \"Upload::Fnord\": glMapNamedBufferRange returned nullptr.\n";
+			HaltAndCatchFire();
+		}
 		Reflow<bvec3>(Mapped, 0, Data.eggs);
 		Reflow<float>(Mapped, 3, Data.cheese);
 		Reflow<ivec2>(Mapped, 4, Data.butter);
@@ -102,6 +113,11 @@ namespace Upload
 	void Meep (GLuint Handle, Glsl::Meep& Data)
 	{
 		char* Mapped = (char*)glMapNamedBufferRange(Handle, 0, 120, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT );
+		if (Mapped == nullptr)
+		{
+			std::cout << "Fatal error in function \"Upload::Meep\": glMapNamedBufferRange returned nullptr.\n";
+			HaltAndCatchFire();
+		}
 		Reflow<bvec3>(Mapped, 0, Data.wat.eggs);
 		Reflow<float>(Mapped, 3, Data.wat.cheese);
 		Reflow<ivec2>(Mapped, 4, Data.wat.butter);
@@ -137,12 +153,6 @@ namespace Upload
 		Reflow< _int>(Mapped, 116, Data.fhqwhgads[1].lemons);
 		glUnmapNamedBuffer(Handle);
 	}
-}
-
-
-void HaltAndCatchFire()
-{
-	__fastfail(7);
 }
 
 
@@ -244,6 +254,19 @@ void ErrorCallback(int Error, const char* Description)
 	std::cout << "OpenGL Error: " << Description << '\n';
 	HaltAndCatchFire();
 }
+
+
+void DebugCallback(
+	GLenum Source,
+	GLenum Type,
+	GLuint Id,
+	GLenum Severity,
+	GLsizei MessageLength,
+	const GLchar* ErrorMessage,
+	const void* UserParam)
+{
+	std::cout << ErrorMessage << "\n";
+}
 #endif // DEBUG_BUILD
 
 
@@ -286,22 +309,22 @@ void InitialSetup()
 	Shaders[1] = CompileShader("shaders/red.fs.glsl", GL_FRAGMENT_SHADER);
 	Shaders[2] = CompileShader("shaders/splat.vs.glsl", GL_VERTEX_SHADER);
 	{
-		GLuint Stages[2] = { Shaders[2], Shaders[1] };
+		GLuint Stages[2] = { Shaders[1], Shaders[2] };
 		ShaderPrograms[0] = LinkShaders("draw red", &Stages[0], 2);
 	}
 	{
-		GLuint Stages[2] = { Shaders[2], Shaders[0] };
+		GLuint Stages[2] = { Shaders[0], Shaders[2] };
 		ShaderPrograms[1] = LinkShaders("draw blue", &Stages[0], 2);
 	}
-	glNamedBufferStorage(0, 40, nullptr, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT);
-	glNamedBufferStorage(1, 120, nullptr, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT);
+	glNamedBufferStorage(BufferHandles[0], 40, nullptr, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT);
+	glNamedBufferStorage(BufferHandles[1], 120, nullptr, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT);
 	{
 		Glsl::Fnord TestUpload = { 0 };
-		Upload::Fnord (0, TestUpload);
+		Upload::Fnord (BufferHandles[0], TestUpload);
 	}
 	{
 		Glsl::Meep TestUpload = { 0 };
-		Upload::Meep (1, TestUpload);
+		Upload::Meep (BufferHandles[1], TestUpload);
 	}
 }
 
@@ -378,6 +401,29 @@ int main()
 	{
 		std::cout << "Found OpenGL version " << GLVersion.major << "." << GLVersion.minor << "\n";
 	}
+
+#if DEBUG_BUILD
+	if (GLAD_GL_ARB_debug_output)
+	{
+		GLint ContextFlags;
+		glGetIntegerv(GL_CONTEXT_FLAGS, &ContextFlags);
+		if (ContextFlags & GL_CONTEXT_FLAG_DEBUG_BIT)
+		{
+			glEnable(GL_DEBUG_OUTPUT);
+			glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+			glDebugMessageCallbackARB(&DebugCallback, nullptr);
+			glDebugMessageControlARB(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
+		}
+		else
+		{
+			std::cout << "Debug context not available!\n";
+		}
+	}
+	else
+	{
+		std::cout << "Debug output extension not available!\n";
+	}
+#endif
 
 	InitialSetup();
 

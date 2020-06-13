@@ -147,7 +147,7 @@ class DeleteBuffers(SyntaxExpander):
 
 
 class BufferStorage(SyntaxExpander):
-    template = "glNamedBufferStorage(「handle」, 「bytes」, nullptr, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT);"
+    template = "glNamedBufferStorage(BufferHandles[「handle」], 「bytes」, nullptr, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT);"
 
 
 class ResizeBuffer(SyntaxExpander):
@@ -227,6 +227,11 @@ class BufferUpload(SyntaxExpander):
 void 「struct_name」 (GLuint Handle, Glsl::「struct_name」& Data)
 {
 	char* Mapped = (char*)glMapNamedBufferRange(Handle, 0, 「bytes」, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT );
+	if (Mapped == nullptr)
+	{
+		std::cout << "Fatal error in function \\"Upload::「struct_name」\\": glMapNamedBufferRange returned nullptr.\\n";
+		HaltAndCatchFire();
+	}
 「reflow」
 	glUnmapNamedBuffer(Handle);
 }
@@ -243,7 +248,7 @@ class TestUpload(SyntaxExpander):
     template = """
 {
 	Glsl::「struct_name」 TestUpload = { 0 };
-	Upload::「struct_name」 (「handle」, TestUpload);
+	Upload::「struct_name」 (BufferHandles[「handle」], TestUpload);
 }
 """.strip()
 
@@ -309,4 +314,4 @@ if __name__ == "__main__":
     with open("generated.cpp", "w", encoding="utf-8") as outfile:
         outfile.write(str(program))
 
-    build("generated.cpp", "generated.exe")
+    build("generated.cpp", "generated.exe", debug=True)

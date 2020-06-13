@@ -4,3 +4,5 @@ __pycache__
 /*.exe
 /*.pdb
 /*.dll
+/*.ilk
+.vs
