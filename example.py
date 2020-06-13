@@ -46,7 +46,7 @@ class ArrayType(GlslType):
         self.item_type = base
         self.item_type.words = align(base.words, 4)
         self.item_type.alignment = base.alignment
-        GlslType.__init__(self, f"{base.name}", self.item_type.alignment, self.item_type.alignment * size)
+        GlslType.__init__(self, f"{base.name}", self.item_type.alignment, self.item_type.words * size)
 
 
 class MatrixType(ArrayType):
@@ -92,72 +92,6 @@ class GlslStruct(SyntaxExpander):
         SyntaxExpander.__init__(self)
         self.name = struct.name
         self.members = [GlslMember(*member) for member in struct.members.items()]
-
-
-CppTypeRewrites = {
-    "uint" : "unsigned int",
-    "bvec2" : "std::array<std::int32_t, 2>",
-    "bvec3" : "std::array<std::int32_t, 3>",
-    "bvec4" : "std::array<std::int32_t, 4>",
-    "ivec2" : "std::array<int, 2>",
-    "ivec3" : "std::array<int, 3>",
-    "ivec4" : "std::array<int, 4>",
-    "uvec2" : "std::array<unsigned int, 2>",
-    "uvec3" : "std::array<unsigned int, 3>",
-    "uvec4" : "std::array<unsigned int, 4>",
-    "vec2" : "std::array<float, 2>",
-    "vec3" : "std::array<float, 3>",
-    "vec4" : "std::array<float, 4>",
-    "mat2" : "std::array<std::array<float, 2>, 2>",
-    "mat3" : "std::array<std::array<float, 3>, 3>",
-    "mat4" : "std::array<std::array<float, 4>, 4>",
-}
-
-
-CppUploadTypes = {
-    "int" : "std::int32_t",
-    "bool" : "std::int32_t",
-    "uint" : "std::uint32_t",
-    "float" : "float",
-    "bvec2" : "std::array<std::int32_t, 2>",
-    "bvec3" : "std::array<std::int32_t, 3>",
-    "bvec4" : "std::array<std::int32_t, 4>",
-    "ivec2" : "std::array<std::int32_t, 2>",
-    "ivec3" : "std::array<std::int32_t, 3>",
-    "ivec4" : "std::array<std::int32_t, 4>",
-    "uvec2" : "std::array<std::uint32_t, 2>",
-    "uvec3" : "std::array<std::uint32_t, 3>",
-    "uvec4" : "std::array<std::uint32_t, 4>",
-    "vec2" : "std::array<float, 2>",
-    "vec3" : "std::array<float, 3>",
-    "vec4" : "std::array<float, 4>",
-    "mat2" : "std::array<float, 2>",
-    "mat3" : "std::array<float, 3>",
-    "mat4" : "std::array<float, 4>",
-}
-
-
-class CppMember(SyntaxExpander):
-    template = "「type」 「name」;"
-    def __init__(self, member_name:str, member_type):
-        SyntaxExpander.__init__(self)
-        if member_type.name in CppTypeRewrites:
-            self.type = CppTypeRewrites[member_type.name]
-        else:
-            self.type = member_type.name
-        self.name = member_name
-        self.array = ""
-        if (type(member_type) is ArrayType):
-            self.type = f"std::array<{self.type}, {member_type.array_size}>"
-
-
-class CppStruct(SyntaxExpander):
-    template = "struct 「name」\n{\n「members」\n};"
-    indent = ("members",)
-    def __init__(self, struct:StructType):
-        SyntaxExpander.__init__(self)
-        self.name = struct.name
-        self.members = [CppMember(*member) for member in struct.members.items()]
 
 
 BuiltinTypes = {
@@ -227,7 +161,17 @@ class ResizeBuffer(SyntaxExpander):
 
 
 class RealignCopy(SyntaxExpander):
-    template = "*((「upload_type」*)(Mapped) + 「offset」) = (「upload_type」)Data.「field」;"
+    template = "Reflow<「upload_type」>(Mapped, 「offset」, Data.「field」);"
+
+    def __init__(self, upload_type, offset, field):
+        SyntaxExpander.__init__(self)
+        if upload_type in ["int", "bool"]:
+            upload_type = f"_{upload_type}"
+        while len(upload_type) < 5:
+            upload_type = f" {upload_type}"
+        self.upload_type = upload_type
+        self.offset = offset
+        self.field = field
 
 
 class Comment(SyntaxExpander):
@@ -242,10 +186,9 @@ class Comment(SyntaxExpander):
 def solve_array_reflow(array: ArrayType, offset: int, base: str) -> list:
     copies = []
     if type(array.item_type) in [ScalarType, VectorType]:
-        upload_type = CppUploadTypes[array.item_type.name]
         for i in range(array.array_size):
             field = f"{base}[{i}]"
-            copies.append(RealignCopy(upload_type = upload_type, offset = offset, field = field))
+            copies.append(RealignCopy(array.item_type.name, offset, field))
             offset += array.item_type.words
     elif type(array.item_type) in [MatrixType, ArrayType]:
         for i in range(array.array_size):
@@ -266,8 +209,7 @@ def solve_struct_reflow(struct: StructType, offset = 0, base = "") -> list:
         offset = align(offset, member_type.alignment)
         if type(member_type) in [ScalarType, VectorType]:
             field = f"{base}{member_name}"
-            upload_type = CppUploadTypes[member_type.name]
-            copies.append(RealignCopy(upload_type = upload_type, offset = offset, field = field))
+            copies.append(RealignCopy(member_type.name, offset, field))
             offset += member_type.words
         elif type(member_type) in [MatrixType, ArrayType]:
             field = f"{base}{member_name}"
@@ -282,9 +224,9 @@ def solve_struct_reflow(struct: StructType, offset = 0, base = "") -> list:
 
 class BufferUpload(SyntaxExpander):
     template = """
-void UploadStruct「struct_name」 (GLuint Handle, 「struct_name」& Data)
+void 「struct_name」 (GLuint Handle, Glsl::「struct_name」& Data)
 {
-	void* Mapped = glMapNamedBufferRange(Handle, 0, 「bytes」, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT );
+	char* Mapped = (char*)glMapNamedBufferRange(Handle, 0, 「bytes」, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT );
 「reflow」
 	glUnmapNamedBuffer(Handle);
 }
@@ -297,6 +239,16 @@ void UploadStruct「struct_name」 (GLuint Handle, 「struct_name」& Data)
         self.reflow = solve_struct_reflow(struct)
 
 
+class TestUpload(SyntaxExpander):
+    template = """
+{
+	Glsl::「struct_name」 TestUpload = { 0 };
+	Upload::「struct_name」 (「handle」, TestUpload);
+}
+""".strip()
+
+
+
 if __name__ == "__main__":
     shader_programs = [
         ShaderProgram("draw red", ShaderStage("vertex", "shaders/splat.vs.glsl"), ShaderStage("fragment", "shaders/red.fs.glsl")),
@@ -304,17 +256,16 @@ if __name__ == "__main__":
     ]
     shader_handles, build_shaders = solve_shaders(shader_programs)
 
-    structs = (TestStruct, TestStruct2)
+    struct_defs = (TestStruct, TestStruct2)
+    structs = [GlslStruct(struct) for struct in struct_defs]
 
     # expressions to expand into the global scope hook
     globals:List[SyntaxExpander] = \
     [
         shader_handles,
-        BufferHandle(len(structs)),
+        BufferHandle(len(struct_defs)),
     ]
-    globals += [Comment(GlslStruct(struct)) for struct in structs]
-    globals += [CppStruct(struct) for struct in structs]
-    globals += [BufferUpload(struct) for struct in structs]
+    uploaders = [BufferUpload(struct) for struct in struct_defs]
 
     # expressions to be called after GL is intialized but before rendering starts
     setup:List[SyntaxExpander] = \
@@ -327,10 +278,11 @@ if __name__ == "__main__":
             "glDepthRange(1.0, 0.0);",
             "glFrontFace(GL_CCW);"
         ]),
-        CreateBuffers(handle=0, count=len(structs)),
+        CreateBuffers(handle=0, count=len(struct_defs)),
     ]
     setup += build_shaders
-    setup += [BufferStorage(handle=i, bytes=struct.words) for i, struct in enumerate(structs)]
+    setup += [BufferStorage(handle=i, bytes=struct.words) for i, struct in enumerate(struct_defs)]
+    setup += [TestUpload(handle = i, struct_name = struct.name) for i, struct in enumerate(struct_defs)]
 
     # expressions to be called every frame to draw
     render:List[SyntaxExpander] = \
@@ -348,7 +300,9 @@ if __name__ == "__main__":
     program.hint_version_major = 4
     program.hint_version_minor = 2
     program.hint_profile = "GLFW_OPENGL_CORE_PROFILE"
+    program.structs = structs
     program.globals = globals
+    program.uploaders = uploaders
     program.initial_setup_hook = setup
     program.draw_frame_hook = render
 
