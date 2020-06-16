@@ -1,8 +1,6 @@
 ﻿
-import os
-from typing import *
 from hashlib import md5
-from graffeine.templates import SyntaxExpander, external, rewrite
+from .glsl_types import *
 
 
 class ShaderHandles(SyntaxExpander):
@@ -47,7 +45,7 @@ class ShaderStage:
     Immutable data corresponding roughly to the parameters for the OpenGL API
     calls "glCreateShader" and "glShaderSource".
     """
-    def __init__(self, stage: str, path: str, interfaces: list) -> None:
+    def __init__(self, stage: str, path: str, interfaces: List[SyntaxExpander]) -> None:
         assert(stage in ["vertex", "fragment"])
         self.path = path
         self.stage = f"GL_{stage.upper()}_SHADER"

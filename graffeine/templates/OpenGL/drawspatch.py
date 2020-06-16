@@ -1,7 +1,5 @@
 ﻿
-from typing import *
-from shader_compilation import *
-from graffeine.templates import SyntaxExpander
+from .shaders import *
 
 
 class ColorClear(SyntaxExpander):

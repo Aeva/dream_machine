@@ -1,8 +1,16 @@
 ﻿
 import re
 import os
-from typing import Iterable, Tuple, Optional, Any
+from typing import *
 from collections.abc import Iterable
+
+
+def div_up(n:int, d:int)->int:
+    return (n + d -1) // d
+
+
+def align(offset:int, alignment:int) -> int:
+    return div_up(offset, alignment) * alignment
 
 
 def external(path_part: str) -> str:
@@ -117,3 +125,16 @@ class SyntaxExpander(metaclass=SyntaxExpanderMeta):
 
     def __str__(self) -> str:
         return self.resolve()
+
+
+class Wrap(SyntaxExpander):
+    template = """「wrapped」"""
+
+
+class Comment(SyntaxExpander):
+    template = """
+/*
+「wrapped」
+*/
+""".strip()
+    indent = ("wrapped",)

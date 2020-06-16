@@ -250,7 +250,7 @@ void InitialSetup()
 	Shaders[1] = CompileShader(ShaderPaths[1], GL_FRAGMENT_SHADER);
 	Shaders[2] = CompileShader(ShaderPaths[2], GL_VERTEX_SHADER);
 	{
-		GLuint Stages[2] = { Shaders[2], Shaders[1] };
+		GLuint Stages[2] = { Shaders[1], Shaders[2] };
 		ShaderPrograms[0] = LinkShaders("draw red", &Stages[0], 2);
 	}
 	{
