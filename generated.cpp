@@ -34,20 +34,9 @@ namespace Glsl
 	using mat4 = std::array<std::array<float, 4>, 4>;
 
 
-	struct Fnord
+	struct TestStruct
 	{
-		bvec3 eggs;
-		float cheese;
-		ivec2 butter;
-		mat3 milk;
-		bool kale;
-		vec3 oranges[3];
-		int lemons;
-	};
-	struct Meep
-	{
-		Fnord wat;
-		Fnord fhqwhgads[2];
+		float ElapsedTime;
 	};
 }
 
@@ -63,7 +52,12 @@ GLFWwindow* Window;
 
 GLuint Shaders[3] = { 0 };
 GLuint ShaderPrograms[2] = { 0 };
-GLuint BufferHandles[2] = { 0 };
+std::string ShaderPaths[3] = {
+	"generated_shaders\\blue.fs.glsl.e1969d049cd4537fe9b28b5241c73b77.glsl",
+	"generated_shaders\\red.fs.glsl.2b050ab5aa645fd4b74af56afd2c496b.glsl",
+	"generated_shaders\\splat.vs.glsl.f7993f92f666ed20839ce38502f4c33b.glsl"
+};
+GLuint BufferHandles[1] = { 0 };
 
 
 namespace Upload
@@ -89,68 +83,15 @@ namespace Upload
 	{
 		*((UploadType*)(MappedBuffer + Offset)) = (UploadType)Data;
 	}
-	void Fnord (GLuint Handle, Glsl::Fnord& Data)
+	void TestStruct (GLuint Handle, Glsl::TestStruct& Data)
 	{
-		char* Mapped = (char*)glMapNamedBufferRange(Handle, 0, 40, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT );
+		char* Mapped = (char*)glMapNamedBufferRange(Handle, 0, 4, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT );
 		if (Mapped == nullptr)
 		{
-			std::cout << "Fatal error in function \"Upload::Fnord\": glMapNamedBufferRange returned nullptr.\n";
+			std::cout << "Fatal error in function \"Upload::TestStruct\": glMapNamedBufferRange returned nullptr.\n";
 			HaltAndCatchFire();
 		}
-		Reflow<bvec3>(Mapped, 0, Data.eggs);
-		Reflow<float>(Mapped, 3, Data.cheese);
-		Reflow<ivec2>(Mapped, 4, Data.butter);
-		Reflow< vec3>(Mapped, 8, Data.milk[0]);
-		Reflow< vec3>(Mapped, 12, Data.milk[1]);
-		Reflow< vec3>(Mapped, 16, Data.milk[2]);
-		Reflow<_bool>(Mapped, 20, Data.kale);
-		Reflow< vec3>(Mapped, 24, Data.oranges[0]);
-		Reflow< vec3>(Mapped, 28, Data.oranges[1]);
-		Reflow< vec3>(Mapped, 32, Data.oranges[2]);
-		Reflow< _int>(Mapped, 36, Data.lemons);
-		glUnmapNamedBuffer(Handle);
-	}
-	void Meep (GLuint Handle, Glsl::Meep& Data)
-	{
-		char* Mapped = (char*)glMapNamedBufferRange(Handle, 0, 120, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT );
-		if (Mapped == nullptr)
-		{
-			std::cout << "Fatal error in function \"Upload::Meep\": glMapNamedBufferRange returned nullptr.\n";
-			HaltAndCatchFire();
-		}
-		Reflow<bvec3>(Mapped, 0, Data.wat.eggs);
-		Reflow<float>(Mapped, 3, Data.wat.cheese);
-		Reflow<ivec2>(Mapped, 4, Data.wat.butter);
-		Reflow< vec3>(Mapped, 8, Data.wat.milk[0]);
-		Reflow< vec3>(Mapped, 12, Data.wat.milk[1]);
-		Reflow< vec3>(Mapped, 16, Data.wat.milk[2]);
-		Reflow<_bool>(Mapped, 20, Data.wat.kale);
-		Reflow< vec3>(Mapped, 24, Data.wat.oranges[0]);
-		Reflow< vec3>(Mapped, 28, Data.wat.oranges[1]);
-		Reflow< vec3>(Mapped, 32, Data.wat.oranges[2]);
-		Reflow< _int>(Mapped, 36, Data.wat.lemons);
-		Reflow<bvec3>(Mapped, 40, Data.fhqwhgads[0].eggs);
-		Reflow<float>(Mapped, 43, Data.fhqwhgads[0].cheese);
-		Reflow<ivec2>(Mapped, 44, Data.fhqwhgads[0].butter);
-		Reflow< vec3>(Mapped, 48, Data.fhqwhgads[0].milk[0]);
-		Reflow< vec3>(Mapped, 52, Data.fhqwhgads[0].milk[1]);
-		Reflow< vec3>(Mapped, 56, Data.fhqwhgads[0].milk[2]);
-		Reflow<_bool>(Mapped, 60, Data.fhqwhgads[0].kale);
-		Reflow< vec3>(Mapped, 64, Data.fhqwhgads[0].oranges[0]);
-		Reflow< vec3>(Mapped, 68, Data.fhqwhgads[0].oranges[1]);
-		Reflow< vec3>(Mapped, 72, Data.fhqwhgads[0].oranges[2]);
-		Reflow< _int>(Mapped, 76, Data.fhqwhgads[0].lemons);
-		Reflow<bvec3>(Mapped, 80, Data.fhqwhgads[1].eggs);
-		Reflow<float>(Mapped, 83, Data.fhqwhgads[1].cheese);
-		Reflow<ivec2>(Mapped, 84, Data.fhqwhgads[1].butter);
-		Reflow< vec3>(Mapped, 88, Data.fhqwhgads[1].milk[0]);
-		Reflow< vec3>(Mapped, 92, Data.fhqwhgads[1].milk[1]);
-		Reflow< vec3>(Mapped, 96, Data.fhqwhgads[1].milk[2]);
-		Reflow<_bool>(Mapped, 100, Data.fhqwhgads[1].kale);
-		Reflow< vec3>(Mapped, 104, Data.fhqwhgads[1].oranges[0]);
-		Reflow< vec3>(Mapped, 108, Data.fhqwhgads[1].oranges[1]);
-		Reflow< vec3>(Mapped, 112, Data.fhqwhgads[1].oranges[2]);
-		Reflow< _int>(Mapped, 116, Data.fhqwhgads[1].lemons);
+		Reflow<float>(Mapped, 0, Data.ElapsedTime);
 		glUnmapNamedBuffer(Handle);
 	}
 }
@@ -304,27 +245,22 @@ void InitialSetup()
 	glClipControl(GL_LOWER_LEFT, GL_NEGATIVE_ONE_TO_ONE);
 	glDepthRange(1.0, 0.0);
 	glFrontFace(GL_CCW);
-	glCreateBuffers(2, &BufferHandles[0]);
-	Shaders[0] = CompileShader("shaders/blue.fs.glsl", GL_FRAGMENT_SHADER);
-	Shaders[1] = CompileShader("shaders/red.fs.glsl", GL_FRAGMENT_SHADER);
-	Shaders[2] = CompileShader("shaders/splat.vs.glsl", GL_VERTEX_SHADER);
+	glCreateBuffers(1, &BufferHandles[0]);
+	Shaders[0] = CompileShader(ShaderPaths[0], GL_FRAGMENT_SHADER);
+	Shaders[1] = CompileShader(ShaderPaths[1], GL_FRAGMENT_SHADER);
+	Shaders[2] = CompileShader(ShaderPaths[2], GL_VERTEX_SHADER);
 	{
 		GLuint Stages[2] = { Shaders[1], Shaders[2] };
 		ShaderPrograms[0] = LinkShaders("draw red", &Stages[0], 2);
 	}
 	{
-		GLuint Stages[2] = { Shaders[0], Shaders[2] };
+		GLuint Stages[2] = { Shaders[2], Shaders[0] };
 		ShaderPrograms[1] = LinkShaders("draw blue", &Stages[0], 2);
 	}
-	glNamedBufferStorage(BufferHandles[0], 40, nullptr, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT);
-	glNamedBufferStorage(BufferHandles[1], 120, nullptr, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT);
+	glNamedBufferStorage(BufferHandles[0], 4, nullptr, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT);
 	{
-		Glsl::Fnord TestUpload = { 0 };
-		Upload::Fnord (BufferHandles[0], TestUpload);
-	}
-	{
-		Glsl::Meep TestUpload = { 0 };
-		Upload::Meep (BufferHandles[1], TestUpload);
+		Glsl::TestStruct TestUpload = { 0 };
+		Upload::TestStruct (BufferHandles[0], TestUpload);
 	}
 }
 

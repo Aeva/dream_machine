@@ -1,5 +1,8 @@
 #version 420
-「interfaces」
+uniform TestStruct
+{
+	float ElapsedTime;
+};
 
 void main()
 {

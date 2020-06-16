@@ -94,6 +94,16 @@ class GlslStruct(SyntaxExpander):
         self.members = [GlslMember(*member) for member in struct.members.items()]
 
 
+class UniformInterface(SyntaxExpander):
+    template = "uniform 「name」\n{\n「members」\n}「instance_name」;"
+    indent = ("members",)
+    def __init__(self, struct:StructType, instance_name=""):
+        SyntaxExpander.__init__(self)
+        self.name = struct.name
+        self.members = [GlslMember(*member) for member in struct.members.items()]
+        self.instance_name = instance_name
+
+
 BuiltinTypes = {
     "bool" : ScalarType("bool"),
     "int" : ScalarType("int"),
@@ -115,23 +125,6 @@ BuiltinTypes = {
     "mat3" : MatrixType("mat", 3),
     "mat4" : MatrixType("mat", 4),
 }
-
-
-TestStruct = StructType(
-    "Fnord",
-    eggs = BuiltinTypes["bvec3"],
-    cheese = BuiltinTypes["float"],
-    butter = BuiltinTypes["ivec2"],
-    milk = BuiltinTypes["mat3"],
-    kale = BuiltinTypes["bool"],
-    oranges = ArrayType(BuiltinTypes["vec3"], 3),
-    lemons = BuiltinTypes["int"])
-
-
-TestStruct2 = StructType(
-    "Meep",
-    wat = TestStruct,
-    fhqwhgads = ArrayType(TestStruct, 2))
 
 
 class BufferHandle(SyntaxExpander):
@@ -253,15 +246,24 @@ class TestUpload(SyntaxExpander):
 """.strip()
 
 
+TestStruct = StructType(
+    "TestStruct",
+    ElapsedTime = BuiltinTypes["float"])
+
 
 if __name__ == "__main__":
+
+    interfaces = [
+        UniformInterface(TestStruct),
+    ]
+
     shader_programs = [
-        ShaderProgram("draw red", ShaderStage("vertex", "shaders/splat.vs.glsl"), ShaderStage("fragment", "shaders/red.fs.glsl")),
-        ShaderProgram("draw blue", ShaderStage("vertex", "shaders/splat.vs.glsl"), ShaderStage("fragment", "shaders/blue.fs.glsl"))
+        ShaderProgram("draw red", ShaderStage("vertex", "shaders/splat.vs.glsl", interfaces), ShaderStage("fragment", "shaders/red.fs.glsl", interfaces)),
+        ShaderProgram("draw blue", ShaderStage("vertex", "shaders/splat.vs.glsl", interfaces), ShaderStage("fragment", "shaders/blue.fs.glsl", interfaces))
     ]
     shader_handles, build_shaders = solve_shaders(shader_programs)
 
-    struct_defs = (TestStruct, TestStruct2)
+    struct_defs = (TestStruct,)
     structs = [GlslStruct(struct) for struct in struct_defs]
 
     # expressions to expand into the global scope hook

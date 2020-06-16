@@ -1,17 +1,21 @@
 ﻿
+import os
 from typing import *
-from graffeine.templates import SyntaxExpander
+from hashlib import md5
+from graffeine.templates import SyntaxExpander, external, rewrite
 
 
 class ShaderHandles(SyntaxExpander):
     template = """
 GLuint Shaders[「shader_count」] = { 0 };
 GLuint ShaderPrograms[「program_count」] = { 0 };
+std::string ShaderPaths[「shader_count」] = {\n「paths」\n};
 """.strip()
+    indent = ("paths",)
 
 
 class CompileShader(SyntaxExpander):
-    template = "Shaders[「index」] = CompileShader(\"「path」\", 「stage」);"
+    template = "Shaders[「index」] = CompileShader(ShaderPaths[「index」], 「stage」);"
     def __init__(self, index: int, shader):
         SyntaxExpander.__init__(self)
         self.index = index
@@ -43,13 +47,23 @@ class ShaderStage:
     Immutable data corresponding roughly to the parameters for the OpenGL API
     calls "glCreateShader" and "glShaderSource".
     """
-    def __init__(self, stage: str, path: str) -> None:
+    def __init__(self, stage: str, path: str, interfaces: list) -> None:
         assert(stage in ["vertex", "fragment"])
         self.path = path
         self.stage = f"GL_{stage.upper()}_SHADER"
+        class GlslTransform(SyntaxExpander):
+            template = external(path)
+        self.src = str(GlslTransform(interfaces))
+
+    def save(self) -> str:
+        name = f"{os.path.split(self.path)[-1]}.{md5(str(self).encode()).hexdigest()}.glsl"
+        path = os.path.join("generated_shaders", name)
+        with open(path, "w") as generated:
+            generated.write(self.src)
+        return path.encode("unicode_escape").decode("utf8")
 
     def __str__(self):
-        return str((self.path, self.stage))
+        return str((self.path, self.stage, self.src))
 
     def __hash__(self):
         return hash(str(self))
@@ -119,6 +133,7 @@ def solve_shaders(programs: List[ShaderProgram]) -> Tuple[ShaderHandles, List[Sy
         return links
 
     shaders = unique_shaders(programs)
+    paths = ",\n".join([f'"{shader.save()}"' for shader in shaders])
     compiles: List[SyntaxExpander] = solve_shader_compilation(shaders)
     links: List[SyntaxExpander] = solve_shader_linking(shaders, programs)
-    return ShaderHandles(shader_count = len(shaders), program_count=len(programs)), compiles + links
+    return ShaderHandles(shader_count = len(shaders), program_count=len(programs), paths=paths), compiles + links
