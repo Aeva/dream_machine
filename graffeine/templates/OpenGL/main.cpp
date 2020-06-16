@@ -69,7 +69,7 @@ namespace Upload
 	using vec4 = std::array<float, 4>;
 
 	template <typename UploadType, typename GlslType>
-	__forceinline void Reflow(char* MappedBuffer, size_t Offset, GlslType Data)
+	__forceinline void Reflow(std::int32_t* MappedBuffer, size_t Offset, GlslType Data)
 	{
 		*((UploadType*)(MappedBuffer + Offset)) = (UploadType)Data;
 	}

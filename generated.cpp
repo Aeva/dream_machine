@@ -79,13 +79,13 @@ namespace Upload
 	using vec4 = std::array<float, 4>;
 
 	template <typename UploadType, typename GlslType>
-	__forceinline void Reflow(char* MappedBuffer, size_t Offset, GlslType Data)
+	__forceinline void Reflow(std::int32_t* MappedBuffer, size_t Offset, GlslType Data)
 	{
 		*((UploadType*)(MappedBuffer + Offset)) = (UploadType)Data;
 	}
 	void TestStruct (GLuint Handle, Glsl::TestStruct& Data)
 	{
-		char* Mapped = (char*)glMapNamedBufferRange(Handle, 0, 4, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT );
+		std::int32_t* Mapped = (std::int32_t*)glMapNamedBufferRange(Handle, 0, 16, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT );
 		if (Mapped == nullptr)
 		{
 			std::cout << "Fatal error in function \"Upload::TestStruct\": glMapNamedBufferRange returned nullptr.\n";
@@ -250,23 +250,25 @@ void InitialSetup()
 	Shaders[1] = CompileShader(ShaderPaths[1], GL_FRAGMENT_SHADER);
 	Shaders[2] = CompileShader(ShaderPaths[2], GL_VERTEX_SHADER);
 	{
-		GLuint Stages[2] = { Shaders[1], Shaders[2] };
+		GLuint Stages[2] = { Shaders[2], Shaders[1] };
 		ShaderPrograms[0] = LinkShaders("draw red", &Stages[0], 2);
 	}
 	{
-		GLuint Stages[2] = { Shaders[2], Shaders[0] };
+		GLuint Stages[2] = { Shaders[0], Shaders[2] };
 		ShaderPrograms[1] = LinkShaders("draw blue", &Stages[0], 2);
 	}
-	glNamedBufferStorage(BufferHandles[0], 4, nullptr, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT);
-	{
-		Glsl::TestStruct TestUpload = { 0 };
-		Upload::TestStruct (BufferHandles[0], TestUpload);
-	}
+	glNamedBufferStorage(BufferHandles[0], 16, nullptr, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT);
 }
 
 
 void DrawFrame(int FrameIndex, double ElapsedTime)
 {
+	{
+		Glsl::TestStruct Data = { 0 };
+	Data.ElapsedTime = ElapsedTime;
+		Upload::TestStruct (BufferHandles[0], Data);
+	}
+	glBindBufferBase(GL_UNIFORM_BUFFER, 0, BufferHandles[0]);
 	glClearColor(0.5, 0.5, 0.5, 1.0);
 	glClear(GL_COLOR_BUFFER_BIT);
 	glClearDepth(0.0);

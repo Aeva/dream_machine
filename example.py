@@ -219,7 +219,7 @@ class BufferUpload(SyntaxExpander):
     template = """
 void 「struct_name」 (GLuint Handle, Glsl::「struct_name」& Data)
 {
-	char* Mapped = (char*)glMapNamedBufferRange(Handle, 0, 「bytes」, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT );
+	std::int32_t* Mapped = (std::int32_t*)glMapNamedBufferRange(Handle, 0, 「bytes」, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT );
 	if (Mapped == nullptr)
 	{
 		std::cout << "Fatal error in function \\"Upload::「struct_name」\\": glMapNamedBufferRange returned nullptr.\\n";
@@ -233,7 +233,7 @@ void 「struct_name」 (GLuint Handle, Glsl::「struct_name」& Data)
     def __init__(self, struct:StructType):
         SyntaxExpander.__init__(self)
         self.struct_name = struct.name
-        self.bytes = struct.words
+        self.bytes = struct.words * 4
         self.reflow = solve_struct_reflow(struct)
 
 
@@ -244,6 +244,29 @@ class TestUpload(SyntaxExpander):
 	Upload::「struct_name」 (BufferHandles[「handle」], TestUpload);
 }
 """.strip()
+
+
+class UploadData(SyntaxExpander):
+    template = """
+{
+	Glsl::「struct_name」 Data = { 0 };
+「data」
+	Upload::「struct_name」 (BufferHandles[「handle」], Data);
+}
+""".strip()
+    def __init__(self, struct: StructType, handle: int, **kwargs):
+        SyntaxExpander.__init__(self)
+        self.struct_name = struct.name
+        self.handle = handle
+        data = []
+        for member, value in kwargs.items():
+            assert(member in struct.members)
+            data.append(f"Data.{member} = {value};")
+        self.data = data
+
+
+class BindUniformBuffer(SyntaxExpander):
+    template = "glBindBufferBase(GL_UNIFORM_BUFFER, 「binding_index」, BufferHandles[「handle」]);"
 
 
 TestStruct = StructType(
@@ -288,12 +311,14 @@ if __name__ == "__main__":
         CreateBuffers(handle=0, count=len(struct_defs)),
     ]
     setup += build_shaders
-    setup += [BufferStorage(handle=i, bytes=struct.words) for i, struct in enumerate(struct_defs)]
-    setup += [TestUpload(handle = i, struct_name = struct.name) for i, struct in enumerate(struct_defs)]
+    setup += [BufferStorage(handle=i, bytes=struct.words*4) for i, struct in enumerate(struct_defs)]
+    #setup += [TestUpload(handle = i, struct_name = struct.name) for i, struct in enumerate(struct_defs)]
 
     # expressions to be called every frame to draw
     render:List[SyntaxExpander] = \
     [
+        UploadData(TestStruct, 0, ElapsedTime="ElapsedTime"),
+        BindUniformBuffer(binding_index = 0, handle = 0),
         ColorClear(0.5, 0.5, 0.5),
         DepthClear(0.0),
     ]
