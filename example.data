@@ -1,0 +1,51 @@
+
+; semicolons are comments
+; all of this is data
+; sequences of numbers are numbers
+; all sequences of alphanumeric characters are strings
+; strings containing whitespace should be wrapped in quotes
+; (or for "emphasis")
+
+
+(interface Fnord
+	(float ElapsedTime))
+
+
+(struct SomeType
+	(mat4 Whatever)
+	(float Etc))
+
+
+(interface Whatsit
+	(SomeType Moop))
+
+
+(defdraw SplatRed
+	(vs "shaders/splat.vs.glsl")
+	(fs "shaders/red.fs.glsl")
+	(use SomeType)
+	(use Fnord)
+	(use Whatsit)
+	(disable GL_DEPTH_TEST)
+	(disable GL_CULL_FACE))
+
+
+(defdraw SplatBlue
+	(copy SplatRed)
+	(fs "shaders/blue.fs.glsl"))
+
+
+(defhandle SomeHandle Fnord)
+
+
+(renderer Red
+	(update SomeHandle)
+	(draw SplatRed
+		(bind SomeHandle)))
+
+
+(renderer Blue
+	(update SomeHandle)
+	(draw SplatBlue
+		(bind SomeHandle)))
+	

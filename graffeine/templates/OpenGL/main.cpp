@@ -45,6 +45,7 @@ float ScreenScaleX = 1.0;
 float ScreenScaleY = 1.0;
 bool WindowIsDirty = true;
 GLFWwindow* Window;
+int CurrentRenderer = 0;
 
 
 「globals」
@@ -216,6 +217,12 @@ void WindowContentScaleCallback(GLFWwindow* Window, float ScaleX, float ScaleY)
 void InitialSetup()
 {
 「initial_setup_hook」
+}
+
+
+namespace Renderer
+{
+「renderers」
 }
 
 

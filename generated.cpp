@@ -34,9 +34,18 @@ namespace Glsl
 	using mat4 = std::array<std::array<float, 4>, 4>;
 
 
-	struct TestStruct
+	struct SomeType
+	{
+		mat4 Whatever;
+		float Etc;
+	};
+	struct Fnord
 	{
 		float ElapsedTime;
+	};
+	struct Whatsit
+	{
+		SomeType Moop;
 	};
 }
 
@@ -48,14 +57,15 @@ float ScreenScaleX = 1.0;
 float ScreenScaleY = 1.0;
 bool WindowIsDirty = true;
 GLFWwindow* Window;
+int CurrentRenderer = 0;
 
 
 GLuint Shaders[3] = { 0 };
 GLuint ShaderPrograms[2] = { 0 };
 std::string ShaderPaths[3] = {
-	"generated_shaders\\blue.fs.glsl.e1969d049cd4537fe9b28b5241c73b77.glsl",
-	"generated_shaders\\red.fs.glsl.2b050ab5aa645fd4b74af56afd2c496b.glsl",
-	"generated_shaders\\splat.vs.glsl.f7993f92f666ed20839ce38502f4c33b.glsl"
+	"generated_shaders\\blue.fs.glsl.dba2a8d33b32039c8240d378967b09ba.glsl",
+	"generated_shaders\\red.fs.glsl.f0cb62bd86c49900bfa312c6d800ded8.glsl",
+	"generated_shaders\\splat.vs.glsl.24e6802d427b8013bbd8b902cb7b0718.glsl"
 };
 GLuint BufferHandles[1] = { 0 };
 
@@ -83,12 +93,12 @@ namespace Upload
 	{
 		*((UploadType*)(MappedBuffer + Offset)) = (UploadType)Data;
 	}
-	void TestStruct (GLuint Handle, Glsl::TestStruct& Data)
+	void Fnord (GLuint Handle, Glsl::Fnord& Data)
 	{
 		std::int32_t* Mapped = (std::int32_t*)glMapNamedBufferRange(Handle, 0, 16, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT );
 		if (Mapped == nullptr)
 		{
-			std::cout << "Fatal error in function \"Upload::TestStruct\": glMapNamedBufferRange returned nullptr.\n";
+			std::cout << "Fatal error in function \"Upload::Fnord\": glMapNamedBufferRange returned nullptr.\n";
 			HaltAndCatchFire();
 		}
 		Reflow<float>(Mapped, 0, Data.ElapsedTime);
@@ -240,50 +250,79 @@ void InitialSetup()
 		glGenVertexArrays(1, &vao);
 		glBindVertexArray(vao);
 	}
-	glDisable(GL_DEPTH_TEST);
-	glDisable(GL_CULL_FACE);
-	glClipControl(GL_LOWER_LEFT, GL_NEGATIVE_ONE_TO_ONE);
-	glDepthRange(1.0, 0.0);
-	glFrontFace(GL_CCW);
 	glCreateBuffers(1, &BufferHandles[0]);
 	Shaders[0] = CompileShader(ShaderPaths[0], GL_FRAGMENT_SHADER);
 	Shaders[1] = CompileShader(ShaderPaths[1], GL_FRAGMENT_SHADER);
 	Shaders[2] = CompileShader(ShaderPaths[2], GL_VERTEX_SHADER);
 	{
-		GLuint Stages[2] = { Shaders[1], Shaders[2] };
-		ShaderPrograms[0] = LinkShaders("draw red", &Stages[0], 2);
+		GLuint Stages[2] = { Shaders[2], Shaders[1] };
+		ShaderPrograms[0] = LinkShaders("SplatRed", &Stages[0], 2);
 	}
 	{
-		GLuint Stages[2] = { Shaders[0], Shaders[2] };
-		ShaderPrograms[1] = LinkShaders("draw blue", &Stages[0], 2);
+		GLuint Stages[2] = { Shaders[2], Shaders[0] };
+		ShaderPrograms[1] = LinkShaders("SplatBlue", &Stages[0], 2);
 	}
 	glNamedBufferStorage(BufferHandles[0], 16, nullptr, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT);
 }
 
 
+namespace Renderer
+{
+	void Red()
+	{
+		glClearColor(0, 0, 0, 1.0);
+		glClear(GL_COLOR_BUFFER_BIT);
+		glClearDepth(0);
+		glClear(GL_DEPTH_BUFFER_BIT);
+		{
+			Glsl::Fnord Data = { 0 };
+			Upload::Fnord(BufferHandles[0], Data);
+		}
+		{
+			glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "SplatRed");
+			glUseProgram(ShaderPrograms[0]);
+			glBindBufferBase(GL_UNIFORM_BUFFER, 0, BufferHandles[0]);
+			glDisable(GL_DEPTH_TEST);
+			glDisable(GL_CULL_FACE);
+			glDrawArraysInstanced(GL_TRIANGLES, 0, 6, 1);
+			glPopDebugGroup();
+		}
+	}
+	void Blue()
+	{
+		glClearColor(0, 0, 0, 1.0);
+		glClear(GL_COLOR_BUFFER_BIT);
+		glClearDepth(0);
+		glClear(GL_DEPTH_BUFFER_BIT);
+		{
+			Glsl::Fnord Data = { 0 };
+			Upload::Fnord(BufferHandles[0], Data);
+		}
+		{
+			glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "SplatBlue");
+			glUseProgram(ShaderPrograms[1]);
+			glBindBufferBase(GL_UNIFORM_BUFFER, 0, BufferHandles[0]);
+			glDisable(GL_DEPTH_TEST);
+			glDisable(GL_CULL_FACE);
+			glDrawArraysInstanced(GL_TRIANGLES, 0, 6, 1);
+			glPopDebugGroup();
+		}
+	}
+}
+
+
 void DrawFrame(int FrameIndex, double ElapsedTime)
 {
+	switch (CurrentRenderer)
 	{
-		Glsl::TestStruct Data = { 0 };
-	Data.ElapsedTime = ElapsedTime;
-		Upload::TestStruct (BufferHandles[0], Data);
-	}
-	glBindBufferBase(GL_UNIFORM_BUFFER, 0, BufferHandles[0]);
-	glClearColor(0.5, 0.5, 0.5, 1.0);
-	glClear(GL_COLOR_BUFFER_BIT);
-	glClearDepth(0.0);
-	glClear(GL_DEPTH_BUFFER_BIT);
-	{
-		glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "draw red");
-		glUseProgram(ShaderPrograms[0]);
-		glDrawArraysInstanced(GL_TRIANGLES, 0, 6, 1);
-		glPopDebugGroup();
-	}
-	{
-		glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "draw blue");
-		glUseProgram(ShaderPrograms[1]);
-		glDrawArraysInstanced(GL_TRIANGLES, 0, 6, 1);
-		glPopDebugGroup();
+	case 0:
+		Renderer::Red();
+		break;
+	case 1:
+		Renderer::Blue();
+		break;
+	default:
+		HaltAndCatchFire();
 	}
 }
 

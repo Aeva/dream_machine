@@ -1,7 +1,16 @@
 #version 420
-uniform TestStruct
+struct SomeType
+{
+	mat4 Whatever;
+	float Etc;
+};
+uniform Fnord
 {
 	float ElapsedTime;
+};
+uniform Whatsit
+{
+	SomeType Moop;
 };
 
 layout(location = 0) out vec4 OutColor;

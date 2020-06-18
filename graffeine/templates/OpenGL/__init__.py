@@ -9,5 +9,5 @@ from .drawspatch import *
 
 class OpenGLWindow(SyntaxExpander):
     template = external("OpenGL/main.cpp")
-    indent = ("initial_setup_hook", "draw_frame_hook", "structs", "uploaders")
+    indent = ("initial_setup_hook", "draw_frame_hook", "renderers", "structs", "uploaders")
 
