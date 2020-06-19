@@ -152,7 +152,7 @@ class BufferUpload(SyntaxExpander):
     template = """
 void 「struct_name」 (GLuint Handle, Glsl::「struct_name」& Data)
 {
-	std::int32_t* Mapped = (std::int32_t*)glMapNamedBufferRange(Handle, 0, 「bytes」, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT );
+	std::int32_t* Mapped = (std::int32_t*)glMapNamedBufferRange(Handle, 0, 「bytes」, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
 	if (Mapped == nullptr)
 	{
 		std::cout << "Fatal error in function \\"Upload::「struct_name」\\": glMapNamedBufferRange returned nullptr.\\n";

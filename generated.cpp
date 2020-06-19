@@ -57,13 +57,13 @@ float ScreenScaleX = 1.0;
 float ScreenScaleY = 1.0;
 bool WindowIsDirty = true;
 GLFWwindow* Window;
-int CurrentRenderer = 0;
+int CurrentRenderer = 1;
 
 
 GLuint Shaders[3] = { 0 };
 GLuint ShaderPrograms[2] = { 0 };
 std::string ShaderPaths[3] = {
-	"generated_shaders\\blue.fs.glsl.7b6e050c8dd385ca8db81565282d47ee.glsl",
+	"generated_shaders\\blue.fs.glsl.0d4bfa50448166804174e28991b2f622.glsl",
 	"generated_shaders\\red.fs.glsl.72e5034f0934a476f7cd05199a16f1d2.glsl",
 	"generated_shaders\\splat.vs.glsl.3fdbf6c0576b6e6d6cba510e637d0a75.glsl"
 };
@@ -95,7 +95,7 @@ namespace Upload
 	}
 	void Fnord (GLuint Handle, Glsl::Fnord& Data)
 	{
-		std::int32_t* Mapped = (std::int32_t*)glMapNamedBufferRange(Handle, 0, 16, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT );
+		std::int32_t* Mapped = (std::int32_t*)glMapNamedBufferRange(Handle, 0, 16, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
 		if (Mapped == nullptr)
 		{
 			std::cout << "Fatal error in function \"Upload::Fnord\": glMapNamedBufferRange returned nullptr.\n";
@@ -268,14 +268,14 @@ void InitialSetup()
 
 namespace Renderer
 {
-	void Red()
+	void Red(int FrameIndex, double CurrentTime, double DeltaTime)
 	{
 		glClearColor(0, 0, 0, 1.0);
 		glClear(GL_COLOR_BUFFER_BIT);
 		glClearDepth(0);
 		glClear(GL_DEPTH_BUFFER_BIT);
 		{
-			Glsl::Fnord Data = { 0 };
+			Glsl::Fnord Data = { (float)(CurrentTime * 0.1) };
 			Upload::Fnord(BufferHandles[0], Data);
 		}
 		{
@@ -288,14 +288,14 @@ namespace Renderer
 			glPopDebugGroup();
 		}
 	}
-	void Blue()
+	void Blue(int FrameIndex, double CurrentTime, double DeltaTime)
 	{
 		glClearColor(0, 0, 0, 1.0);
 		glClear(GL_COLOR_BUFFER_BIT);
 		glClearDepth(0);
 		glClear(GL_DEPTH_BUFFER_BIT);
 		{
-			Glsl::Fnord Data = { 0 };
+			Glsl::Fnord Data = { (float)(CurrentTime * 0.1) };
 			Upload::Fnord(BufferHandles[0], Data);
 		}
 		{
@@ -311,15 +311,15 @@ namespace Renderer
 }
 
 
-void DrawFrame(int FrameIndex, double ElapsedTime)
+void DrawFrame(int FrameIndex, double CurrentTime, double DeltaTime)
 {
 	switch (CurrentRenderer)
 	{
 	case 0:
-		Renderer::Red();
+		Renderer::Red(FrameIndex, CurrentTime, DeltaTime);
 		break;
 	case 1:
-		Renderer::Blue();
+		Renderer::Blue(FrameIndex, CurrentTime, DeltaTime);
 		break;
 	default:
 		HaltAndCatchFire();
@@ -407,15 +407,15 @@ int main()
 	while (!glfwWindowShouldClose(Window))
 	{
 		static int FrameIndex = 0;
-		static double ElapsedTime = 0.0;
+		static double DeltaTime = 0.0;
 		static double StartTime = glfwGetTime();
 		{
-			DrawFrame(FrameIndex++, ElapsedTime);
+			DrawFrame(FrameIndex++, StartTime, DeltaTime);
 			glfwSwapBuffers(Window);
 			glfwPollEvents();
 		}
 		double EndTime = glfwGetTime();
-		ElapsedTime = EndTime - StartTime;
+		DeltaTime = EndTime - StartTime;
 		StartTime = EndTime;
 	}
 

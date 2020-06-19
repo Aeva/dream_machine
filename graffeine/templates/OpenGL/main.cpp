@@ -45,7 +45,7 @@ float ScreenScaleX = 1.0;
 float ScreenScaleY = 1.0;
 bool WindowIsDirty = true;
 GLFWwindow* Window;
-int CurrentRenderer = 0;
+int CurrentRenderer = 1;
 
 
 「globals」
@@ -226,7 +226,7 @@ namespace Renderer
 }
 
 
-void DrawFrame(int FrameIndex, double ElapsedTime)
+void DrawFrame(int FrameIndex, double CurrentTime, double DeltaTime)
 {
 「draw_frame_hook」
 }
@@ -312,15 +312,15 @@ int main()
 	while (!glfwWindowShouldClose(Window))
 	{
 		static int FrameIndex = 0;
-		static double ElapsedTime = 0.0;
+		static double DeltaTime = 0.0;
 		static double StartTime = glfwGetTime();
 		{
-			DrawFrame(FrameIndex++, ElapsedTime);
+			DrawFrame(FrameIndex++, StartTime, DeltaTime);
 			glfwSwapBuffers(Window);
 			glfwPollEvents();
 		}
 		double EndTime = glfwGetTime();
-		ElapsedTime = EndTime - StartTime;
+		DeltaTime = EndTime - StartTime;
 		StartTime = EndTime;
 	}
 

@@ -5,34 +5,6 @@ from graffeine.templates.OpenGL import *
 from graffeine.build import build
 
 
-class TestUpload(SyntaxExpander):
-    template = """
-{
-	Glsl::「struct_name」 TestUpload = { 0 };
-	Upload::「struct_name」 (BufferHandles[「handle」], TestUpload);
-}
-""".strip()
-
-
-class UploadData(SyntaxExpander):
-    template = """
-{
-	Glsl::「struct_name」 Data = { 0 };
-「data」
-	Upload::「struct_name」 (BufferHandles[「handle」], Data);
-}
-""".strip()
-    def __init__(self, struct: StructType, handle: int, **kwargs):
-        SyntaxExpander.__init__(self)
-        self.struct_name = struct.name
-        self.handle = handle
-        data = []
-        for member, value in kwargs.items():
-            assert(member in struct.members)
-            data.append(f"Data.{member} = {value};")
-        self.data = data
-
-
 grammar = parsley.makeGrammar("""
 symbol = <(letterOrDigit | "_")+>:w -> w
 quote = '"' <(~'"' anything)*>:w '"' -> w
@@ -65,7 +37,7 @@ def scrub(source:str) -> str:
 class FakeUpload(SyntaxExpander):
     template = """
 {
-	Glsl::「struct_name」 Data = { 0 };
+	Glsl::「struct_name」 Data = { (float)(CurrentTime * 0.1) };
 	Upload::「struct_name」(BufferHandles[「handle」], Data);
 }
 """.strip()
@@ -77,7 +49,7 @@ class BindUniformBuffer(SyntaxExpander):
 
 class Renderer(SyntaxExpander):
     template = """
-void 「name」()
+void 「name」(int FrameIndex, double CurrentTime, double DeltaTime)
 {
 「calls」
 }
@@ -122,7 +94,7 @@ void 「name」()
 class RendererCase(SyntaxExpander):
     template = """
 case 「index」:
-	Renderer::「name」();
+	Renderer::「name」(FrameIndex, CurrentTime, DeltaTime);
 	break;
 """.strip()
 
