@@ -109,7 +109,7 @@ void 「name」()
                 for bind, handle_name in binds:
                     assert(bind == "bind")
                     handle_index = list(env["handles"].keys()).index(handle_name)
-                    binding_index = 0 # lol todo!
+                    binding_index = list(env["interfaces"].keys()).index(env["handles"][handle_name])
                     setup.append(BindUniformBuffer(binding_index=binding_index, handle=handle_index))
                 for flag, state in draw.flags.items():
                     setup.append(Capability(flag, state))
@@ -174,8 +174,9 @@ class DrawDef:
                 self.flags[value] = False
 
     def make_program(self, env):
+        binding_points = {k:i for i, k in enumerate(env["interfaces"].keys())}
         structs = [GlslStruct(env["structs"][s]) for s in self.structs]
-        interfaces = [UniformInterface(env["interfaces"][i]) for i in self.interfaces]
+        interfaces = [UniformInterface(env["interfaces"][i], binding_points[i]) for i in self.interfaces]
         expanders = structs + interfaces
         vert = ShaderStage("vertex", self.vs, expanders)
         frag = ShaderStage("fragment", self.fs, expanders)

@@ -83,11 +83,12 @@ class GlslStruct(SyntaxExpander):
 
 
 class UniformInterface(SyntaxExpander):
-    template = "uniform 「name」\n{\n「members」\n}「instance_name」;"
+    template = "layout(std140, binding = 「binding_point」)\nuniform 「name」\n{\n「members」\n}「instance_name」;"
     indent = ("members",)
-    def __init__(self, struct: StructType, instance_name: str = ""):
+    def __init__(self, struct: StructType, binding_point: int, instance_name: str = ""):
         SyntaxExpander.__init__(self)
         self.name = struct.name
+        self.binding_point = binding_point
         self.members = [GlslMember(*member) for member in struct.members.items()]
         self.instance_name = instance_name
 

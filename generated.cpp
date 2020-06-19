@@ -63,9 +63,9 @@ int CurrentRenderer = 0;
 GLuint Shaders[3] = { 0 };
 GLuint ShaderPrograms[2] = { 0 };
 std::string ShaderPaths[3] = {
-	"generated_shaders\\blue.fs.glsl.dba2a8d33b32039c8240d378967b09ba.glsl",
-	"generated_shaders\\red.fs.glsl.f0cb62bd86c49900bfa312c6d800ded8.glsl",
-	"generated_shaders\\splat.vs.glsl.24e6802d427b8013bbd8b902cb7b0718.glsl"
+	"generated_shaders\\blue.fs.glsl.7b6e050c8dd385ca8db81565282d47ee.glsl",
+	"generated_shaders\\red.fs.glsl.72e5034f0934a476f7cd05199a16f1d2.glsl",
+	"generated_shaders\\splat.vs.glsl.3fdbf6c0576b6e6d6cba510e637d0a75.glsl"
 };
 GLuint BufferHandles[1] = { 0 };
 
