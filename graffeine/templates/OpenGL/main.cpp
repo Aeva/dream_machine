@@ -45,7 +45,10 @@ float ScreenScaleX = 1.0;
 float ScreenScaleY = 1.0;
 bool WindowIsDirty = true;
 GLFWwindow* Window;
-int CurrentRenderer = 1;
+
+extern int CurrentRenderer = 0;
+extern void UserSetupCallback(GLFWwindow* Window);
+extern void UserFrameCallback(GLFWwindow* Window);
 
 
 「globals」
@@ -171,9 +174,9 @@ GLuint LinkShaders(std::string Name, GLuint* Shaders, int ShaderCount)
 
 
 #if DEBUG_BUILD
-void ErrorCallback(int Error, const char* Description)
+void GlfwErrorCallback(int Error, const char* Description)
 {
-	std::cout << "OpenGL Error: " << Description << '\n';
+	std::cout << "GLFW Error: " << Description << '\n';
 	HaltAndCatchFire();
 }
 
@@ -187,7 +190,83 @@ void DebugCallback(
 	const GLchar* ErrorMessage,
 	const void* UserParam)
 {
-	std::cout << ErrorMessage << "\n";
+	if (Type == GL_DEBUG_TYPE_PUSH_GROUP || Type == GL_DEBUG_TYPE_POP_GROUP)
+	{
+		return;
+	}
+	std::cout << "OpenGL Debug Callback - ";
+	std::cout << "Source: ";
+	switch (Source)
+	{
+	case GL_DEBUG_SOURCE_API:
+		std::cout << "API";
+		break;
+	case GL_DEBUG_SOURCE_WINDOW_SYSTEM:
+		std::cout << "Window System";
+		break;
+	case GL_DEBUG_SOURCE_SHADER_COMPILER:
+		std::cout << "Shader Compiler";
+		break;
+	case GL_DEBUG_SOURCE_THIRD_PARTY:
+		std::cout << "Third Party";
+		break;
+	case GL_DEBUG_SOURCE_APPLICATION:
+		std::cout << "You!";
+		break;
+	default:
+		std::cout << "Other";
+	}
+
+	std::cout << ", Type: ";
+	switch (Type)
+	{
+	case GL_DEBUG_TYPE_ERROR:
+		std::cout << "Error!";
+		break;
+	case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
+		std::cout << "Deprecated Behavior";
+		break;
+	case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:
+		std::cout << "Undefined Behavior";
+		break;
+	case GL_DEBUG_TYPE_PORTABILITY:
+		std::cout << "Portability";
+		break;
+	case GL_DEBUG_TYPE_PERFORMANCE:
+		std::cout << "Performance";
+		break;
+	case GL_DEBUG_TYPE_MARKER:
+		std::cout << "Marker";
+		break;
+	case GL_DEBUG_TYPE_PUSH_GROUP:
+		std::cout << "Push";
+		break;
+	case GL_DEBUG_TYPE_POP_GROUP:
+		std::cout << "Pop";
+		break;
+	default:
+		std::cout << "Other";
+	}
+
+	std::cout << ", Severity: ";
+	switch (Severity)
+	{
+	case GL_DEBUG_SEVERITY_LOW:
+		std::cout << "Low";
+		break;
+	case GL_DEBUG_SEVERITY_MEDIUM:
+		std::cout << "Medium";
+		break;
+	case GL_DEBUG_SEVERITY_HIGH:
+		std::cout << "High";
+		break;
+	case GL_DEBUG_SEVERITY_NOTIFICATION:
+		std::cout << "Notification";
+		break;
+	default:
+		std::cout << "Unknown?";
+	}
+	std::cout << "\n\tMessage: " << ErrorMessage << "\n\n";
 }
 #endif // DEBUG_BUILD
 
@@ -235,7 +314,7 @@ void DrawFrame(int FrameIndex, double CurrentTime, double DeltaTime)
 int main()
 {
 #if DEBUG_BUILD
-	glfwSetErrorCallback(ErrorCallback);
+	glfwSetErrorCallback(GlfwErrorCallback);
 #endif // DEBUG_BUILD
 	if (!glfwInit())
 	{
@@ -308,6 +387,7 @@ int main()
 #endif
 
 	InitialSetup();
+	UserSetupCallback(Window);
 
 	while (!glfwWindowShouldClose(Window))
 	{
@@ -318,6 +398,7 @@ int main()
 			DrawFrame(FrameIndex++, StartTime, DeltaTime);
 			glfwSwapBuffers(Window);
 			glfwPollEvents();
+			UserFrameCallback(Window);
 		}
 		double EndTime = glfwGetTime();
 		DeltaTime = EndTime - StartTime;

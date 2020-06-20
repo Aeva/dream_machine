@@ -18,12 +18,12 @@ def find_exe(name):
     raise RuntimeError(f"Can't find {name}.  Is it in your PATH env var?")
 
 
-def build(source_path, out_path=None, copy_dlls=True, debug=False):
+def build(*source_paths, out_path=None, copy_dlls=True, debug=False):
     cc = find_exe("clang++")
     defines = ["GLFW_DLL", "WIN32_LEAN_AND_MEAN", "DEBUG_BUILD"]
     includes = glob(os.path.join(os.path.dirname(__file__), "**", "include"))
     libs = glob(os.path.join(os.path.dirname(__file__), "**", "lib"))
-    sources = [source_path]
+    sources = list(source_paths)
     sources += glob(os.path.join(os.path.dirname(__file__), "**", "src", "*.cpp"))
     sources += glob(os.path.join(os.path.dirname(__file__), "**", "src", "*.c"))
     dlls = ["glfw3.dll"]

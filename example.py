@@ -264,4 +264,4 @@ if __name__ == "__main__":
     with open("generated.cpp", "w", encoding="utf-8") as outfile:
         outfile.write(str(program))
 
-    build("generated.cpp", "generated.exe", debug=True)
+    build("generated.cpp", "user_code.cpp", out_path="generated.exe", debug=True)

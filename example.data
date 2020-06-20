@@ -38,14 +38,14 @@
 (defhandle SomeHandle Fnord)
 
 
-(renderer Red
-	(update SomeHandle)
-	(draw SplatRed
-		(bind SomeHandle)))
-
-
 (renderer Blue
 	(update SomeHandle)
 	(draw SplatBlue
+		(bind SomeHandle)))
+
+
+(renderer Red
+	(update SomeHandle)
+	(draw SplatRed
 		(bind SomeHandle)))
 	

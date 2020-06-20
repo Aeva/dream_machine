@@ -57,7 +57,10 @@ float ScreenScaleX = 1.0;
 float ScreenScaleY = 1.0;
 bool WindowIsDirty = true;
 GLFWwindow* Window;
-int CurrentRenderer = 1;
+
+extern int CurrentRenderer = 0;
+extern void UserSetupCallback(GLFWwindow* Window);
+extern void UserFrameCallback(GLFWwindow* Window);
 
 
 GLuint Shaders[3] = { 0 };
@@ -200,9 +203,9 @@ GLuint LinkShaders(std::string Name, GLuint* Shaders, int ShaderCount)
 
 
 #if DEBUG_BUILD
-void ErrorCallback(int Error, const char* Description)
+void GlfwErrorCallback(int Error, const char* Description)
 {
-	std::cout << "OpenGL Error: " << Description << '\n';
+	std::cout << "GLFW Error: " << Description << '\n';
 	HaltAndCatchFire();
 }
 
@@ -216,7 +219,83 @@ void DebugCallback(
 	const GLchar* ErrorMessage,
 	const void* UserParam)
 {
-	std::cout << ErrorMessage << "\n";
+	if (Type == GL_DEBUG_TYPE_PUSH_GROUP || Type == GL_DEBUG_TYPE_POP_GROUP)
+	{
+		return;
+	}
+	std::cout << "OpenGL Debug Callback - ";
+	std::cout << "Source: ";
+	switch (Source)
+	{
+	case GL_DEBUG_SOURCE_API:
+		std::cout << "API";
+		break;
+	case GL_DEBUG_SOURCE_WINDOW_SYSTEM:
+		std::cout << "Window System";
+		break;
+	case GL_DEBUG_SOURCE_SHADER_COMPILER:
+		std::cout << "Shader Compiler";
+		break;
+	case GL_DEBUG_SOURCE_THIRD_PARTY:
+		std::cout << "Third Party";
+		break;
+	case GL_DEBUG_SOURCE_APPLICATION:
+		std::cout << "You!";
+		break;
+	default:
+		std::cout << "Other";
+	}
+
+	std::cout << ", Type: ";
+	switch (Type)
+	{
+	case GL_DEBUG_TYPE_ERROR:
+		std::cout << "Error!";
+		break;
+	case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
+		std::cout << "Deprecated Behavior";
+		break;
+	case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:
+		std::cout << "Undefined Behavior";
+		break;
+	case GL_DEBUG_TYPE_PORTABILITY:
+		std::cout << "Portability";
+		break;
+	case GL_DEBUG_TYPE_PERFORMANCE:
+		std::cout << "Performance";
+		break;
+	case GL_DEBUG_TYPE_MARKER:
+		std::cout << "Marker";
+		break;
+	case GL_DEBUG_TYPE_PUSH_GROUP:
+		std::cout << "Push";
+		break;
+	case GL_DEBUG_TYPE_POP_GROUP:
+		std::cout << "Pop";
+		break;
+	default:
+		std::cout << "Other";
+	}
+
+	std::cout << ", Severity: ";
+	switch (Severity)
+	{
+	case GL_DEBUG_SEVERITY_LOW:
+		std::cout << "Low";
+		break;
+	case GL_DEBUG_SEVERITY_MEDIUM:
+		std::cout << "Medium";
+		break;
+	case GL_DEBUG_SEVERITY_HIGH:
+		std::cout << "High";
+		break;
+	case GL_DEBUG_SEVERITY_NOTIFICATION:
+		std::cout << "Notification";
+		break;
+	default:
+		std::cout << "Unknown?";
+	}
+	std::cout << "\n\tMessage: " << ErrorMessage << "\n\n";
 }
 #endif // DEBUG_BUILD
 
@@ -255,7 +334,7 @@ void InitialSetup()
 	Shaders[1] = CompileShader(ShaderPaths[1], GL_FRAGMENT_SHADER);
 	Shaders[2] = CompileShader(ShaderPaths[2], GL_VERTEX_SHADER);
 	{
-		GLuint Stages[2] = { Shaders[2], Shaders[1] };
+		GLuint Stages[2] = { Shaders[1], Shaders[2] };
 		ShaderPrograms[0] = LinkShaders("SplatRed", &Stages[0], 2);
 	}
 	{
@@ -268,26 +347,6 @@ void InitialSetup()
 
 namespace Renderer
 {
-	void Red(int FrameIndex, double CurrentTime, double DeltaTime)
-	{
-		glClearColor(0, 0, 0, 1.0);
-		glClear(GL_COLOR_BUFFER_BIT);
-		glClearDepth(0);
-		glClear(GL_DEPTH_BUFFER_BIT);
-		{
-			Glsl::Fnord Data = { (float)(CurrentTime * 0.1) };
-			Upload::Fnord(BufferHandles[0], Data);
-		}
-		{
-			glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "SplatRed");
-			glUseProgram(ShaderPrograms[0]);
-			glBindBufferBase(GL_UNIFORM_BUFFER, 0, BufferHandles[0]);
-			glDisable(GL_DEPTH_TEST);
-			glDisable(GL_CULL_FACE);
-			glDrawArraysInstanced(GL_TRIANGLES, 0, 6, 1);
-			glPopDebugGroup();
-		}
-	}
 	void Blue(int FrameIndex, double CurrentTime, double DeltaTime)
 	{
 		glClearColor(0, 0, 0, 1.0);
@@ -308,6 +367,26 @@ namespace Renderer
 			glPopDebugGroup();
 		}
 	}
+	void Red(int FrameIndex, double CurrentTime, double DeltaTime)
+	{
+		glClearColor(0, 0, 0, 1.0);
+		glClear(GL_COLOR_BUFFER_BIT);
+		glClearDepth(0);
+		glClear(GL_DEPTH_BUFFER_BIT);
+		{
+			Glsl::Fnord Data = { (float)(CurrentTime * 0.1) };
+			Upload::Fnord(BufferHandles[0], Data);
+		}
+		{
+			glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "SplatRed");
+			glUseProgram(ShaderPrograms[0]);
+			glBindBufferBase(GL_UNIFORM_BUFFER, 0, BufferHandles[0]);
+			glDisable(GL_DEPTH_TEST);
+			glDisable(GL_CULL_FACE);
+			glDrawArraysInstanced(GL_TRIANGLES, 0, 6, 1);
+			glPopDebugGroup();
+		}
+	}
 }
 
 
@@ -316,10 +395,10 @@ void DrawFrame(int FrameIndex, double CurrentTime, double DeltaTime)
 	switch (CurrentRenderer)
 	{
 	case 0:
-		Renderer::Red(FrameIndex, CurrentTime, DeltaTime);
+		Renderer::Blue(FrameIndex, CurrentTime, DeltaTime);
 		break;
 	case 1:
-		Renderer::Blue(FrameIndex, CurrentTime, DeltaTime);
+		Renderer::Red(FrameIndex, CurrentTime, DeltaTime);
 		break;
 	default:
 		HaltAndCatchFire();
@@ -330,7 +409,7 @@ void DrawFrame(int FrameIndex, double CurrentTime, double DeltaTime)
 int main()
 {
 #if DEBUG_BUILD
-	glfwSetErrorCallback(ErrorCallback);
+	glfwSetErrorCallback(GlfwErrorCallback);
 #endif // DEBUG_BUILD
 	if (!glfwInit())
 	{
@@ -403,6 +482,7 @@ int main()
 #endif
 
 	InitialSetup();
+	UserSetupCallback(Window);
 
 	while (!glfwWindowShouldClose(Window))
 	{
@@ -413,6 +493,7 @@ int main()
 			DrawFrame(FrameIndex++, StartTime, DeltaTime);
 			glfwSwapBuffers(Window);
 			glfwPollEvents();
+			UserFrameCallback(Window);
 		}
 		double EndTime = glfwGetTime();
 		DeltaTime = EndTime - StartTime;
