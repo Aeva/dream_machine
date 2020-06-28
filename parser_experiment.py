@@ -63,13 +63,14 @@ class TokenString(Token):
         self.text = text
 
     def __repr__(self) -> str:
-        return f"<TokenString at {self.line}:{self.col} → \"{self.text}\">"
+        return f"<TokenString at {self.line}:{self.col} → {self.pretty()}>"
 
     def __str__(self) -> str:
         return self.text
 
     def pretty(self) -> str:
-        return f"{self.quote}{str(self)}{self.quote}"
+        sub = str(self).replace(self.quote, f"\\{self.quote}")
+        return f"{self.quote}{sub}{self.quote}"
 
 
 class TokenComment(Token):
@@ -260,6 +261,10 @@ class Parser:
         self.advance()
         acc = ""
         while True:
+            if self.char == "EOF":
+                self.error("End of file reached while parsing a string", *pos)
+            if self.char == "\n":
+                self.error("Line end reached while parsing a string", *pos)
             if self.char == "\\":
                 self.advance()
                 if self.char in (term, "\\"):

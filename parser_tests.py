@@ -26,10 +26,14 @@ def string_test():
     parser = Parser()
     parser.reset("\"Hello\" \n 'World'")
     token = parser.parse_string()
-    assert token.text == "Hello"
+    assert(token.text == "Hello")
     parser.skip_whitespace()
     token = parser.parse_string()
-    assert token.text == "World"
+    assert(token.text == "World")
+
+    parser.reset(r'"Hello \"World\""')
+    token = parser.parse_string()
+    assert(token.text == 'Hello "World"')
 
 
 def comment_test():
