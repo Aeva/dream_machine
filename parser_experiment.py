@@ -21,6 +21,12 @@ class Token:
     def pretty(self) -> str:
         return str(self)
 
+    def pos(self) -> Tuple[int, int]:
+        """
+        Returns the beginning of the token.
+        """
+        return self.line, self.col
+
 
 class TokenNumber(Token):
     """
@@ -99,6 +105,21 @@ class TokenList(Token):
         Token.__init__(self, line, col)
         self.tokens = tokens
 
+    def car(self) -> Optional[Token]:
+        return self.tokens[0] if len(self.tokens) > 0 else None
+
+    def cdr(self):
+        return TokenList(self.tokens[1:], *self.pos())
+
+    def is_nil(self):
+        return len(self.tokens) == 0
+
+    def __iter__(self):
+        expr = self
+        while len(expr.tokens) > 0:
+            yield expr.car()
+            expr = expr.cdr()
+
     def __repr__(self) -> str:
         return f"<TokenList at {self.line}:{self.col} → {self.tokens}>"
 
@@ -161,14 +182,16 @@ class Parser:
         self.line = 0
         self.col = 0
 
-    def error(self, hint:str, start_line:Optional[int] = None, start_col:Optional[int] = None):
+    def error(self, hint:str, start_line:Optional[int] = None, start_col:Optional[int] = None, end_line:Optional[int] = None, end_col:Optional[int] = None):
         """
         Provide a nice error for the user when the parser fails.
         """
-        start_line = start_line or max(self.line - 1, 0)
-        assert(start_line <= self.line)
+        end_line = end_line or self.line
+        end_col = end_col or self.col
+        start_line = start_line or max(end_line - 1, 0)
+        assert(start_line <= end_line)
 
-        margin = len(str(self.line)) + 3
+        margin = len(str(end_line)) + 3
         def prefix(n):
             """
             Generates a nice left-padded line number prefix.
@@ -177,8 +200,8 @@ class Parser:
             pad = margin - len(pre)
             return (" " * pad) + pre
 
-        lines = self.raw.split("\n")[start_line:self.line+1]
-        message = f"\n\n{hint} in file \"{self.path}\" near line {self.line} column {self.col}:\n"
+        lines = self.raw.split("\n")[start_line:end_line+1]
+        message = f"\n\n{hint} in file \"{self.path}\" near line {end_line} column {end_col}:\n"
 
         for index, line in enumerate(lines):
             message += prefix(index)
@@ -187,10 +210,10 @@ class Parser:
                 message += line.replace("\t", "    ") + "\n"
             else:
                 # rewrite tabs as spaces and adjust cursor position
-                tabs = line[:self.col].count("\t")
+                tabs = line[:end_col].count("\t")
                 ext = tabs * 3
                 message += line.replace("\t", "    ") + "\n"
-                message += (" " * (self.col + ext + margin)) + "↑\n"
+                message += (" " * (end_col + ext + margin)) + "↑\n"
         raise ParserError(message)
 
     def advance(self):
