@@ -3,98 +3,160 @@ from parser_experiment import *
 from graffeine.templates.OpenGL import *
 
 
-class Grammar:
-    def __init__(self, parser:Parser):
-        self.comments:List[TokenComment] = []
-        self.parser = parser
-        self.structs:Dict[str, StructType] = {}
-        self.interfaces:Dict[str, StructType] = {}
-        #self.draws = {}
-        #self.handles = {}
-        #self.renderers = {}
+ErrorCallback = Callable[[str, Token], None]
 
-    def validate_schema(self, expr:TokenList, **schema):
-        head = expr.car()
-        tail = expr.cdr()
-        if len(expr.tokens) != len(schema.keys()) and not "vargs" in schema:
-            self.error(f"Expected {len(schema.keys())} items, got {len(expr.tokens)}", expr)
-        for hint_name, expected in schema.items():
-            if hint_name == "vargs":
-                assert(list(schema.keys())[-1] == "vargs")
-                if expected is None:
-                    break
-                while head is not None:
-                    head = cast(Token, head)
-                    if type(head) is not expected:
-                        self.error(f"Expected {expected.__name__}, got {type(head).__name__}", head)
-                    head = tail.car()
-                    tail = tail.cdr()
-                break
-            else:
-                head = cast(Token, head)
-                if type(head) is not expected:
-                    self.error(f"Expected {hint_name} to be {expected.__name__}, got {type(head).__name__}", head)
-                head = tail.car()
-                tail = tail.cdr()
 
-    def process_struct(self, name:str, args:TokenList) -> StructType:
-        members = {}
-        self.validate_schema(args, vargs=TokenList)
-        for member in args:
-            member = cast(TokenList, member)
-            self.validate_schema(member, type_name=TokenWord, member_name=TokenWord)
-            type_name, member_name = member.tokens
-            if str(member_name) in members:
-                self.error(f"Duplicate variable name within struct", member_name)
-            members[str(member_name)] = self.find_type(type_name)
-        return StructType(name, **members)
+def assert_type(_type, value):
+    assert(type(value) == _type)
+    return cast(_type, value)
 
-    def dispatch_command(self, callback:str, instance:str, args:TokenList):
-        if callback == "struct":
-            if self.structs.get(instance) is not None:
-                self.error("Cannot have multiple structs with the same name", args)
-            self.structs[instance] = self.process_struct(instance, args)
-        elif callback == "interface":
-            if self.interfaces.get(instance) is not None:
-                self.error("Cannot have multiple interfaces with the same name", args)
-            self.interfaces[instance] = self.process_struct(instance, args)
-        elif callback == "defdraw":
-            pass
-        elif callback == "defhandle":
-            self.validate_schema(args, handle=TokenWord)
-            pass
-        elif callback == "renderer":
-            pass
+
+class Rule:
+    def validate(self, token:Token, error:ErrorCallback):
+        raise NotImplementedError
+        return False
+
+
+class AtomRule(Rule):
+    def __init__(self, hint:str, atom:type):
+        self.hint = hint
+        self.atom = atom
+
+    def validate(self, token:Token, error:ErrorCallback):
+        if not type(token) == self.atom:
+            error(f"Expected {self.hint} to be a {self.atom}, got {type(token).__name__}", token)
+
+    def __repr__(self):
+        return f'<{type(self).__name__} "{self.hint}">'
+
+
+class WordRule(AtomRule):
+    def __init__(self, hint:str):
+        AtomRule.__init__(self, hint, TokenWord)
+
+
+class StringRule(AtomRule):
+    def __init__(self, hint:str):
+        AtomRule.__init__(self, hint, TokenString)
+
+
+class NumberRule(AtomRule):
+    def __init__(self, hint:str):
+        AtomRule.__init__(self, hint, TokenNumber)
+
+
+class Exactly(WordRule):
+    def __init__(self, name:str):
+        WordRule.__init__(self, name)
+
+    def validate(self, token:Token, error:ErrorCallback):
+        WordRule.validate(self, token, error)
+        if str(token) != self.hint:
+            error(f"Expected {self.hint}, got {str(token)}...?", token)
+
+    def match(self, token:Token) -> bool:
+        if type(token) == TokenWord:
+            return str(token) == self.hint
         else:
-            self.error(f"Unknown command {callback}", args)
+            return False
 
-    def process(self, tokens:Sequence[Token]):
-        for token in tokens:
-            if type(token) is TokenComment:
-                self.comments.append(cast(TokenComment, token))
-            else:
-                assert(type(token) is TokenList)
-                token = cast(TokenList, token)
-                self.validate_schema(token, command=TokenWord, name=TokenWord, vargs=None)
-                callback = cast(Token, token.car())
-                args = token.cdr()
-                instance = cast(Token, token.cdr().car())
-                self.dispatch_command(str(callback), str(instance), args.cdr())
+    def __repr__(self):
+        return f'<Exactly "{self.name}">'
 
-    def find_type(self, type_name:TokenWord) -> Optional[GlslType]:
-        found = glsl_builtins.get(type_name.word) or self.structs.get(type_name.word)
-        if not found:
-            self.error(f"No such GLSL builtin type or struct \"{type_name.word}\"", type_name)
-        return found
 
-    def error(self, hint:str, token:Token):
-        self.parser.error(hint, *token.pos(), *token.pos())
+class ListRule(Rule):
+    def __init__(self, *rules:Rule, SPLAT:Optional[Rule] = None):
+        self.rules = rules
+        self.splat = SPLAT
+
+    def validate(self, token:Token, error:ErrorCallback):
+        if type(token) is not TokenList:
+            error(f"Expected TokenList, got {type(token).__name__}", token)
+        token_list = cast(TokenList, token).without_comments()
+        if self.splat:
+            if len(token_list) <= len(self.rules):
+                error(f"Expected more than {len(self.rules)} list items, got {len(token_list)}", token_list)
+        elif len(token_list) != len(self.rules):
+            error(f"Expected exactly {len(self.rules)} list items, got {len(token_list)}", token_list)
+        for rule, token in zip(self.rules, token_list):
+            rule.validate(token, error)
+        if self.splat:
+            remainder = cast(Tuple[Token], token_list[len(self.rules):])
+            for token in remainder:
+                self.splat.validate(token, error)
+
+    def match(self, token_list:TokenList) -> bool:
+        assert(len([r for r in self.rules if type(r) is Exactly]) == 1)
+        for rule, token in zip(self.rules, token_list):
+            if type(rule) is Exactly:
+                if not cast(Exactly, rule).match(token):
+                    return False
+        return True
+
+    def __repr__(self):
+        return "<ListRule>"
+
+
+class MatchRule(Rule):
+    def __init__(self, *rules:ListRule):
+        self.rules = rules
+
+    def validate(self, token:Token, error:ErrorCallback):
+        token_list = assert_type(TokenList, token).without_comments()
+        if token_list.is_nil():
+            error("Expected non-empty TokenList", token_list)
+        for rule in self.rules:
+            assert(type(rule) is ListRule)
+            if rule.match(token_list):
+                return rule.validate(token_list, error)
+        error("Unkown expression", token_list)
+
+    def __repr__(self):
+        return "<MatchRule>"
+
+
+GRAMMAR = MatchRule(
+    ListRule(Exactly("struct"), WordRule("struct name"), SPLAT = ListRule(WordRule("type"), WordRule("name"))),
+    ListRule(Exactly("interface"), WordRule("interface name"), SPLAT = ListRule(WordRule("type"), WordRule("name"))),
+    ListRule(Exactly("defhandle"), WordRule("handle name"), WordRule("interface name")),
+    ListRule(Exactly("defdraw"), WordRule("draw name"), SPLAT = MatchRule(
+        ListRule(Exactly("vs"), StringRule("shader path")),
+        ListRule(Exactly("fs"), StringRule("shader path")),
+        ListRule(Exactly("use"), WordRule("struct or interface name")),
+        ListRule(Exactly("enable"), WordRule("opengl capability enum")),
+        ListRule(Exactly("disable"), WordRule("opengl capability enum")),
+        ListRule(Exactly("copy"), WordRule("draw name")))),
+    ListRule(Exactly("renderer"), WordRule("renderer name"), SPLAT = MatchRule(
+        ListRule(Exactly("update"), WordRule("handle name")),
+        ListRule(Exactly("draw"), WordRule("draw name"), SPLAT = MatchRule(
+            ListRule(Exactly("bind"), WordRule("handle name")))))))
+
+
+def validate_grammar(parser:Parser, tokens:Tuple[Token, ...]):
+    """
+    Takes a parser object and the tuple of tokens it generated, and performs
+    grammar validation on the tokens.  If this function doesn't blow up, then
+    the token stream can be assumed to be valid.
+
+    This ignores comment tokens, so you will still need to check for those
+    when performing the final processing on the token stream.
+    """
+    global GRAMMAR
+
+    def error(hint:str, token:Token):
+        parser.token_error(hint, token)
+
+    for token in tokens:
+        if type(token) is TokenComment:
+            continue
+        token = assert_type(TokenList, token)
+        GRAMMAR.validate(token, error)
 
 
 if __name__ == "__main__":
     parser = Parser()
     parser.open("example.data")
     tokens = parser.parse()
-    grammar = Grammar(parser)
-    grammar.process(tokens)
-    import pdb; pdb.set_trace()
+    validate_grammar(parser, tokens)
+    # if we got here without error, then the grammar is valid, and we can proceede to
+    # process the actual data with minimal additional validation required

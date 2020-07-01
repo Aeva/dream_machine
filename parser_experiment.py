@@ -114,6 +114,18 @@ class TokenList(Token):
     def is_nil(self):
         return len(self.tokens) == 0
 
+    def without_comments(self):
+        """
+        Used for validation.
+        """
+        return TokenList(tuple([t for t in self.tokens if type(t) is not TokenComment]), *self.pos())
+
+    def __len__(self):
+        return len(self.tokens)
+
+    def __getitem__(self, key) -> Union[Token,Tuple[Token]]:
+        return self.tokens[key]
+
     def __iter__(self):
         expr = self
         while len(expr.tokens) > 0:
@@ -215,6 +227,12 @@ class Parser:
                 message += line.replace("\t", "    ") + "\n"
                 message += (" " * (end_col + ext + margin)) + "↑\n"
         raise ParserError(message)
+
+    def token_error(self, hint:str, token:Token):
+        """
+        Provide a nice error on a specific token.
+        """
+        self.error(hint, *token.pos(), *token.pos())
 
     def advance(self):
         """
