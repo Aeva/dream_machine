@@ -1,6 +1,5 @@
 
 from parser_experiment import *
-from graffeine.templates.OpenGL import *
 
 
 ErrorCallback = Callable[[str, Token], None]
