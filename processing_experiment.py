@@ -5,18 +5,55 @@ from grammar_experiment import validate_grammar, assert_type
 from graffeine.templates.OpenGL import *
 
 
-class Draw:
+class DrawDef:
     def __init__(self, name:str):
         self.name = name
         self.vs = ""
         self.fs = ""
-        self.structs = []
-        self.interfaces = []
-        self.flags = {}
+        self.structs:List[str] = []
+        self.interfaces:List[str] = []
+        self.flags:Dict[str, bool] = {}
+
+    def __repr__(self):
+        return f"<DrawDef {self.name}>"
+
+
+class Binding:
+    def __init__(self, handle_name:str):
+        self.name = handle_name
+
+    def __repr__(self):
+        return f"<Binding {self.name}>"
+
+
+class RenderEvent:
+    pass
+
+
+class UploadBufferEvent(RenderEvent):
+    def __init__(self, handle_name:str):
+        self.name = handle_name
+
+    def __repr__(self):
+        return f"<UploadBufferEvent {self.name}>"
+
+
+class DrawEvent(RenderEvent):
+    def __init__(self, draw_name:str):
+        self.name = draw_name
+        self.bindings: List[Binding] = []
+
+    def __repr__(self):
+        return f"<DrawEvent {self.name} {self.bindings}>"
 
 
 class Renderer:
-    pass
+    def __init__(self, renderer_name:str):
+        self.name = renderer_name
+        self.events : List[RenderEvent] = []
+
+    def __repr__(self):
+        return f"<Renderer {self.name} {self.events}>"
 
 
 class Program:
@@ -25,7 +62,7 @@ class Program:
         self.parser = parser
         self.structs:Dict[str, StructType] = {}
         self.interfaces:Dict[str, StructType] = {}
-        self.draws:Dict[str, Draw] = {}
+        self.draws:Dict[str, DrawDef] = {}
         self.handles:Dict[str, str] = {}
         self.renderers:Dict[str, Renderer] = {}
 
@@ -38,8 +75,8 @@ class Program:
             members[str(member_name)] = self.find_type(cast(TokenWord, type_name))
         return StructType(struct_name, **members)
 
-    def fill_draw(self, draw_name:str, attrs:Tuple[Token,...], full_list:TokenList) -> Draw:
-        draw = Draw(draw_name)
+    def fill_draw(self, draw_name:str, attrs:Tuple[Token,...], full_list:TokenList) -> DrawDef:
+        draw = DrawDef(draw_name)
         for attr in attrs:
             name, value = cast(TokenList, attr).without_comments()
             if str(name) == "copy":
@@ -74,7 +111,27 @@ class Program:
         return draw
 
     def fill_renderer(self, renderer_name:str, events:Tuple[Token,...]):
-        renderer = Renderer()
+        renderer = Renderer(renderer_name)
+        for event in (cast(TokenList, e).without_comments() for e in events):
+            name = event[0]
+            params = event[1:]
+            if str(name) == "update":
+                handle_name = params[0]
+                if str(handle_name) not in self.handles:
+                    self.error(f'Unknown handle "{str(handle_name)}"', handle_name)
+                renderer.events.append(UploadBufferEvent(str(handle_name)))
+            elif str(name) == "draw":
+                draw_name = params[0]
+                draw_splat = params[1:]
+                if str(draw_name) not in self.draws:
+                    self.error(f'Unknown drawdef "{str(draw_name)}"', draw_name)
+                draw = DrawEvent(str(draw_name))
+                for subcommand, handle_name  in (cast(TokenList, e).without_comments() for e in draw_splat):
+                    assert(str(subcommand) == "bind")
+                    if str(handle_name) not in self.handles:
+                        self.error(f'Unknown handle "{str(handle_name)}"', handle_name)
+                    draw.bindings.append(Binding(str(handle_name)))
+                renderer.events.append(draw)
         return renderer
 
     def route_command(self, command:str, token_list:TokenList):
@@ -91,8 +148,8 @@ class Program:
             self.draws[name] = self.fill_draw(name, clean[2:], token_list)
 
         elif command == "defhandle":
-            interface = str(clean[2])
-            if interface not in self.interfaces:
+            interface = clean[2]
+            if str(interface) not in self.interfaces:
                 self.error(f'Undefined interface "{str(interface)}"', interface)
             self.handles[name] = str(interface)
 
