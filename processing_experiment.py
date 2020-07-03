@@ -18,12 +18,12 @@ class DrawDef:
         return f"<DrawDef {self.name}>"
 
 
-class Binding:
+class DrawBinding:
     def __init__(self, handle_name:str):
         self.name = handle_name
 
     def __repr__(self):
-        return f"<Binding {self.name}>"
+        return f"<DrawBinding {self.name}>"
 
 
 class RenderEvent:
@@ -41,19 +41,19 @@ class UploadBufferEvent(RenderEvent):
 class DrawEvent(RenderEvent):
     def __init__(self, draw_name:str):
         self.name = draw_name
-        self.bindings: List[Binding] = []
+        self.bindings: List[DrawBinding] = []
 
     def __repr__(self):
         return f"<DrawEvent {self.name} {self.bindings}>"
 
 
-class Renderer:
+class RendererDef:
     def __init__(self, renderer_name:str):
         self.name = renderer_name
         self.events : List[RenderEvent] = []
 
     def __repr__(self):
-        return f"<Renderer {self.name} {self.events}>"
+        return f"<RendererDef {self.name} {self.events}>"
 
 
 class Program:
@@ -64,7 +64,17 @@ class Program:
         self.interfaces:Dict[str, StructType] = {}
         self.draws:Dict[str, DrawDef] = {}
         self.handles:Dict[str, str] = {}
-        self.renderers:Dict[str, Renderer] = {}
+        self.renderers:Dict[str, RendererDef] = {}
+
+    def buffer_index(self, handle_name:str) -> int:
+        return list(self.handles.keys()).index(handle_name)
+
+    def binding_index(self, handle_name:str) -> int:
+        interface_name = self.handles[handle_name]
+        return list(self.interfaces.keys()).index(interface_name)
+
+    def shader_index(self, draw_name:str) -> int:
+        return list(self.draws.keys()).index(draw_name)
 
     def fill_struct(self, struct_name:str, member_defs:Tuple[Token,...]) -> StructType:
         members = {}
@@ -111,7 +121,7 @@ class Program:
         return draw
 
     def fill_renderer(self, renderer_name:str, events:Tuple[Token,...]):
-        renderer = Renderer(renderer_name)
+        renderer = RendererDef(renderer_name)
         for event in (cast(TokenList, e).without_comments() for e in events):
             name = event[0]
             params = event[1:]
@@ -130,7 +140,7 @@ class Program:
                     assert(str(subcommand) == "bind")
                     if str(handle_name) not in self.handles:
                         self.error(f'Unknown handle "{str(handle_name)}"', handle_name)
-                    draw.bindings.append(Binding(str(handle_name)))
+                    draw.bindings.append(DrawBinding(str(handle_name)))
                 renderer.events.append(draw)
         return renderer
 
