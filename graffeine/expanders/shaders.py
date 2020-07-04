@@ -57,6 +57,8 @@ class ShaderStage:
 
     def save(self) -> str:
         name = f"{os.path.split(self.path)[-1]}.{md5(str(self).encode()).hexdigest()}.glsl"
+        if not os.path.exists("generated_shaders"):
+            os.mkdir("generated_shaders")
         path = os.path.join("generated_shaders", name)
         with open(path, "w") as generated:
             generated.write(self.src)
