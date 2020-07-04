@@ -45,10 +45,22 @@ class SyntaxExpanderMeta(type):
         newclass = super().__new__(cls, name, bases, dct)
         template = dct.get("template")
         if template:
-            newclass.params = tuple(sorted(set(re.findall(r"「([a-zA-Z]\w+)」", template))))
+            found = re.findall(r"「([a-zA-Z]\w+)(:[a-zA-Z]\w+)?」", template)
+            params = [f[0] for f in found]
+            newclass._types = {}
+            for param, _type in found:
+                if _type != "":
+                    _type = _type[1:]
+                    if param in newclass._types and newclass._types[param] != _type:
+                        raise SyntaxError(f"Repeating parameter \"{param}\" has conflicting (optional) type definitions.")
+                    else:
+                        newclass._types[param] = _type
+            newclass.params = tuple(sorted(set(params)))
+            for param, _type in newclass._types.items():
+                template = template.replace(f"{param}:{_type}", param)
             newclass.template = rewrite(template)
         for param in newclass.params:
-            if param in ["template", "params", "indent"]:
+            if param in ["template", "params", "indent", "_dict", "_types"]:
                 raise SyntaxError(f"\"{param}\" can't be used as a parameter name in SyntaxExpander template strings.")
         return newclass
 
@@ -61,6 +73,7 @@ class SyntaxExpander(metaclass=SyntaxExpanderMeta):
     template = ""
     params: Tuple[str, ...] = tuple()
     indent: Tuple[str, ...] = tuple()
+    _types: Dict[str, str] = {}
 
     def __init__(self, *args, **kwargs) -> None:
         if len(self.params) == 1 and len(args) > 0:
@@ -72,6 +85,13 @@ class SyntaxExpander(metaclass=SyntaxExpanderMeta):
         for key, value in kwargs.items():
             self[key] = value
 
+    def _check_type(self, key, new_value):
+        if key in self._types:
+            got = type(new_value).__name__
+            expected = self._types[key]
+            if got != expected:
+                raise TypeError(f"Expected type \"{expected}\", got \"{got}\".")
+
     def __getitem__(self, key: str):
         if not key in self.params:
             raise KeyError(f"key \"{key}\" is not valid for {type(self).__name__}")
@@ -80,6 +100,7 @@ class SyntaxExpander(metaclass=SyntaxExpanderMeta):
     def __setitem__(self, key: str, value: Any):
         if not key in self.params:
             raise KeyError(f"key \"{key}\" is not valid for {type(self).__name__}")
+        self._check_type(key, value)
         self._dict[key] = value
         return value
 
@@ -91,6 +112,7 @@ class SyntaxExpander(metaclass=SyntaxExpanderMeta):
 
     def __setattr__(self, name: str, value: Any):
         if name in self.params:
+            self._check_type(name, value)
             self._dict[name] = value
         else:
             object.__setattr__(self, name, value)

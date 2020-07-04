@@ -11,7 +11,7 @@ class ColorClear(SyntaxExpander):
 
 
 class DepthClear(SyntaxExpander):
-    template = "glClearDepth(「depth」);\nglClear(GL_DEPTH_BUFFER_BIT);"
+    template = "glClearDepth(「depth:int」);\nglClear(GL_DEPTH_BUFFER_BIT);"
 
 
 class Capability(SyntaxExpander):
