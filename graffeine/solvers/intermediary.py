@@ -1,9 +1,9 @@
 
 from copy import copy
-from typing import *
+from ..handy import *
 from ..syntax.tokens import *
 from ..syntax.parser import Parser
-from ..syntax.grammar import validate_grammar, assert_type
+from ..syntax.grammar import validate_grammar
 from ..expanders.glsl_types import *
 
 
@@ -81,7 +81,7 @@ class Program:
     def fill_struct(self, struct_name:str, member_defs:Tuple[Token,...]) -> StructType:
         members = {}
         for member in member_defs:
-            type_name, member_name = assert_type(TokenList, member).without_comments()
+            type_name, member_name = CAST(TokenList, member).without_comments()
             if str(member_name) in members:
                 self.error(f'Duplicate member name "{str(member_name)}" in struct "{struct_name}"', member_name)
             members[str(member_name)] = self.find_type(cast(TokenWord, type_name))
@@ -173,7 +173,7 @@ class Program:
             if type(token) is TokenComment:
                 pass
             else:
-                token_list = assert_type(TokenList, token)
+                token_list = CAST(TokenList, token)
                 command = str(token_list.without_comments()[0])
                 self.route_command(command, token_list)
 

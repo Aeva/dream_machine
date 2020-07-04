@@ -1,16 +1,8 @@
 ﻿
 import re
 import os
-from typing import *
 from collections.abc import Iterable
-
-
-def div_up(n:int, d:int)->int:
-    return (n + d -1) // d
-
-
-def align(offset:int, alignment:int) -> int:
-    return div_up(offset, alignment) * alignment
+from ..handy import *
 
 
 def external(path_part: str) -> str:
@@ -35,20 +27,6 @@ def rewrite(template: str) -> str:
     escaped.
     """
     return template.replace("{", "{{").replace("}", "}}").replace("「", "{").replace("」", "}")
-
-
-def indent(text: str) -> str:
-    """
-    Indent each line in a string.
-    """
-    lines = text.replace("\r", "").split("\n")
-    new_lines = []
-    for line in lines:
-        if len(line.strip()) == 0:
-            new_lines.append("")
-        else:
-            new_lines.append("\t" + line)
-    return "\n".join(new_lines)
 
 
 class SyntaxExpanderMeta(type):
