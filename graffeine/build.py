@@ -22,6 +22,7 @@ def build(*source_paths, out_path=None, copy_dlls=True, debug=False):
     cc = find_exe("clang++")
     defines = ["GLFW_DLL", "WIN32_LEAN_AND_MEAN", "DEBUG_BUILD"]
     includes = glob(os.path.join(os.getcwd(), "dependencies", "**", "include"))
+    includes += [os.path.dirname(__file__)]
     libs = glob(os.path.join(os.getcwd(), "dependencies", "**", "lib"))
     sources = list(source_paths)
     sources += glob(os.path.join(os.getcwd(), "dependencies", "**", "src", "*.cpp"))
