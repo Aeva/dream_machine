@@ -87,7 +87,7 @@ class ShaderProgram:
     """
     def __init__(self, name: str, *shaders: ShaderStage) -> None:
         self.name = name
-        self.shaders = set(shaders)
+        self.shaders = sorted(set(shaders))
         self.stages = tuple(sorted(set([shader.stage for shader in self.shaders])))
         self.validate()
 
