@@ -103,12 +103,6 @@ class TokenList(Token):
         Token.__init__(self, line, col)
         self.tokens = tokens
 
-    def car(self) -> Optional[Token]:
-        return self.tokens[0] if len(self.tokens) > 0 else None
-
-    def cdr(self):
-        return TokenList(self.tokens[1:], *self.pos())
-
     def is_nil(self):
         return len(self.tokens) == 0
 
@@ -125,10 +119,9 @@ class TokenList(Token):
         return self.tokens[key]
 
     def __iter__(self):
-        expr = self
-        while len(expr.tokens) > 0:
-            yield expr.car()
-            expr = expr.cdr()
+        tokens = list(self.tokens)
+        while len(tokens) > 0:
+            yield tokens.pop(0)
 
     def __repr__(self) -> str:
         return f"<TokenList at {self.line}:{self.col} → {self.tokens}>"
