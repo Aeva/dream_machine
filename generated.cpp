@@ -3,24 +3,6 @@
 
 namespace Glsl
 {
-	using uint = unsigned int;
-	using bvec2 = std::array<std::int32_t, 2>;
-	using bvec3 = std::array<std::int32_t, 3>;
-	using bvec4 = std::array<std::int32_t, 4>;
-	using ivec2 = std::array<int, 2>;
-	using ivec3 = std::array<int, 3>;
-	using ivec4 = std::array<int, 4>;
-	using uvec2 = std::array<unsigned int, 2>;
-	using uvec3 = std::array<unsigned int, 3>;
-	using uvec4 = std::array<unsigned int, 4>;
-	using vec2 = std::array<float, 2>;
-	using vec3 = std::array<float, 3>;
-	using vec4 = std::array<float, 4>;
-	using mat2 = std::array<std::array<float, 2>, 2>;
-	using mat3 = std::array<std::array<float, 3>, 3>;
-	using mat4 = std::array<std::array<float, 4>, 4>;
-
-
 	struct SomeType
 	{
 		mat4 Whatever;
@@ -62,27 +44,6 @@ GLuint BufferHandles[1] = { 0 };
 
 namespace Upload
 {
-	using _int = std::int32_t;
-	using _bool = std::int32_t;
-	using uint = std::uint32_t;
-	using bvec2 = std::array<std::int32_t, 2>;
-	using bvec3 = std::array<std::int32_t, 3>;
-	using bvec4 = std::array<std::int32_t, 4>;
-	using ivec2 = std::array<std::int32_t, 2>;
-	using ivec3 = std::array<std::int32_t, 3>;
-	using ivec4 = std::array<std::int32_t, 4>;
-	using uvec2 = std::array<std::uint32_t, 2>;
-	using uvec3 = std::array<std::uint32_t, 3>;
-	using uvec4 = std::array<std::uint32_t, 4>;
-	using vec2 = std::array<float, 2>;
-	using vec3 = std::array<float, 3>;
-	using vec4 = std::array<float, 4>;
-
-	template <typename UploadType, typename GlslType>
-	__forceinline void Reflow(std::int32_t* MappedBuffer, size_t Offset, GlslType Data)
-	{
-		*((UploadType*)(MappedBuffer + Offset)) = (UploadType)Data;
-	}
 	void Fnord (GLuint Handle, Glsl::Fnord& Data)
 	{
 		std::int32_t* Mapped = (std::int32_t*)glMapNamedBufferRange(Handle, 0, 16, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
