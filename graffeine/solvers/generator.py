@@ -1,7 +1,10 @@
 ﻿
-from processing_experiment import *
-from graffeine.templates.OpenGL import *
-from graffeine.build import build
+from .intermediary import *
+from ..expanders.common import *
+from ..expanders.buffers import *
+from ..expanders.shaders import *
+from ..expanders.drawspatch import *
+from ..expanders.window import *
 
 
 class FakeUpload(SyntaxExpander):
@@ -154,15 +157,3 @@ class ProgramSolver:
         program.draw_frame_hook = self.switch
         return program
 
-
-if __name__ == "__main__":
-    parser = Parser()
-    parser.open("example.data")
-    tokens = parser.parse()
-    validate_grammar(parser, tokens)
-    program = Program(parser)
-    program.process(tokens)
-    solved = ProgramSolver(program)
-    with open("generated.cpp", "w", encoding="utf-8") as outfile:
-        outfile.write(str(solved.expand()))
-    build("generated.cpp", "user_code.cpp", out_path="generated.exe", debug=True)

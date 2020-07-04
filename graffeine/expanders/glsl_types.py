@@ -1,5 +1,6 @@
 ﻿
-from ..import *
+from typing import *
+from .common import SyntaxExpander, align
 
 
 class GlslType:

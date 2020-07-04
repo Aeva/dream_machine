@@ -1,6 +1,8 @@
 ﻿
+import os
 from hashlib import md5
 from .glsl_types import *
+from .common import external
 
 
 class ShaderHandles(SyntaxExpander):

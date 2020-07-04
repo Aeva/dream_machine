@@ -1,5 +1,6 @@
 ﻿
-from .shaders import *
+from .common import SyntaxExpander
+from .shaders import ShaderProgram, ChangeProgram
 
 
 class ColorClear(SyntaxExpander):

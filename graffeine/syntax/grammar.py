@@ -1,5 +1,6 @@
 
-from parser_experiment import *
+from .parser import Parser
+from .tokens import *
 
 
 ErrorCallback = Callable[[str, Token], None]
@@ -151,11 +152,3 @@ def validate_grammar(parser:Parser, tokens:Tuple[Token, ...]):
         token = assert_type(TokenList, token)
         GRAMMAR.validate(token, error)
 
-
-if __name__ == "__main__":
-    parser = Parser()
-    parser.open("example.data")
-    tokens = parser.parse()
-    validate_grammar(parser, tokens)
-    # if we got here without error, then the grammar is valid, and we can proceede to
-    # process the actual data with minimal additional validation required

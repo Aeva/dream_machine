@@ -1,5 +1,5 @@
 ﻿
-from ..import *
+from .common import SyntaxExpander
 
 
 class BufferHandle(SyntaxExpander):

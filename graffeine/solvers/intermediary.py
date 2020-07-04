@@ -1,8 +1,10 @@
 
 from copy import copy
-from parser_experiment import *
-from grammar_experiment import validate_grammar, assert_type
-from graffeine.templates.OpenGL import *
+from typing import *
+from ..syntax.tokens import *
+from ..syntax.parser import Parser
+from ..syntax.grammar import validate_grammar, assert_type
+from ..expanders.glsl_types import *
 
 
 class DrawDef:
@@ -183,23 +185,3 @@ class Program:
 
     def error(self, hint:str, token:Token):
         self.parser.error(hint, *token.pos(), *token.pos())
-
-
-if __name__ == "__main__":
-    parser = Parser()
-    parser.open("example.data")
-    tokens = parser.parse()
-    validate_grammar(parser, tokens)
-    program = Program(parser)
-    program.process(tokens)
-
-    def report(name):
-        print(f" - {name}:")
-        for key, value in getattr(program, name).items():
-            print(f"   - {key}:", value)
-
-    report("structs")
-    report("interfaces")
-    report("draws")
-    report("handles")
-    report("renderers")

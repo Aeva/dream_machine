@@ -338,7 +338,7 @@ void InitialSetup()
 		ShaderPrograms[0] = LinkShaders("SplatRed", &Stages[0], 2);
 	}
 	{
-		GLuint Stages[2] = { Shaders[0], Shaders[2] };
+		GLuint Stages[2] = { Shaders[2], Shaders[0] };
 		ShaderPrograms[1] = LinkShaders("SplatBlue", &Stages[0], 2);
 	}
 	glNamedBufferStorage(BufferHandles[0], 16, nullptr, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT);
