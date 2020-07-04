@@ -6,6 +6,11 @@ from ..handy import *
 
 
 def external(path_part: str) -> str:
+    """
+    Attempts to open a file and return the contents.  This will search in the same
+    directory as the calling module first, and then in the current working directory
+    if no file was found.
+    """
     search_dir = os.path.dirname(__file__)
     full_path = os.path.join(search_dir, path_part)
     if os.path.isfile(full_path):
@@ -17,7 +22,7 @@ def external(path_part: str) -> str:
             template = template_file.read()
         return template
     else:
-        raise RuntimeError(f"Can't find template file \"{path_part}\"!")
+        raise FileNotFoundError(f"Can't find template file \"{path_part}\"!")
 
 
 def rewrite(template: str) -> str:
@@ -30,16 +35,29 @@ def rewrite(template: str) -> str:
 
 
 class SyntaxExpanderMeta(type):
+    """
+    Metaclass for SyntaxExpander.
+    This rewrites the "template" class variable on new classes so to use a more C++
+    friendly formatting syntax, and populates the "params" class variable w/ extracted
+    template parameters.  See the function "rewrite" for the exact rewrite rules.
+    """
     def __new__(cls, name, bases, dct):
         newclass = super().__new__(cls, name, bases, dct)
         template = dct.get("template")
         if template:
             newclass.params = tuple(sorted(set(re.findall(r"「([a-zA-Z]\w+)」", template))))
             newclass.template = rewrite(template)
+        for param in newclass.params:
+            if param in ["template", "params", "indent"]:
+                raise SyntaxError(f"\"{param}\" can't be used as a parameter name in SyntaxExpander template strings.")
         return newclass
 
 
 class SyntaxExpander(metaclass=SyntaxExpanderMeta):
+    """
+    Syntax expanders are simple templates, which are primarily intended to be used to
+    generate C++ and GLSL code.
+    """
     template = ""
     params: Tuple[str, ...] = tuple()
     indent: Tuple[str, ...] = tuple()
@@ -50,13 +68,13 @@ class SyntaxExpander(metaclass=SyntaxExpanderMeta):
                 kwargs[self.params[0]] = args[0]
         elif len(self.params) > 1 and len(args) > 0:
             raise NameError(f"{type(self)} has more than one parameter, so init values have to be passed in as keyword arguments")
-        self._dict = dict(zip(self.params, ["" for p in self.params]))
+        self._dict = {p:"" for p in self.params}
         for key, value in kwargs.items():
             self[key] = value
 
     def __getitem__(self, key: str):
         if not key in self.params:
-            raise KeyError(f"key \"{key}\" is not valid for {type(self)}")
+            raise KeyError(f"key \"{key}\" is not valid for {type(self).__name__}")
         return self._dict[key]
 
     def __setitem__(self, key: str, value: Any):
@@ -66,20 +84,20 @@ class SyntaxExpander(metaclass=SyntaxExpanderMeta):
         return value
 
     def __getattr__(self, name: str):
-        if name in self.params:
-            return self[name]
-        else:
+        try:
+            return self._dict[name]
+        except:
             raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
 
     def __setattr__(self, name: str, value: Any):
         if name in self.params:
-            self[name] = value
+            self._dict[name] = value
         else:
             object.__setattr__(self, name, value)
         return value
 
     def __dir__(self):
-        return sorted(list(set(object.__dir__(self) + list(self.params))))
+        return sorted(set(object.__dir__(self) + list(self.params)))
 
     def __repr__(self) -> str:
         params_repr = ", ".join([f"{p}={repr(self._dict[p])}" for p in self.params])
@@ -90,7 +108,7 @@ class SyntaxExpander(metaclass=SyntaxExpanderMeta):
             value = self._dict[key]
             if type(value) is not str:
                 if isinstance(value, Iterable):
-                    value = "\n".join(map(lambda x: str(x), value))
+                    value = "\n".join(map(str, value))
                 else:
                     value = str(value)
             if key in self.indent:
@@ -103,16 +121,3 @@ class SyntaxExpander(metaclass=SyntaxExpanderMeta):
 
     def __str__(self) -> str:
         return self.resolve()
-
-
-class Wrap(SyntaxExpander):
-    template = """「wrapped」"""
-
-
-class Comment(SyntaxExpander):
-    template = """
-/*
-「wrapped」
-*/
-""".strip()
-    indent = ("wrapped",)
