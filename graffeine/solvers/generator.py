@@ -2,6 +2,7 @@
 from .intermediary import *
 from ..expanders.common import *
 from ..expanders.buffers import *
+from ..expanders.samplers import *
 from ..expanders.shaders import *
 from ..expanders.drawspatch import *
 from ..expanders.window import *
@@ -14,10 +15,6 @@ class FakeUpload(SyntaxExpander):
 	Upload::「struct_name」(BufferHandles[「handle」], Data);
 }
 """.strip()
-
-
-class BindUniformBuffer(SyntaxExpander):
-    template = "glBindBufferBase(GL_UNIFORM_BUFFER, 「binding_index」, BufferHandles[「handle」]);"
 
 
 class Renderer(SyntaxExpander):
@@ -59,33 +56,47 @@ class ProgramSolver:
         shaders_programs = list(map(self.expand_shader, program.draws.values()))
         shader_handles, build_shaders = solve_shaders(shaders_programs)
 
+        interface_handles = {handle:name for (handle, name) in program.handles.items() if name in program.interfaces}
+        texture_handles = {handle:name for (handle, name) in program.handles.items() if name in program.textures}
+
         # expanders defining the C++ struct definitions for all available structs and interfaces
         self.structs:List[SyntaxExpander] = []
         self.structs += [GlslStruct(s) for s in program.structs.values()]
         self.structs += [GlslStruct(s) for s in program.interfaces.values()]
 
         # expanders generated data uploader functions
-        self.uploaders = [BufferUpload(program.interfaces[name]) for name in program.handles.values()]
+        self.uploaders = [BufferUpload(program.interfaces[name]) for name in interface_handles.values()]
 
         # expanders for various things in the global scope
         self.globals:List[SyntaxExpander] = \
         [
             shader_handles,
             BufferHandle(len(program.handles)),
+            SamplerHandles(len(program.samplers)),
         ]
 
         # expanders for generated code which is called after GL is initialized before rendering starts
         self.setup:List[SyntaxExpander] = \
         [
             DefaultVAO(),
-            CreateBuffers(handle=0, count=len(program.handles)),
         ]
         self.setup += build_shaders
-        self.setup += \
-        [
-            BufferStorage(handle=buffer_index, bytes=program.interfaces[interface].words*4)
-            for buffer_index, interface in enumerate(program.handles.values())
-        ]
+
+        if program.handles:
+            self.setup.append(CreateBuffers(handle=0, count=len(program.handles)))
+            self.setup += \
+            [
+                BufferStorage(handle=buffer_index, bytes=program.interfaces[interface].words*4)
+                for buffer_index, interface in enumerate(interface_handles.values())
+            ]
+
+        if program.samplers:
+            self.setup.append(CreateSamplers(handle=0, count=len(program.samplers)))
+            self.setup += \
+            [
+                SamplerSetup(index, sampler)
+                for index, sampler in enumerate(program.samplers.values())
+            ]
 
         # expanders defining the available renderers
         self.renderers:List[SyntaxExpander] = list(map(self.expand_renderer, program.renderers.values()))
@@ -100,14 +111,22 @@ class ProgramSolver:
 
         elif type(event) == DrawEvent:
             event = cast(DrawEvent, event)
-            setup:List[SyntaxExpander] = [
+            interface_bindings = [b for b in event.bindings if self.program.handle_is_interface(b.name)]
+            texture_bindings = [b for b in event.bindings if self.program.handle_is_texture(b.name)]
+
+            setup:List[SyntaxExpander] = \
+            [
                 cast(SyntaxExpander, ChangeProgram(self.program.shader_index(event.name)))
-            ] + [
+            ]
+            setup += \
+            [
                 cast(SyntaxExpander, BindUniformBuffer(
                     binding_index = self.program.binding_index(binding.name),
                     handle = self.program.buffer_index(binding.name)))
-                for binding in event.bindings
-            ] + [
+                for binding in interface_bindings
+            ]
+            setup += \
+            [
                 cast(SyntaxExpander, Capability(flag, state))
                 for (flag, state) in self.program.draws[event.name].flags.items()
             ]

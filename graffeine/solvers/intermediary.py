@@ -95,6 +95,14 @@ class Program:
         self.handles:Dict[str, str] = {}
         self.renderers:Dict[str, RendererDef] = {}
 
+    def handle_is_interface(self, handle_name:str) -> bool:
+        target = self.handles[handle_name]
+        return target in self.interfaces
+
+    def handle_is_texture(self, handle_name:str) -> bool:
+        target = self.handles[handle_name]
+        return target in self.textures
+
     def buffer_index(self, handle_name:str) -> int:
         return list(self.handles.keys()).index(handle_name)
 
@@ -251,14 +259,17 @@ class Program:
             self.draws[name] = self.fill_draw(name, clean[2:], token_list)
 
         elif command == "handle":
-            interface = clean[2]
-            if str(interface) not in self.interfaces:
-                self.error(f'Undefined interface "{str(interface)}"', interface)
-            self.handles[name] = str(interface)
+            target = clean[2]
+            if str(name) in self.handles:
+                self.error(f'Multiple handles named "{str(name)}"', token_list)
+            elif str(target) in self.interfaces or str(target) in self.textures:
+                self.handles[name] = str(target)
+            else:
+                self.error(f'Undefined interface or texture "{str(target)}"', target)
 
         elif command == "preload":
-            handle = clean[2]
-            path = clean[3]
+            handle = clean[1]
+            path = clean[2]
             if str(handle) not in self.handles:
                 self.error(f'Undefined handle "{str(handle)}"', handle)
             elif str(handle) in self.preloads:

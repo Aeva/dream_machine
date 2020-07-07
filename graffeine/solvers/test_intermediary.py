@@ -43,6 +43,7 @@ def test_valid_sampler():
     program = run(src)
     assert("SomeSampler" in program.samplers)
     sampler = program.samplers["SomeSampler"]
+    assert(sampler.name == "SomeSampler")
     assert(sampler.min_filter == "GL_NEAREST")
     assert(sampler.mag_filter == "GL_LINEAR")
 
@@ -239,3 +240,21 @@ def test_pipeline_using_texture_and_struct():
 """
     program = run(src)
     assert("SomeTexture" in program.draws["SomeDraw"].textures)
+
+
+def test_pipeline_texture_handle():
+    """
+    """
+    src = """
+(sampler SomeSampler
+	(min_filter GL_NEAREST)
+	(mag_filter GL_LINEAR))
+
+(texture2d SomeTexture
+    (use SomeSampler)
+    (format RGBA8))
+
+(handle SomeHandle SomeTexture)
+"""
+    program = run(src)
+    assert(program.handles["SomeHandle"] == "SomeTexture")

@@ -34,7 +34,7 @@
 	(vs "shaders/splat.vs.glsl")
 	(fs "shaders/texture.fs.glsl")
 	(use Fnord)
-	(use bg_image)
+	(use BgImage)
 	(disable GL_DEPTH_TEST)
 	(disable GL_CULL_FACE))
 
@@ -63,13 +63,6 @@
 (preload YourTextureHere "test_texture.png")
 
 
-(renderer TextureTest
-	(update SomeHandle)
-	(draw TextureTest
-		(bind SomeHandle)
-		(bind YourTextureHere)))
-
-
 (renderer Blue
 	(update SomeHandle)
 	(draw SplatBlue
@@ -80,4 +73,10 @@
 	(update SomeHandle)
 	(draw SplatRed
 		(bind SomeHandle)))
-	
+
+
+(renderer TextureTest
+	(update SomeHandle)
+	(draw TextureTest
+		(bind SomeHandle)
+		(bind YourTextureHere)))

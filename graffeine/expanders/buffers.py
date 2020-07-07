@@ -26,3 +26,7 @@ class ResizeBuffer(SyntaxExpander):
             CreateBuffers(handle=handle, count=1), 
             BufferStorage(handle=handle, bytes=bytes)
         ]
+
+
+class BindUniformBuffer(SyntaxExpander):
+    template = "glBindBufferBase(GL_UNIFORM_BUFFER, 「binding_index」, BufferHandles[「handle」]);"

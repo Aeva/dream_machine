@@ -32,14 +32,17 @@ extern void UserSetupCallback(GLFWwindow* Window);
 extern void UserFrameCallback(GLFWwindow* Window);
 
 
-GLuint Shaders[3] = { 0 };
-GLuint ShaderPrograms[2] = { 0 };
-std::string ShaderPaths[3] = {
+GLuint Shaders[5] = { 0 };
+GLuint ShaderPrograms[3] = { 0 };
+std::string ShaderPaths[5] = {
 	"generated_shaders\\blue.fs.glsl.0d4bfa50448166804174e28991b2f622.glsl",
 	"generated_shaders\\red.fs.glsl.72e5034f0934a476f7cd05199a16f1d2.glsl",
-	"generated_shaders\\splat.vs.glsl.3fdbf6c0576b6e6d6cba510e637d0a75.glsl"
+	"generated_shaders\\splat.vs.glsl.1a97f2c8d1abc5b488b2bb51accd6436.glsl",
+	"generated_shaders\\splat.vs.glsl.3fdbf6c0576b6e6d6cba510e637d0a75.glsl",
+	"generated_shaders\\texture.fs.glsl.fc43e398781fd13389e558c4c95e13e1.glsl"
 };
-GLuint BufferHandles[1] = { 0 };
+GLuint BufferHandles[2] = { 0 };
+GLuint SamplerHandles[1] = { 0 };
 
 
 namespace Upload
@@ -87,19 +90,31 @@ void InitialSetup()
 		glGenVertexArrays(1, &vao);
 		glBindVertexArray(vao);
 	}
-	glCreateBuffers(1, &BufferHandles[0]);
 	Shaders[0] = CompileShader(ShaderPaths[0], GL_FRAGMENT_SHADER);
 	Shaders[1] = CompileShader(ShaderPaths[1], GL_FRAGMENT_SHADER);
 	Shaders[2] = CompileShader(ShaderPaths[2], GL_VERTEX_SHADER);
+	Shaders[3] = CompileShader(ShaderPaths[3], GL_VERTEX_SHADER);
+	Shaders[4] = CompileShader(ShaderPaths[4], GL_FRAGMENT_SHADER);
 	{
-		GLuint Stages[2] = { Shaders[1], Shaders[2] };
-		ShaderPrograms[0] = LinkShaders("SplatRed", &Stages[0], 2);
+		GLuint Stages[2] = { Shaders[2], Shaders[4] };
+		ShaderPrograms[0] = LinkShaders("TextureTest", &Stages[0], 2);
 	}
 	{
-		GLuint Stages[2] = { Shaders[0], Shaders[2] };
-		ShaderPrograms[1] = LinkShaders("SplatBlue", &Stages[0], 2);
+		GLuint Stages[2] = { Shaders[1], Shaders[3] };
+		ShaderPrograms[1] = LinkShaders("SplatRed", &Stages[0], 2);
 	}
+	{
+		GLuint Stages[2] = { Shaders[0], Shaders[3] };
+		ShaderPrograms[2] = LinkShaders("SplatBlue", &Stages[0], 2);
+	}
+	glCreateBuffers(2, &BufferHandles[0]);
 	glNamedBufferStorage(BufferHandles[0], 16, nullptr, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT);
+	glCreateSamplers(1, &SamplerHandles[0]);
+	{
+	    // Setup sampler "SomeSampler"
+	    glSamplerParameteri(SamplerHandles[0], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	    glSamplerParameteri(SamplerHandles[0], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	}
 }
 
 
@@ -117,7 +132,7 @@ namespace Renderer
 		}
 		{
 			glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "SplatBlue");
-			glUseProgram(ShaderPrograms[1]);
+			glUseProgram(ShaderPrograms[2]);
 			glBindBufferBase(GL_UNIFORM_BUFFER, 0, BufferHandles[0]);
 			glDisable(GL_DEPTH_TEST);
 			glDisable(GL_CULL_FACE);
@@ -137,6 +152,26 @@ namespace Renderer
 		}
 		{
 			glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "SplatRed");
+			glUseProgram(ShaderPrograms[1]);
+			glBindBufferBase(GL_UNIFORM_BUFFER, 0, BufferHandles[0]);
+			glDisable(GL_DEPTH_TEST);
+			glDisable(GL_CULL_FACE);
+			glDrawArraysInstanced(GL_TRIANGLES, 0, 6, 1);
+			glPopDebugGroup();
+		}
+	}
+	void TextureTest(int FrameIndex, double CurrentTime, double DeltaTime)
+	{
+		glClearColor(0, 0, 0, 1.0);
+		glClear(GL_COLOR_BUFFER_BIT);
+		glClearDepth(0);
+		glClear(GL_DEPTH_BUFFER_BIT);
+		{
+			Glsl::Fnord Data = { (float)(CurrentTime * 0.1) };
+			Upload::Fnord(BufferHandles[0], Data);
+		}
+		{
+			glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "TextureTest");
 			glUseProgram(ShaderPrograms[0]);
 			glBindBufferBase(GL_UNIFORM_BUFFER, 0, BufferHandles[0]);
 			glDisable(GL_DEPTH_TEST);
@@ -157,6 +192,9 @@ void DrawFrame(int FrameIndex, double CurrentTime, double DeltaTime)
 		break;
 	case 1:
 		Renderer::Red(FrameIndex, CurrentTime, DeltaTime);
+		break;
+	case 2:
+		Renderer::TextureTest(FrameIndex, CurrentTime, DeltaTime);
 		break;
 	default:
 		HaltAndCatchFire();
