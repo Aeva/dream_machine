@@ -1,7 +1,5 @@
 
-from ..handy import *
-from .parser import Parser
-from .rules import *
+from .validator import *
 
 
 GRAMMAR = MatchRule(
@@ -19,25 +17,3 @@ GRAMMAR = MatchRule(
         ListRule(Exactly("update"), WordRule("handle name")),
         ListRule(Exactly("draw"), WordRule("draw name"), SPLAT = MatchRule(
             ListRule(Exactly("bind"), WordRule("handle name")))))))
-
-
-def validate_grammar(parser:Parser, tokens:Tuple[Token, ...]):
-    """
-    Takes a parser object and the tuple of tokens it generated, and performs
-    grammar validation on the tokens.  If this function doesn't blow up, then
-    the token stream can be assumed to be valid.
-
-    This ignores comment tokens, so you will still need to check for those
-    when performing the final processing on the token stream.
-    """
-    global GRAMMAR
-
-    def error(hint:str, token:Token):
-        parser.token_error(hint, token)
-
-    for token in tokens:
-        if type(token) is TokenComment:
-            continue
-        token = CAST(TokenList, token)
-        GRAMMAR.validate(token, error)
-

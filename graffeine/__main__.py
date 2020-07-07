@@ -1,7 +1,8 @@
 
 import sys
 from .syntax.parser import Parser
-from .syntax.grammar import validate_grammar
+from .syntax.validator import validate_grammar
+from .syntax.grammar import GRAMMAR
 from .solvers.intermediary import Program
 from .solvers.generator import ProgramSolver
 from .build import build
@@ -16,7 +17,7 @@ if __name__ == "__main__":
     parser = Parser()
     parser.open(src_path)
     tokens = parser.parse()
-    validate_grammar(parser, tokens)
+    validate_grammar(GRAMMAR, parser, tokens)
     program = Program(parser)
     program.process(tokens)
     solved = ProgramSolver(program)

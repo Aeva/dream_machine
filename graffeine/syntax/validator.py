@@ -1,6 +1,7 @@
 
 from ..handy import *
 from .tokens import *
+from .parser import Parser
 
 
 ErrorCallback = Callable[[str, Token], None]
@@ -108,3 +109,22 @@ class MatchRule(Rule):
 
     def __repr__(self):
         return "<MatchRule>"
+
+
+def validate_grammar(language:MatchRule, parser:Parser, tokens:Tuple[Token, ...]):
+    """
+    Takes a parser object and the tuple of tokens it generated, and performs
+    grammar validation on the tokens.  If this function doesn't blow up, then
+    the token stream can be assumed to be valid.
+
+    This ignores comment tokens, so you will still need to check for those
+    when performing the final processing on the token stream.
+    """
+    def error(hint:str, token:Token):
+        parser.token_error(hint, token)
+
+    for token in tokens:
+        if type(token) is TokenComment:
+            continue
+        token = CAST(TokenList, token)
+        language.validate(token, error)
