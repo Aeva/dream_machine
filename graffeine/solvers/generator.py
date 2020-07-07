@@ -3,6 +3,7 @@ from .intermediary import *
 from ..expanders.common import *
 from ..expanders.buffers import *
 from ..expanders.samplers import *
+from ..expanders.textures import *
 from ..expanders.shaders import *
 from ..expanders.drawspatch import *
 from ..expanders.window import *
@@ -71,8 +72,9 @@ class ProgramSolver:
         self.globals:List[SyntaxExpander] = \
         [
             shader_handles,
-            BufferHandle(len(program.handles)),
+            BufferHandles(len(interface_handles)),
             SamplerHandles(len(program.samplers)),
+            TextureHandles(len(program.textures)),
         ]
 
         # expanders for generated code which is called after GL is initialized before rendering starts
@@ -83,7 +85,7 @@ class ProgramSolver:
         self.setup += build_shaders
 
         if program.handles:
-            self.setup.append(CreateBuffers(handle=0, count=len(program.handles)))
+            self.setup.append(CreateBuffers(handle=0, count=len(interface_handles)))
             self.setup += \
             [
                 BufferStorage(handle=buffer_index, bytes=program.interfaces[interface].words*4)

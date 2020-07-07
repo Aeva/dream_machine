@@ -41,8 +41,9 @@ std::string ShaderPaths[5] = {
 	"generated_shaders\\splat.vs.glsl.3fdbf6c0576b6e6d6cba510e637d0a75.glsl",
 	"generated_shaders\\texture.fs.glsl.fc43e398781fd13389e558c4c95e13e1.glsl"
 };
-GLuint BufferHandles[2] = { 0 };
+GLuint BufferHandles[1] = { 0 };
 GLuint SamplerHandles[1] = { 0 };
+GLuint TextureHandles[1] = { 0 };
 
 
 namespace Upload
@@ -107,13 +108,13 @@ void InitialSetup()
 		GLuint Stages[2] = { Shaders[0], Shaders[3] };
 		ShaderPrograms[2] = LinkShaders("SplatBlue", &Stages[0], 2);
 	}
-	glCreateBuffers(2, &BufferHandles[0]);
+	glCreateBuffers(1, &BufferHandles[0]);
 	glNamedBufferStorage(BufferHandles[0], 16, nullptr, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT);
 	glCreateSamplers(1, &SamplerHandles[0]);
 	{
-	    // Setup sampler "SomeSampler"
-	    glSamplerParameteri(SamplerHandles[0], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	    glSamplerParameteri(SamplerHandles[0], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		// Setup sampler "SomeSampler"
+		glSamplerParameteri(SamplerHandles[0], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glSamplerParameteri(SamplerHandles[0], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	}
 }
 

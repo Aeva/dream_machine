@@ -26,7 +26,7 @@
 
 
 (texture2d BgImage
-	(format RGBA8)
+	(format RGBA8) ; This should probably just be the format enum that we'd pass into glTextureStorage2D?
 	(use SomeSampler))
 
 
@@ -80,3 +80,52 @@
 	(draw TextureTest
 		(bind SomeHandle)
 		(bind YourTextureHere)))
+
+
+; NOTE FOR LATER REVISION:
+; Texture definitions here aren't really type definitions like structs are.
+; For example, BgImage can only ever be used once in a given pipeline construction,
+; so if you wanted to have another image w/ the same parameters, you'll have to copy
+; and paste the definition.  Basically, this has a 1:1 mapping to a texture handle,
+; which means I totally inverted what I intended to do here D:
+
+; maybe it would be better to do this:
+;
+;	(format TextureFormat GL_TEXTURE_2D GL_RGBA8)
+;
+;	(struct SomeType
+;		(mat4 Whatever)
+;		(float Etc))
+;
+;	(struct FnordType
+;		(float ElapsedTime))
+;
+;	(pipeline SomeDrawPass
+;		...
+;		(use SomeType)
+;		(interface Beep FnordType)
+;		(interface Boop TextureFormat))
+;
+;	(buffer SomeBuffer Fnord)
+;
+;	(sampler SamplerName
+;		(min-filter GL_NEAREST)
+;		(mag-filter GL_NEAREST))
+;
+;	(texture TextureName TextureFormat
+;		; mips, size, etc
+;		(loadfrom "fnordpng"))
+;
+;	(renderer RenderSomeDrawPass
+;		(update SomeBuffer)
+;		(draw SomeDrawPass
+;			(bind-buffer Beep SomeBuffer)
+;			(bind-texture TextureName SamplerName)))
+
+; So in this version, we have type-ish definitions ("format" and "struct"),
+; data-ish definitions ("buffer", "sampler", and "texture"), and code-ish
+; definitions ("pipeline" and "renderer").
+
+
+
+

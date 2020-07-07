@@ -2,7 +2,7 @@
 from .common import SyntaxExpander
 
 
-class BufferHandle(SyntaxExpander):
+class BufferHandles(SyntaxExpander):
     template = "GLuint BufferHandles[「count」] = { 0 };"
 
 

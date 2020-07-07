@@ -26,9 +26,9 @@ class BindSampler(SyntaxExpander):
 class SamplerSetup(SyntaxExpander):
     template = """
 {
-    // Setup sampler "「name」"
-    glSamplerParameteri(SamplerHandles[「handle」], GL_TEXTURE_MIN_FILTER, 「min_filter」);
-    glSamplerParameteri(SamplerHandles[「handle」], GL_TEXTURE_MAG_FILTER, 「mag_filter」);
+	// Setup sampler "「name」"
+	glSamplerParameteri(SamplerHandles[「handle」], GL_TEXTURE_MIN_FILTER, 「min_filter」);
+	glSamplerParameteri(SamplerHandles[「handle」], GL_TEXTURE_MAG_FILTER, 「mag_filter」);
 }
 """.strip()
     def __init__(self, handle:int, sampler:Sampler):
