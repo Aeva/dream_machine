@@ -20,6 +20,25 @@
 	(SomeType Moop))
 
 
+(sampler SomeSampler
+	(min_filter GL_NEAREST)
+	(mag_filter GL_NEAREST))
+
+
+(texture2d BgImage
+	(format RGBA8)
+	(use SomeSampler))
+
+
+(pipeline TextureTest
+	(vs "shaders/splat.vs.glsl")
+	(fs "shaders/texture.fs.glsl")
+	(use Fnord)
+	(use bg_image)
+	(disable GL_DEPTH_TEST)
+	(disable GL_CULL_FACE))
+
+
 (pipeline SplatRed
 	(vs "shaders/splat.vs.glsl")
 	(fs "shaders/red.fs.glsl")
@@ -36,6 +55,19 @@
 
 
 (handle SomeHandle Fnord)
+
+
+(handle YourTextureHere BgImage)
+
+
+(preload YourTextureHere "test_texture.png")
+
+
+(renderer TextureTest
+	(update SomeHandle)
+	(draw TextureTest
+		(bind SomeHandle)
+		(bind YourTextureHere))
 
 
 (renderer Blue

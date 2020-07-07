@@ -7,6 +7,29 @@ from ..syntax.grammar import validate_grammar
 from ..expanders.glsl_types import *
 
 
+class Sampler:
+    def __init__(self, name:str):
+        self.name = name
+        self.min_filter:str = ""
+        self.mag_filter:str = ""
+
+
+class Texture:
+    def __init__(self, name:str):
+        self.name = name
+        self.sampler:str = ""
+        self.format:str = ""
+
+
+class Texture2D(Texture):
+    VALID_FORMATS = [
+        "RGBA8",
+        "RGBA32F",
+    ]
+    def __init__(self, name:str):
+        Texture.__init__(self, name)
+
+
 class DrawDef:
     def __init__(self, name:str):
         self.name = name
@@ -64,6 +87,9 @@ class Program:
         self.parser = parser
         self.structs:Dict[str, StructType] = {}
         self.interfaces:Dict[str, StructType] = {}
+        self.samplers:Dict[str, Sampler] = {}
+        self.textures:Dict[str, Texture] = {}
+        self.preloads:Dict[str, str] = {}
         self.draws:Dict[str, DrawDef] = {}
         self.handles:Dict[str, str] = {}
         self.renderers:Dict[str, RendererDef] = {}
@@ -86,6 +112,59 @@ class Program:
                 self.error(f'Duplicate member name "{str(member_name)}" in struct "{struct_name}"', member_name)
             members[str(member_name)] = self.find_type(cast(TokenWord, type_name))
         return StructType(struct_name, **members)
+
+    def fill_sampler(self, sampler_name:str, attrs:Tuple[Token,...], full_list:TokenList) -> Sampler:
+        if self.samplers.get(sampler_name):
+            self.error(f'"Multiple definitions of sampler "{sampler_name}"', full_list)
+        sampler = Sampler(sampler_name)
+        for attr in attrs:
+            param, value = cast(TokenList, attr).without_comments()
+            filter = str(param)
+            assert(filter in ["min_filter", "mag_filter"])
+            current_value = getattr(sampler, filter)
+            if current_value != "":
+                self.error("Duplicate filter definition.", attr)
+            elif str(value) not in ["GL_NEAREST", "GL_LINEAR"]:
+                self.error(f'Unsupported {filter} value: "{str(value)}"', value)
+            else:
+                setattr(sampler, filter, str(value))
+
+        if sampler.min_filter == "":
+            self.error("Missing min_filter definition", full_list)
+        if sampler.mag_filter == "":
+            self.error("Missing mag_filter definition", full_list)
+
+        return sampler
+
+    def fill_texture2d(self, texture_name:str, attrs:Tuple[Token,...], full_list:TokenList) -> Texture:
+        if self.textures.get(texture_name):
+            self.error(f'"Multiple definitions of texture "{texture_name}"', full_list)
+        texture = Texture2D(texture_name)
+        for attr in attrs:
+            param, value = cast(TokenList, attr).without_comments()
+
+            if str(param) == "use":
+                if texture.sampler != "":
+                    self.error(f'Texture "{texture_name}" has multiple sampler definitions.  See "use" entries.', full_list)
+                sampler_name = str(value)
+                if self.samplers.get(sampler_name) is None:
+                    self.error(f'Unknown sampler "{sampler_name}"', attr)
+                texture.sampler = sampler_name
+
+            elif str(param) == "format":
+                if texture.format != "":
+                    self.error(f'Texture "{texture_name}" has multiple format definitions.', full_list)
+                format = str(value)
+                if not format in Texture2D.VALID_FORMATS:
+                    self.error(f'Unsupported format "{format}".', attr)
+                texture.format = format
+
+        if texture.sampler == "":
+            self.error("Texture must use a sampler.", full_list)
+        if texture.format == "":
+            self.error("Missing texture format.", full_list)
+
+        return texture
 
     def fill_draw(self, draw_name:str, attrs:Tuple[Token,...], full_list:TokenList) -> DrawDef:
         draw = DrawDef(draw_name)
@@ -156,6 +235,12 @@ class Program:
         elif command == "interface":
             self.interfaces[name] = self.fill_struct(name, clean[2:])
 
+        elif command == "sampler":
+            self.samplers[name] = self.fill_sampler(name, clean[2:], token_list)
+
+        elif command == "texture2d":
+            self.textures[name] = self.fill_texture2d(name, clean[2:], token_list)
+
         elif command == "pipeline":
             self.draws[name] = self.fill_draw(name, clean[2:], token_list)
 
@@ -164,6 +249,16 @@ class Program:
             if str(interface) not in self.interfaces:
                 self.error(f'Undefined interface "{str(interface)}"', interface)
             self.handles[name] = str(interface)
+
+        elif command == "preload":
+            handle = clean[2]
+            path = clean[3]
+            if str(handle) not in self.handles:
+                self.error(f'Undefined handle "{str(handle)}"', handle)
+            elif str(handle) in self.preloads:
+                self.error(f'Multiple preloads reference handle "{str(handle)}"', handle)
+            else:
+                self.preloads[handle] = str(path)
 
         elif command == "renderer":
             self.renderers[name] = self.fill_renderer(name, clean[2:])
