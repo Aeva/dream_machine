@@ -67,7 +67,7 @@
 	(update SomeHandle)
 	(draw TextureTest
 		(bind SomeHandle)
-		(bind YourTextureHere))
+		(bind YourTextureHere)))
 
 
 (renderer Blue

@@ -214,3 +214,28 @@ def test_preload():
 
 (preload SomeHandle "fake_path.png")
     """
+
+
+def test_pipeline_using_texture_and_struct():
+    """
+    """
+    src = """
+(sampler SomeSampler
+	(min_filter GL_NEAREST)
+	(mag_filter GL_LINEAR))
+
+(texture2d SomeTexture
+    (use SomeSampler)
+    (format RGBA8))
+
+(struct SomeStruct
+    (float ElapsedTime))
+
+(pipeline SomeDraw
+	(vs "shaders/gndn.vs.glsl")
+	(fs "shaders/gndn.fs.glsl")
+	(use SomeStruct)
+	(use SomeTexture))
+"""
+    program = run(src)
+    assert("SomeTexture" in program.draws["SomeDraw"].textures)

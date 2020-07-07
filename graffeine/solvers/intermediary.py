@@ -37,6 +37,7 @@ class DrawDef:
         self.fs = ""
         self.structs:List[str] = []
         self.interfaces:List[str] = []
+        self.textures:List[str] = []
         self.flags:Dict[str, bool] = {}
 
     def __repr__(self):
@@ -189,8 +190,10 @@ class Program:
                     draw.structs.append(str(value))
                 elif str(value) in self.interfaces:
                     draw.interfaces.append(str(value))
+                elif str(value) in self.textures:
+                    draw.textures.append(str(value))
                 else:
-                    self.error(f'Unknown struct or interface "{str(value)}"', value)
+                    self.error(f'Unknown struct or interface or texture "{str(value)}"', value)
             elif str(name) == "enable":
                 draw.flags[str(value)] = True
             elif str(name) == "disable":
@@ -206,17 +209,20 @@ class Program:
         for event in (cast(TokenList, e).without_comments() for e in events):
             name = event[0]
             params = event[1:]
+
             if str(name) == "update":
                 handle_name = params[0]
                 if str(handle_name) not in self.handles:
                     self.error(f'Unknown handle "{str(handle_name)}"', handle_name)
                 renderer.events.append(UploadBufferEvent(str(handle_name)))
+
             elif str(name) == "draw":
                 draw_name = params[0]
                 draw_splat = params[1:]
                 if str(draw_name) not in self.draws:
                     self.error(f'Unknown drawdef "{str(draw_name)}"', draw_name)
                 draw = DrawEvent(str(draw_name))
+
                 for subcommand, handle_name  in (cast(TokenList, e).without_comments() for e in draw_splat):
                     assert(str(subcommand) == "bind")
                     if str(handle_name) not in self.handles:
