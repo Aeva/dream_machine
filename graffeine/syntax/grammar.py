@@ -6,7 +6,7 @@ GRAMMAR = MatchRule(
     ListRule(Exactly("struct"), WordRule("struct name"), SPLAT = ListRule(WordRule("type"), WordRule("name"))),
     ListRule(Exactly("interface"), WordRule("interface name"), SPLAT = ListRule(WordRule("type"), WordRule("name"))),
     ListRule(Exactly("handle"), WordRule("handle name"), WordRule("interface name")),
-    ListRule(Exactly("defdraw"), WordRule("draw name"), SPLAT = MatchRule(
+    ListRule(Exactly("pipeline"), WordRule("draw name"), SPLAT = MatchRule(
         ListRule(Exactly("vs"), StringRule("shader path")),
         ListRule(Exactly("fs"), StringRule("shader path")),
         ListRule(Exactly("use"), WordRule("struct or interface name")),

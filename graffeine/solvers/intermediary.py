@@ -156,7 +156,7 @@ class Program:
         elif command == "interface":
             self.interfaces[name] = self.fill_struct(name, clean[2:])
 
-        elif command == "defdraw":
+        elif command == "pipeline":
             self.draws[name] = self.fill_draw(name, clean[2:], token_list)
 
         elif command == "handle":

@@ -20,7 +20,7 @@
 	(SomeType Moop))
 
 
-(defdraw SplatRed
+(pipeline SplatRed
 	(vs "shaders/splat.vs.glsl")
 	(fs "shaders/red.fs.glsl")
 	(use SomeType)
@@ -30,7 +30,7 @@
 	(disable GL_CULL_FACE))
 
 
-(defdraw SplatBlue
+(pipeline SplatBlue
 	(copy SplatRed)
 	(fs "shaders/blue.fs.glsl"))
 
