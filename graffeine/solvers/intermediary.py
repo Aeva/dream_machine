@@ -159,7 +159,7 @@ class Program:
         elif command == "defdraw":
             self.draws[name] = self.fill_draw(name, clean[2:], token_list)
 
-        elif command == "defhandle":
+        elif command == "handle":
             interface = clean[2]
             if str(interface) not in self.interfaces:
                 self.error(f'Undefined interface "{str(interface)}"', interface)
