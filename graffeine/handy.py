@@ -10,6 +10,18 @@ def CAST(_type, value):
     return cast(_type, value)
 
 
+def dedupe(items:list):
+    """
+    Removes duplicates from a list.
+    This preserves the order of the list.
+    """
+    reduced = []
+    for item in items:
+        if not item in reduced:
+            reduced.append(item)
+    return reduced
+
+
 def div_up(n:int, d:int)->int:
     """
     Integer divide and round up.

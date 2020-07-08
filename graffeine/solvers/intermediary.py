@@ -3,7 +3,6 @@ from copy import copy
 from ..handy import *
 from ..syntax.tokens import *
 from ..syntax.parser import Parser
-from ..syntax.grammar import validate_grammar
 from ..expanders.glsl_types import *
 
 

@@ -45,9 +45,12 @@ class Parser:
         self.line = 0
         self.col = 0
 
-    def error(self, hint:str, start_line:Optional[int] = None, start_col:Optional[int] = None, end_line:Optional[int] = None, end_col:Optional[int] = None):
+    def message(self,
+                hint:str,
+                start_line:Optional[int] = None, start_col:Optional[int] = None,
+                end_line:Optional[int] = None, end_col:Optional[int] = None):
         """
-        Provide a nice error for the user when the parser fails.
+        For generating error messages and warnings and so on.
         """
         end_line = end_line or self.line
         end_col = end_col or self.col
@@ -77,13 +80,16 @@ class Parser:
                 ext = tabs * 3
                 message += line.replace("\t", "    ") + "\n"
                 message += (" " * (end_col + ext + margin)) + "↑\n"
-        raise ParserError(message)
+        return message
 
-    def token_error(self, hint:str, token:Token):
+    def error(self,
+              hint:str, start_line:Optional[int] = None, start_col:Optional[int] = None,
+              end_line:Optional[int] = None, end_col:Optional[int] = None):
         """
-        Provide a nice error on a specific token.
+        Provide a nice error for the user when the parser fails.
         """
-        self.error(hint, *token.pos(), *token.pos())
+        message = self.message(hint, start_line, start_col, end_line, end_col)
+        raise ParserError(message)
 
     def advance(self):
         """
