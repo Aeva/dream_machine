@@ -1,6 +1,5 @@
 ﻿
 from .common import SyntaxExpander
-from ..solvers.intermediary import Texture, Texture2D
 from ..handy import CAST
 
 
@@ -17,9 +16,8 @@ class CreateTexture(SyntaxExpander):
 	glObjectLabel(GL_TEXTURE, &TextureHandles[「handle:int」], -1, 「name:str」);
 }
 """.strip()
-    def __init__(self, handle:int, texture:Texture):
+    def __init__(self, handle:int, texture):
         SyntaxExpander.__init__(self)
-        texture = CAST(Texture2D, texture)
         self.handle = handle
         self.name = texture.name
         self.format = texture.format # uh
