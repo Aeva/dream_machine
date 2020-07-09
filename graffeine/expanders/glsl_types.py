@@ -86,9 +86,9 @@ class GlslStruct(SyntaxExpander):
 class UniformInterface(SyntaxExpander):
     template = "layout(std140, binding = 「binding_point」)\nuniform 「name」\n{\n「members」\n}「instance_name」;"
     indent = ("members",)
-    def __init__(self, struct: StructType, binding_point: int, instance_name: str = ""):
+    def __init__(self, struct: StructType, binding_point: int, block_name: str, instance_name: str = ""):
         SyntaxExpander.__init__(self)
-        self.name = struct.name
+        self.name = block_name
         self.binding_point = binding_point
         self.members = [GlslMember(*member) for member in struct.members.items()]
         self.instance_name = instance_name
@@ -109,7 +109,7 @@ class RealignCopy(SyntaxExpander):
 
 
 def solve_array_reflow(array, offset: int, base: str) -> list:
-    assert(type(array) is ArrayType)
+    assert(type(array) in [ArrayType, MatrixType])
     copies = []
     if type(array.item_type) in [ScalarType, VectorType]:
         for i in range(array.array_size):

@@ -10,7 +10,7 @@ def CAST(_type, value):
     return cast(_type, value)
 
 
-def dedupe(items:list):
+def dedupe(items:list) -> list:
     """
     Removes duplicates from a list.
     This preserves the order of the list.

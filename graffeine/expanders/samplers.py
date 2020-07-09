@@ -1,6 +1,6 @@
 ﻿
 from .common import SyntaxExpander
-from ..solvers.intermediary import Sampler
+from ..syntax.grammar import Sampler
 
 
 class SamplerHandles(SyntaxExpander):
@@ -35,5 +35,5 @@ class SamplerSetup(SyntaxExpander):
         SyntaxExpander.__init__(self)
         self.name = sampler.name
         self.handle = handle
-        self.min_filter = sampler.min_filter
-        self.mag_filter = sampler.mag_filter
+        self.min_filter = sampler.filters["min"].value
+        self.mag_filter = sampler.filters["mag"].value

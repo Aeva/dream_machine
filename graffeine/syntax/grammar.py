@@ -265,6 +265,24 @@ class Pipeline(Syntax):
     def __repr__(self):
         return f'<Pipeline {self.name}>'
 
+    def uniforms(self) -> tuple:
+        """
+        Returns the pipeline's uniform interfaces.
+        """
+        return tuple([i for i in self.interfaces.values() if i.is_uniform])
+
+    def textures(self) -> tuple:
+        """
+        Returns the pipeline's texture interfaces.
+        """
+        return tuple([i for i in self.interfaces.values() if i.is_texture])
+
+    def binding_index(self, name:str) -> int:
+        return [i.name for i in self.uniforms()].index(name)
+
+    def texture_unit(self, name:str) -> int:
+        return [i.name for i in self.textures()].index(name)
+
 
 class PipelineShader(Syntax):
     """
@@ -345,6 +363,9 @@ class PipelineFlag(Syntax):
     def __repr__(self):
         return f'<PipelineFlag {self.flag} = {self.state == "enable"}>'
 
+    def value(self):
+        return self.state == "enable"
+
 
 class PipelineCopy(Syntax):
     """
@@ -420,7 +441,7 @@ class Renderer(Syntax):
     specification for what is to be rendered in a given frame.  Only one
     renderer is used per frame, but the renderer can be changed between frames.
     """
-    rename = "renderer"
+    rename = "renderers"
 
     def __init__(self, *args, **kargs):
         Syntax.__init__(self, *args, **kargs)
@@ -502,6 +523,24 @@ class RendererDraw(Syntax):
 
     def __repr__(self):
         return f'<RendererDraw {self.pipeline}>'
+
+    def buffer_bindings(self) -> tuple:
+        """
+        Returns the draw's uniform bindings.
+        """
+        return tuple([i for i in self.binds if i.is_buffer])
+
+    def texture_bindings(self) -> tuple:
+        """
+        Returns the draw's texture bindings.
+        """
+        return tuple([i for i in self.binds if i.is_texture])
+
+    def sampler_bindings(self) -> tuple:
+        """
+        Returns the draw's sampler bindings.
+        """
+        return tuple([i for i in self.binds if i.is_sampler])
 
 
 class RendererDrawBind(Syntax):

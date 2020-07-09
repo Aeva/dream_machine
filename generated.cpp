@@ -3,16 +3,16 @@
 
 namespace Glsl
 {
+	struct FnordType
+	{
+		float ElapsedTime;
+	};
 	struct SomeType
 	{
 		mat4 Whatever;
 		float Etc;
 	};
-	struct Fnord
-	{
-		float ElapsedTime;
-	};
-	struct Whatsit
+	struct WhatsitType
 	{
 		SomeType Moop;
 	};
@@ -35,28 +35,50 @@ extern void UserFrameCallback(GLFWwindow* Window);
 GLuint Shaders[5] = { 0 };
 GLuint ShaderPrograms[3] = { 0 };
 std::string ShaderPaths[5] = {
-	"generated_shaders\\blue.fs.glsl.0d4bfa50448166804174e28991b2f622.glsl",
-	"generated_shaders\\red.fs.glsl.72e5034f0934a476f7cd05199a16f1d2.glsl",
 	"generated_shaders\\splat.vs.glsl.1a97f2c8d1abc5b488b2bb51accd6436.glsl",
+	"generated_shaders\\texture.fs.glsl.fc43e398781fd13389e558c4c95e13e1.glsl",
 	"generated_shaders\\splat.vs.glsl.3fdbf6c0576b6e6d6cba510e637d0a75.glsl",
-	"generated_shaders\\texture.fs.glsl.fc43e398781fd13389e558c4c95e13e1.glsl"
+	"generated_shaders\\red.fs.glsl.72e5034f0934a476f7cd05199a16f1d2.glsl",
+	"generated_shaders\\blue.fs.glsl.0d4bfa50448166804174e28991b2f622.glsl"
 };
-GLuint BufferHandles[1] = { 0 };
 GLuint SamplerHandles[1] = { 0 };
 GLuint TextureHandles[1] = { 0 };
+GLuint BufferHandles[1] = { 0 };
 
 
 namespace Upload
 {
-	void Fnord (GLuint Handle, Glsl::Fnord& Data)
+	void FnordType (GLuint Handle, Glsl::FnordType& Data)
 	{
 		std::int32_t* Mapped = (std::int32_t*)glMapNamedBufferRange(Handle, 0, 16, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
 		if (Mapped == nullptr)
 		{
-			std::cout << "Fatal error in function \"Upload::Fnord\": glMapNamedBufferRange returned nullptr.\n";
+			std::cout << "Fatal error in function \"Upload::FnordType\": glMapNamedBufferRange returned nullptr.\n";
 			HaltAndCatchFire();
 		}
 		Reflow<float>(Mapped, 0, Data.ElapsedTime);
+		glUnmapNamedBuffer(Handle);
+	}
+	void SomeType (GLuint Handle, Glsl::SomeType& Data)
+	{
+		std::int32_t* Mapped = (std::int32_t*)glMapNamedBufferRange(Handle, 0, 80, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
+		if (Mapped == nullptr)
+		{
+			std::cout << "Fatal error in function \"Upload::SomeType\": glMapNamedBufferRange returned nullptr.\n";
+			HaltAndCatchFire();
+		}
+		Reflow<float>(Mapped, 16, Data.Etc);
+		glUnmapNamedBuffer(Handle);
+	}
+	void WhatsitType (GLuint Handle, Glsl::WhatsitType& Data)
+	{
+		std::int32_t* Mapped = (std::int32_t*)glMapNamedBufferRange(Handle, 0, 80, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
+		if (Mapped == nullptr)
+		{
+			std::cout << "Fatal error in function \"Upload::WhatsitType\": glMapNamedBufferRange returned nullptr.\n";
+			HaltAndCatchFire();
+		}
+		Reflow<float>(Mapped, 16, Data.Moop.Etc);
 		glUnmapNamedBuffer(Handle);
 	}
 }
@@ -91,31 +113,31 @@ void InitialSetup()
 		glGenVertexArrays(1, &vao);
 		glBindVertexArray(vao);
 	}
-	Shaders[0] = CompileShader(ShaderPaths[0], GL_FRAGMENT_SHADER);
+	Shaders[0] = CompileShader(ShaderPaths[0], GL_VERTEX_SHADER);
 	Shaders[1] = CompileShader(ShaderPaths[1], GL_FRAGMENT_SHADER);
 	Shaders[2] = CompileShader(ShaderPaths[2], GL_VERTEX_SHADER);
-	Shaders[3] = CompileShader(ShaderPaths[3], GL_VERTEX_SHADER);
+	Shaders[3] = CompileShader(ShaderPaths[3], GL_FRAGMENT_SHADER);
 	Shaders[4] = CompileShader(ShaderPaths[4], GL_FRAGMENT_SHADER);
 	{
-		GLuint Stages[2] = { Shaders[2], Shaders[4] };
+		GLuint Stages[2] = { Shaders[0], Shaders[1] };
 		ShaderPrograms[0] = LinkShaders("TextureTest", &Stages[0], 2);
 	}
 	{
-		GLuint Stages[2] = { Shaders[1], Shaders[3] };
+		GLuint Stages[2] = { Shaders[2], Shaders[3] };
 		ShaderPrograms[1] = LinkShaders("SplatRed", &Stages[0], 2);
 	}
 	{
-		GLuint Stages[2] = { Shaders[0], Shaders[3] };
+		GLuint Stages[2] = { Shaders[2], Shaders[4] };
 		ShaderPrograms[2] = LinkShaders("SplatBlue", &Stages[0], 2);
 	}
-	glCreateBuffers(1, &BufferHandles[0]);
-	glNamedBufferStorage(BufferHandles[0], 16, nullptr, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT);
 	glCreateSamplers(1, &SamplerHandles[0]);
 	{
 		// Setup sampler "SomeSampler"
 		glSamplerParameteri(SamplerHandles[0], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glSamplerParameteri(SamplerHandles[0], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	}
+	glCreateBuffers(1, &BufferHandles[0]);
+	glNamedBufferStorage(BufferHandles[0], 16, nullptr, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT);
 }
 
 
@@ -128,8 +150,8 @@ namespace Renderer
 		glClearDepth(0);
 		glClear(GL_DEPTH_BUFFER_BIT);
 		{
-			Glsl::Fnord Data = { (float)(CurrentTime * 0.1) };
-			Upload::Fnord(BufferHandles[0], Data);
+			Glsl::FnordType Data = { (float)(CurrentTime * 0.1) };
+			Upload::FnordType(BufferHandles[0], Data);
 		}
 		{
 			glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "SplatBlue");
@@ -148,8 +170,8 @@ namespace Renderer
 		glClearDepth(0);
 		glClear(GL_DEPTH_BUFFER_BIT);
 		{
-			Glsl::Fnord Data = { (float)(CurrentTime * 0.1) };
-			Upload::Fnord(BufferHandles[0], Data);
+			Glsl::FnordType Data = { (float)(CurrentTime * 0.1) };
+			Upload::FnordType(BufferHandles[0], Data);
 		}
 		{
 			glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "SplatRed");
@@ -168,8 +190,8 @@ namespace Renderer
 		glClearDepth(0);
 		glClear(GL_DEPTH_BUFFER_BIT);
 		{
-			Glsl::Fnord Data = { (float)(CurrentTime * 0.1) };
-			Upload::Fnord(BufferHandles[0], Data);
+			Glsl::FnordType Data = { (float)(CurrentTime * 0.1) };
+			Upload::FnordType(BufferHandles[0], Data);
 		}
 		{
 			glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "TextureTest");

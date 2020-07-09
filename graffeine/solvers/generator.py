@@ -18,38 +18,6 @@ class FakeUpload(SyntaxExpander):
 """.strip()
 
 
-class Renderer(SyntaxExpander):
-    template = """
-void 「name」(int FrameIndex, double CurrentTime, double DeltaTime)
-{
-「calls」
-}
-""".strip()
-    indent = ("calls",)
-
-
-class RendererCase(SyntaxExpander):
-    template = """
-case 「index」:
-	Renderer::「name」(FrameIndex, CurrentTime, DeltaTime);
-	break;
-""".strip()
-
-
-class RendererSwitch(SyntaxExpander):
-    template = """
-switch (CurrentRenderer)
-{
-「cases」
-default:
-	HaltAndCatchFire();
-}
-""".strip()
-    def __init__(self, program:Program):
-        SyntaxExpander.__init__(self)
-        self.cases = [RendererCase(index=index, name=name) for index, name in enumerate(program.renderers.keys())]
-
-
 class ProgramSolver:
     def __init__(self, program:Program):
         # inputs for expanders
