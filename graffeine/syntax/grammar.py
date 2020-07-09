@@ -732,7 +732,7 @@ def validate(parser:Parser):
     abstract syntax tree.
     """
 
-    def grammer_error(hint:str, token:Token):
+    def grammar_error(hint:str, token:Token):
         message = parser.message(hint, *token.pos(), *token.pos())
         raise GrammarError(message)
 
@@ -745,6 +745,6 @@ def validate(parser:Parser):
     for token in tokens:
         if type(token) is not TokenComment:
             token = CAST(TokenList, token)
-            children.append(cast(Syntax, GRAMMAR.validate(token, grammer_error)))
+            children.append(cast(Syntax, GRAMMAR.validate(token, grammar_error)))
 
     return Program(validation_error, children, GRAMMAR.constructors())
