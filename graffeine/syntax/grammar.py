@@ -3,6 +3,7 @@ from weakref import ref
 from ..handy import *
 from .tokens import *
 from .parser import Parser
+from ..expanders.glsl_types import glsl_builtins
 
 
 ErrorCallback = Callable[[str, Token], None]
@@ -33,8 +34,20 @@ class Syntax:
         self.children = children
         self.child_types = child_types
         self._keys = dedupe([c.rename for c in child_types])
-        self.env = None
+        self.env:Optional[Program] = None
+        self.error_callback:Optional[ErrorCallback] = None
         self.populate(self.children)
+
+    def error(self, hint:str, token:Optional[Token] = None):
+        """
+        This will generate a nice error message for the user w/ context and
+        raise a ValidationError.
+
+        This should only be called from the "rewrite" or "validate" methods
+        from subclasses.
+        """
+        error_callback = cast(ErrorCallback, self.error_callback)
+        error_callback(hint, token or CAST(TokenList, self.tokens))
 
     def populate(self, children):
         for match in self.child_types:
@@ -52,12 +65,16 @@ class Syntax:
             for child in self.subset(attr):
                 getattr(child, method_name)(*args, **kargs)
 
-    def set_env(self, env):
-        self.env = ref(env)
-        self.dispatch("set_env", env)
+    def set_env(self, env, error_callback:ErrorCallback):
+        self.env = cast(Program, ref(env))
+        self.error_callback = error_callback
+        self.dispatch("set_env", env, error_callback)
 
     def rewrite(self):
         self.dispatch("rewrite")
+
+    def validate(self):
+        self.dispatch("validate")
 
     def report(self):
         msg = ""
@@ -82,10 +99,28 @@ class Struct(Syntax):
     structs, GLSL uniform blocks, C++ structs, and C++ side buffer upload functions.
     """
     rename = "structs"
+    primary = "name"
 
     def __init__(self, *args, **kargs):
         Syntax.__init__(self, *args, **kargs)
         struct, self.name = map(str, cast(TokenList, self.tokens)[:2])
+        self.referenced:List[str] = []
+
+    def validate(self):
+        Syntax.validate(self)
+        if self.name in glsl_builtins:
+            self.error(f'Struct cannot be named after built in type "{self.name}".')
+
+        names = []
+        for member in self.members:
+            if member.name in names:
+                self.error(f'Struct "{self.name}" contains more than one member named "{member.name}".')
+            else:
+                names.append(member.name)
+            if member.type == self.name:
+                member.error(f"Struct members can't use the type of the struct it belongs to.")
+            if member.type in self.env().structs and member.type not in self.referenced:
+                self.referenced.append(member.type)
 
     def __repr__(self):
         return f'<Struct {self.name}>'
@@ -100,6 +135,11 @@ class StructMember(Syntax):
     def __init__(self, *args, **kargs):
         Syntax.__init__(self, *args, **kargs)
         self.type, self.name = map(str, cast(TokenList, self.tokens))
+
+    def validate(self):
+        Syntax.validate(self)
+        if self.type not in glsl_builtins and self.type not in self.env().structs:
+            self.error(f'Undefined type name: "{self.type}"')
 
     def __repr__(self):
         return f'<StructMember {self.name} {self.type}>'
@@ -117,6 +157,13 @@ class Sampler(Syntax):
         Syntax.__init__(self, *args, **kargs)
         sampler, self.name = map(str, cast(TokenList, self.tokens)[:2])
 
+    def validate(self):
+        Syntax.validate(self)
+        if not self.filters.get("min"):
+            self.error("Sampler must specify it's \"min\" filter.")
+        if not self.filters.get("mag"):
+            self.error("Sampler must specify it's \"mag\" filter.")
+
     def __repr__(self):
         return f'<Sampler {self.name}>'
 
@@ -131,6 +178,12 @@ class SamplerFilter(Syntax):
     def __init__(self, *args, **kargs):
         Syntax.__init__(self, *args, **kargs)
         self.name, self.value = map(str, cast(TokenList, self.tokens))
+
+    def validate(self):
+        Syntax.validate(self)
+        supported = ["GL_NEAREST", "GL_LINEAR"]
+        if self.value not in supported:
+            self.error(f'Unsupported sampler filter value: "{self.value}"')
 
     def __repr__(self):
         return f'<SamplerFilter {self.name} {self.value}>'
@@ -151,6 +204,17 @@ class Format(Syntax):
         Syntax.__init__(self, *args, **kargs)
         format, self.name, self.target, self.format, self.sampler = map(str, cast(TokenList, self.tokens))
 
+    def validate(self):
+        Syntax.validate(self)
+        if self.target != "GL_TEXTURE_2D":
+            self.error(f'Unsupported texture target: "{self.target}"')
+        if self.format != "GL_RGBA8":
+            self.error(f'Unsupported texture format: "{self.format}"')
+        if self.sampler not in self.env().samplers:
+            self.error(f'Unknown sampler: "{self.sampler}"')
+        if self.name in self.env().structs:
+            self.error(f'There cannot be a format named "{self.name}", because there is already a struct of the same name.')
+
     def __repr__(self):
         return f'<Format {self.name} {self.target} {self.format} {self.sampler}>'
 
@@ -166,6 +230,7 @@ class Pipeline(Syntax):
     def __init__(self, *args, **kargs):
         Syntax.__init__(self, *args, **kargs)
         pipeline, self.name = map(str, cast(TokenList, self.tokens)[:2])
+        self.bindings:List[str] = []
 
     def rewrite(self):
         Syntax.rewrite(self)
@@ -173,13 +238,32 @@ class Pipeline(Syntax):
         for child in self.children:
             if type(child) is PipelineCopy:
                 target = cast(PipelineCopy, child).target
-                assert(target != self.name)
+                if target == self.name:
+                    child.error("A pipeline can't copy itself!")
                 found = self.env().pipelines.get(target)
                 if found:
                     new_children += found.children
             else:
                 new_children.append(child)
         self.populate(new_children)
+        for interface in self.interfaces.values():
+            if interface.name in self.bindings:
+                self.error(f'Pipeline "{self.name}" contains more than one interface named "{interface.name}".')
+            self.bindings.append(interface.name)
+
+    def validate(self):
+        Syntax.validate(self)
+        if "cs" in self.shaders:
+            if len(self.shaders.keys()) > 1:
+                self.error("Compute pipelines can't use non-compute shaders.")
+        else:
+            if "vs" not in self.shaders:
+                self.error("Raster pipelines must declare a vertex shader.")
+            if "fs" not in self.shaders:
+                self.error("Raster pipelines must declare a fragment shader.")
+
+    def __repr__(self):
+        return f'<Pipeline {self.name}>'
 
 
 class PipelineShader(Syntax):
@@ -208,6 +292,11 @@ class PipelineUse(Syntax):
         Syntax.__init__(self, *args, **kargs)
         use, self.struct = map(str, cast(TokenList, self.tokens))
 
+    def validate(self):
+        Syntax.validate(self)
+        if self.struct not in self.env().structs:
+            self.error(f'Unknown struct "{self.struct}"')
+
     def __repr__(self):
         return f'<PipelineUse {self.struct}>'
 
@@ -223,6 +312,20 @@ class PipelineInterface(Syntax):
     def __init__(self, *args, **kargs):
         Syntax.__init__(self, *args, **kargs)
         interface, self.name, self.type = map(str, cast(TokenList, self.tokens))
+        self.is_texture = False
+        self.is_uniform = False
+
+    def rewrite(self):
+        Syntax.rewrite(self)
+        self.is_texture = self.type in self.env().formats
+        self.is_uniform = self.type in self.env().structs
+
+    def validate(self):
+        Syntax.validate(self)
+        if not (self.is_texture or self.is_uniform):
+            self.error(f'Unknown texture or struct type: "{self.type}"')
+        # strictly speaking it should be an error to be both, but it is more useful
+        # for it to be an error to have a struct and a format of the same name.
 
     def __repr__(self):
         return f'<PipelineInterface {self.name} {self.type}>'
@@ -254,6 +357,11 @@ class PipelineCopy(Syntax):
         Syntax.__init__(self, *args, **kargs)
         copy, self.target = map(str, cast(TokenList, self.tokens))
 
+    def validate(self):
+        Syntax.validate(self)
+        if self.target not in self.env().pipelines:
+            self.error(f'Unknown pipeline copy target: "{self.target}"')
+
     def __repr__(self):
         return f'<PipelineCopy {self.target}>'
 
@@ -270,6 +378,13 @@ class Buffer(Syntax):
         Syntax.__init__(self, *args, **kargs)
         buffer, self.handle, self.struct = map(str, cast(TokenList, self.tokens))
 
+    def validate(self):
+        Syntax.validate(self)
+        if self.handle in self.env().samplers:
+            self.error(f'Buffer cannot be named "{self.handle}", because there is already a sampler of the same name.')
+        if self.struct not in self.env().structs:
+            self.error(f'Unknown struct: "{self.struct}"')
+
     def __repr__(self):
         return f'<Buffer {self.handle} {self.struct}>'
 
@@ -285,6 +400,15 @@ class Texture(Syntax):
     def __init__(self, *args, **kargs):
         Syntax.__init__(self, *args, **kargs)
         buffer, self.handle, self.format = map(str, cast(TokenList, self.tokens))
+
+    def validate(self):
+        Syntax.validate(self)
+        if self.handle in self.env().samplers:
+            self.error(f'Texture cannot be named "{self.handle}", because there is already a sampler of the same name.')
+        if self.handle in self.env().buffers:
+            self.error(f'Texture cannot be named "{self.handle}", because there is already a buffer of the same name.')
+        if self.format not in self.env().formats:
+            self.error(f'Unknown format: "{self.format}"')
 
     def __repr__(self):
         return f'<Texture {self.handle} {self.format}>'
@@ -316,6 +440,11 @@ class RendererUpdate(Syntax):
         Syntax.__init__(self, *args, **kargs)
         update, self.resource = map(str, cast(TokenList, self.tokens))
 
+    def validate(self):
+        Syntax.validate(self)
+        if self.resource not in self.env().textures and self.resource not in self.env().buffers:
+            self.error(f'Unknown texture or buffer: "{self.resource}"')
+
     def __repr__(self):
         return f'<RendererUpdate {self.resource}>'
 
@@ -328,10 +457,51 @@ class RendererDraw(Syntax):
 
     def __init__(self, *args, **kargs):
         Syntax.__init__(self, *args, **kargs)
-        draw, self.name = map(str, cast(TokenList, self.tokens)[:2])
+        draw, self.pipeline = map(str, cast(TokenList, self.tokens)[:2])
+
+    def validate(self):
+        Syntax.validate(self)
+
+        # verify that the referenced pipeline exists
+        if self.pipeline not in self.env().pipelines:
+            self.error(f'Unknown pipeline: "{self.pipeline}"')
+        pipeline = self.env().pipelines[self.pipeline]
+
+        # verify the draw's bindings against the referenced pipeline
+        for bind in self.binds:
+
+            # the pipeline should reference an interface within the pipeline
+            if bind.binding not in pipeline.bindings:
+                bind.error(f'Binding "{bind.binding}" is not an interface in this draw\'s pipeline.  See pipeline "{self.pipeline}."')
+
+            # check the binding against the referenced pipeline
+            interface:PipelineInterface = pipeline.interfaces[bind.binding]
+            if interface.is_uniform:
+                # the interface is a uniform block
+                if bind.is_texture:
+                    bind.error("Cannot bind a texture to a uniform buffer block.")
+                elif bind.is_sampler:
+                    bind.error("Cannot bind a sampler to a uniform buffer block.")
+                else:
+                    assert(bind.is_buffer)
+                    buffer = self.env().buffers[bind.resource]
+                    if buffer.struct != interface.type:
+                        bind.error(f'Buffer is type "{buffer.struct}", but the interface expects "{interface.type}"')
+            else:
+                # the interface is a texture unit
+                assert(interface.is_texture)
+                if bind.is_buffer:
+                    bind.error("Cannot bind a buffer to a texture unit.")
+                elif bind.is_texture:
+                    texture = self.env().textures[bind.resource]
+                    if texture.format != interface.type:
+                        # TODO: really we just care if the target is compatible, and maybe if the channels are the same
+                        bind.error(f'Texture is format "{texture.format}", but the interface expects "{interface.type}"')
+                else:
+                    assert(bind.is_sampler)
 
     def __repr__(self):
-        return f'<RendererDraw {self.name}>'
+        return f'<RendererDraw {self.pipeline}>'
 
 
 class RendererDrawBind(Syntax):
@@ -343,6 +513,17 @@ class RendererDrawBind(Syntax):
     def __init__(self, *args, **kargs):
         Syntax.__init__(self, *args, **kargs)
         bind, self.binding, self.resource = map(str, cast(TokenList, self.tokens))
+        self.is_sampler = False
+        self.is_texture = False
+        self.is_buffer = False
+
+    def rewrite(self):
+        Syntax.rewrite(self)
+        self.is_sampler = self.resource in self.env().samplers
+        self.is_texture = self.resource in self.env().textures
+        self.is_buffer = self.resource in self.env().buffers
+        if not (self.is_sampler or self.is_texture or self.is_buffer):
+            self.error(f'Unknown texture, buffer, or sampler: "{self.resource}"')
 
     def __repr__(self):
         return f'<RendererDrawBind {self.binding}, {self.resource}>'
@@ -354,10 +535,11 @@ class Program(Syntax):
     """
     rename = "programs"
 
-    def __init__(self, *args, **kargs):
-        Syntax.__init__(self, *args, **kargs)
-        self.set_env(self)
+    def __init__(self, error_handler:ErrorCallback, *args, **kargs):
+        Syntax.__init__(self, None, *args, **kargs)
+        self.set_env(self, error_handler)
         self.rewrite()
+        self.validate()
 
 
 class Rule:
@@ -540,21 +722,29 @@ class GrammarError(Exception):
     pass
 
 
+class ValidationError(Exception):
+    pass
+
+
 def validate(parser:Parser):
     """
     Validate the program's tokens against the grammar tree, and then return the
     abstract syntax tree.
     """
 
-    def error(hint:str, token:Token):
+    def grammer_error(hint:str, token:Token):
         message = parser.message(hint, *token.pos(), *token.pos())
         raise GrammarError(message)
+
+    def validation_error(hint:str, token:Token):
+        message = parser.message(hint, *token.pos(), *token.pos())
+        raise ValidationError(message)
 
     tokens = parser.parse()
     children:List[Syntax] = []
     for token in tokens:
         if type(token) is not TokenComment:
             token = CAST(TokenList, token)
-            children.append(cast(Syntax, GRAMMAR.validate(token, error)))
+            children.append(cast(Syntax, GRAMMAR.validate(token, grammer_error)))
 
-    return Program(None, children, GRAMMAR.constructors())
+    return Program(validation_error, children, GRAMMAR.constructors())
