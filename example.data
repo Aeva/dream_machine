@@ -21,8 +21,8 @@
 
 
 (sampler SomeSampler
-	(min GL_NEAREST)
-	(mag GL_NEAREST))
+	(min GL_LINEAR)
+	(mag GL_LINEAR))
 
 
 (format BgImageFormat GL_TEXTURE_2D GL_RGBA8 SomeSampler)
@@ -59,6 +59,13 @@
 	(src "woman_taking_in_cheese_from_fire_escape.png"))
 
 
+(renderer TextureTest
+	(update SomeHandle)
+	(draw TextureTest
+		(bind Fnord SomeHandle)
+		(bind BgImage YourTextureHere)))
+
+
 (renderer Blue
 	(update SomeHandle)
 	(draw SplatBlue
@@ -69,10 +76,3 @@
 	(update SomeHandle)
 	(draw SplatRed
 		(bind Fnord SomeHandle)))
-
-
-(renderer TextureTest
-	(update SomeHandle)
-	(draw TextureTest
-		(bind Fnord SomeHandle)
-		(bind BgImage YourTextureHere)))

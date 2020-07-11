@@ -35,8 +35,8 @@ extern void UserFrameCallback(GLFWwindow* Window);
 GLuint Shaders[5] = { 0 };
 GLuint ShaderPrograms[3] = { 0 };
 std::string ShaderPaths[5] = {
-	"generated_shaders\\splat.vs.glsl.1a97f2c8d1abc5b488b2bb51accd6436.glsl",
-	"generated_shaders\\texture.fs.glsl.fc43e398781fd13389e558c4c95e13e1.glsl",
+	"generated_shaders\\splat.vs.glsl.da0e6628e3cf2c7d201d3564cca3fd66.glsl",
+	"generated_shaders\\texture.fs.glsl.9dde9a16c1c97192c8ca7823dfceb4be.glsl",
 	"generated_shaders\\splat.vs.glsl.3fdbf6c0576b6e6d6cba510e637d0a75.glsl",
 	"generated_shaders\\red.fs.glsl.72e5034f0934a476f7cd05199a16f1d2.glsl",
 	"generated_shaders\\blue.fs.glsl.0d4bfa50448166804174e28991b2f622.glsl"
@@ -134,8 +134,8 @@ void InitialSetup()
 		glCreateSamplers(1, &SamplerHandles[0]);
 		{
 			// sampler "SomeSampler"
-			glSamplerParameteri(SamplerHandles[0], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-			glSamplerParameteri(SamplerHandles[0], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			glSamplerParameteri(SamplerHandles[0], GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			glSamplerParameteri(SamplerHandles[0], GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 			glObjectLabel(GL_SAMPLER, SamplerHandles[0], -1, "SomeSampler");
 		}
 	}
@@ -162,6 +162,28 @@ void InitialSetup()
 
 namespace Renderer
 {
+	void TextureTest(int FrameIndex, double CurrentTime, double DeltaTime)
+	{
+		glClearColor(0, 0, 0, 1.0);
+		glClear(GL_COLOR_BUFFER_BIT);
+		glClearDepth(0);
+		glClear(GL_DEPTH_BUFFER_BIT);
+		{
+			Glsl::FnordType Data = { (float)(CurrentTime * 0.1) };
+			Upload::FnordType(BufferHandles[0], Data);
+		}
+		{
+			glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "TextureTest");
+			glUseProgram(ShaderPrograms[0]);
+			glBindBufferBase(GL_UNIFORM_BUFFER, 0, BufferHandles[0]);
+			glBindTextureUnit(0, TextureHandles[0]);
+			glBindSampler(0, SamplerHandles[0]);
+			glDisable(GL_DEPTH_TEST);
+			glDisable(GL_CULL_FACE);
+			glDrawArraysInstanced(GL_TRIANGLES, 0, 6, 1);
+			glPopDebugGroup();
+		}
+	}
 	void Blue(int FrameIndex, double CurrentTime, double DeltaTime)
 	{
 		glClearColor(0, 0, 0, 1.0);
@@ -202,26 +224,6 @@ namespace Renderer
 			glPopDebugGroup();
 		}
 	}
-	void TextureTest(int FrameIndex, double CurrentTime, double DeltaTime)
-	{
-		glClearColor(0, 0, 0, 1.0);
-		glClear(GL_COLOR_BUFFER_BIT);
-		glClearDepth(0);
-		glClear(GL_DEPTH_BUFFER_BIT);
-		{
-			Glsl::FnordType Data = { (float)(CurrentTime * 0.1) };
-			Upload::FnordType(BufferHandles[0], Data);
-		}
-		{
-			glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "TextureTest");
-			glUseProgram(ShaderPrograms[0]);
-			glBindBufferBase(GL_UNIFORM_BUFFER, 0, BufferHandles[0]);
-			glDisable(GL_DEPTH_TEST);
-			glDisable(GL_CULL_FACE);
-			glDrawArraysInstanced(GL_TRIANGLES, 0, 6, 1);
-			glPopDebugGroup();
-		}
-	}
 }
 
 
@@ -230,13 +232,13 @@ void DrawFrame(int FrameIndex, double CurrentTime, double DeltaTime)
 	switch (CurrentRenderer)
 	{
 	case 0:
-		Renderer::Blue(FrameIndex, CurrentTime, DeltaTime);
+		Renderer::TextureTest(FrameIndex, CurrentTime, DeltaTime);
 		break;
 	case 1:
-		Renderer::Red(FrameIndex, CurrentTime, DeltaTime);
+		Renderer::Blue(FrameIndex, CurrentTime, DeltaTime);
 		break;
 	case 2:
-		Renderer::TextureTest(FrameIndex, CurrentTime, DeltaTime);
+		Renderer::Red(FrameIndex, CurrentTime, DeltaTime);
 		break;
 	default:
 		HaltAndCatchFire();

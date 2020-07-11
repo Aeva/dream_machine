@@ -9,6 +9,8 @@ from .expanders.drawspatch import *
 from .expanders.renderers import *
 from .expanders.window import *
 from .expanders.glsl_types import *
+from .expanders.glsl_interfaces import *
+from .expanders.cpp_interfaces import *
 from .syntax.grammar import *
 
 
@@ -78,7 +80,7 @@ def solve_shaders(env:Program, solved_structs:Dict[str,StructType]) -> Tuple[Sha
         ]
         textures:List[SyntaxExpander] = \
         [
-            # todo!
+            TextureInterface(t) for t in pipeline.textures()
         ]
         return ShaderStage(stage, shader.path, structs + uniforms + textures)
 
@@ -121,6 +123,18 @@ def solve_renderers(env:Program) -> Tuple[List[SyntaxExpander], SyntaxExpander]:
                 binding_index = pipeline.binding_index(binding.name),
                 handle = binding.buffer.handle)
             for binding in event.buffer_bindings()
+        ]
+        setup += \
+        [
+            BindTexture(t) for t in event.texture_bindings()
+        ]
+
+        explicit_samplers = {b.name:b for b in event.sampler_bindings()}
+        implicit_samplers = {b.name:b for b in event.texture_bindings() if b.name not in explicit_samplers}
+        sampler_bindings = list(implicit_samplers.values()) + list(explicit_samplers.values())
+        setup += \
+        [
+            BindSampler(t) for t in sampler_bindings
         ]
         setup += \
         [

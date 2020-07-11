@@ -2,7 +2,7 @@
 from typing import *
 from .common import SyntaxExpander
 from ..handy import CAST
-from ..syntax.grammar import Texture, TextureWidth, TextureHeight, TextureDepth, Program
+from ..syntax.grammar import Texture, TextureWidth, TextureHeight, TextureDepth, RendererDrawBind, Program
 
 
 class TextureHandles(SyntaxExpander):
@@ -66,6 +66,15 @@ class Texture3DSetup(SyntaxExpander):
         self.width = cast(TextureWidth, texture.width).value
         self.height = cast(TextureHeight, texture.height).value
         self.depth = cast(TextureDepth, texture.depth).value
+
+
+class BindTexture(SyntaxExpander):
+    template = "glBindTextureUnit(「texture_unit」, TextureHandles[「handle」]);"
+
+    def __init__(self, binding:RendererDrawBind):
+        SyntaxExpander.__init__(self)
+        self.texture_unit = binding.interface.texture_unit
+        self.handle = binding.texture.handle
 
 
 class SetupTextures(SyntaxExpander):

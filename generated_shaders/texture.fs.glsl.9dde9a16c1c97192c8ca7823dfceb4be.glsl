@@ -1,5 +1,11 @@
 #version 420
-「interfaces」
+layout(std140, binding = 0)
+uniform Fnord
+{
+	float ElapsedTime;
+};
+layout(binding = 0)
+uniform sampler2D BgImage;
 
 layout(location = 0) out vec4 OutColor;
 

@@ -40,8 +40,21 @@ class Syntax:
         self.child_types = child_types
         self._keys = dedupe([cast(str, c.many or c.one) for c in child_types])
         self.env:Optional[Program] = None
+        self._parent:Optional[ref] = None
         self.error_callback:Optional[ErrorCallback] = None
+        for child in self.children:
+            child.parent = self
         self.populate(self.children)
+
+    @property
+    def parent(self):
+        assert(self._parent is not None)
+        return cast(Syntax, self._parent())
+
+    @parent.setter
+    def parent(self, parent):
+        assert(self._parent is None)
+        self._parent = ref(parent)
 
     def error(self, hint:str, token:Optional[Token] = None):
         """
@@ -228,7 +241,11 @@ class Format(Syntax):
 
     def __init__(self, *args, **kargs):
         Syntax.__init__(self, *args, **kargs)
-        format, self.name, self.target, self.format, self.sampler = map(str, cast(TokenList, self.tokens))
+        format, self.name, self.target, self.format, self._sampler = map(str, cast(TokenList, self.tokens))
+
+    @property
+    def sampler(self):
+        return self.env().samplers.get(self._sampler)
 
     def validate(self):
         Syntax.validate(self)
@@ -236,8 +253,8 @@ class Format(Syntax):
             self.error(f'Unsupported texture target: "{self.target}"')
         if self.format != "GL_RGBA8":
             self.error(f'Unsupported texture format: "{self.format}"')
-        if self.sampler not in self.env().samplers:
-            self.error(f'Unknown sampler: "{self.sampler}"')
+        if self.sampler is None:
+            self.error(f'Unknown sampler: "{self._sampler}"')
         if self.name in self.env().structs:
             self.error(f'There cannot be a format named "{self.name}", because there is already a struct of the same name.')
 
@@ -367,6 +384,20 @@ class PipelineInterface(Syntax):
         self.is_texture = self.type in self.env().formats
         self.is_uniform = self.type in self.env().structs
 
+    @property
+    def format(self):
+        return self.env().formats.get(self.type)
+
+    @property
+    def binding_index(self):
+        assert(self.is_texture)
+        return self.parent.binding_index(self.name)
+
+    @property
+    def texture_unit(self):
+        assert(self.is_texture)
+        return self.parent.texture_unit(self.name)
+
     def validate(self):
         Syntax.validate(self)
         if not (self.is_texture or self.is_uniform):
@@ -466,6 +497,10 @@ class Texture(Syntax):
     @property
     def handle(self):
         return list(self.env().textures.keys()).index(self.name)
+
+    @property
+    def sampler(self):
+        return self.format.sampler
 
     def validate(self):
         Syntax.validate(self)
@@ -685,12 +720,20 @@ class RendererDrawBind(Syntax):
             self.error(f'Unknown texture, buffer, or sampler: "{self.resource}"')
 
     @property
+    def interface(self):
+        pipeline = self.env().pipelines[self.parent.pipeline]
+        return pipeline.interfaces[self.name]
+
+    @property
     def texture(self):
         return self.env().textures.get(self.resource)
 
     @property
     def sampler(self):
-        return self.env().samplers.get(self.resource)
+        if self.is_texture:
+            return self.texture.sampler
+        else:
+            return self.env().samplers.get(self.resource)
 
     @property
     def buffer(self):
