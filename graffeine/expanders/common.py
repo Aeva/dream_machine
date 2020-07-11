@@ -83,6 +83,7 @@ class SyntaxExpander(metaclass=SyntaxExpanderMeta):
             raise NameError(f"{type(self)} has more than one parameter, so init values have to be passed in as keyword arguments")
         self._dict = {p:"" for p in self.params}
         for key, value in kwargs.items():
+            assert(key in self.params)
             self[key] = value
 
     def _check_type(self, key, new_value):

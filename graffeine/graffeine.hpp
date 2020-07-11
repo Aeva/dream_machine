@@ -4,8 +4,9 @@
 #include <string>
 #include <cstdint>
 #include <stdlib.h>
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
+#include "glad/glad.h"
+#include "GLFW/glfw3.h"
+#include "lodepng.h"
 
 
 void HaltAndCatchFire()
@@ -27,6 +28,44 @@ void ReadFile(std::string& Source, std::string Path)
 	{
 		Source += Line + "\n";
 	}
+}
+
+
+struct ImageData
+{
+	unsigned Width;
+	unsigned Height;
+	std::vector<unsigned char> Data;
+};
+
+
+ImageData ReadPng(const char* Path)
+{
+	ImageData Image;
+	std::vector<unsigned char> Data;
+	unsigned Error = lodepng::decode(Data, Image.Width, Image.Height, Path);
+	if (Error)
+	{
+		std::cout \
+			<< "Failed to read " << Path << "!\n"
+			<< " - Reason: PNG decode error:\n"
+			<< " - [" << Error << "] " << lodepng_error_text(Error) << "\n";
+		HaltAndCatchFire();
+	}
+	Image.Data.resize(Data.size());
+	int Dst = 0;
+	const int RowSize = Image.Width * 4;
+	for (int y = Image.Height - 1; y >= 0; --y)
+	{
+		int Src = RowSize * y;
+		for (int x = 0; x < RowSize; ++x)
+		{
+			Image.Data[Dst] = Data[Src];
+			++Dst;
+			++Src;
+		}
+	}
+	return Image;
 }
 
 

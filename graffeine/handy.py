@@ -1,5 +1,14 @@
 
 from typing import *
+from collections import abc
+
+
+def is_sequence(value:Any) -> bool:
+    return isinstance(value, abc.Sequence)
+
+
+def is_mapping(value:Any) -> bool:
+    return isinstance(value, abc.Mapping)
 
 
 def CAST(_type, value):

@@ -48,10 +48,10 @@ def solve_shaders(env:Program, solved_structs:Dict[str,StructType]) -> Tuple[Sha
     OpenGL context is initialized, but before the shaders are to be used).
     """
 
-    def solve_shader_compilation(shaders: Tuple[ShaderStage,...]):
+    def solve_shader_compilation(shaders: List[ShaderStage]):
         return [CompileShader(*args) for args in enumerate(shaders)]
 
-    def solve_shader_linking(shaders: Tuple[ShaderStage,...], programs: List[ShaderProgram]):
+    def solve_shader_linking(shaders: List[ShaderStage], programs: List[ShaderProgram]):
         handle_map = {shader:index for index, shader in enumerate(shaders)}
         links = []
         for index, program in enumerate(programs):
@@ -98,21 +98,14 @@ def solve_shaders(env:Program, solved_structs:Dict[str,StructType]) -> Tuple[Sha
     return ShaderHandles(shader_count = len(shaders), program_count=len(programs), paths=paths), compiles + links
 
 
-def solve_handles(resources:Dict[str,Syntax]):
-    """
-    Assign a positive integer to each resource we intend to create.
-    """
-    return {key:index for (index, key) in enumerate(resources.keys())}
-
-
-def solve_renderers(env:Program, buffer_handles:Dict[str,int]) -> Tuple[List[SyntaxExpander], SyntaxExpander]:
+def solve_renderers(env:Program) -> Tuple[List[SyntaxExpander], SyntaxExpander]:
     """
     """
 
     def solve_uploader(event:RendererUpdate) -> SyntaxExpander:
         return FakeUpload(
-            struct_name = env.buffers[event.resource].struct,
-            handle = buffer_handles[event.resource])
+            struct_name = event.buffer.struct,
+            handle = event.buffer.handle)
 
     def solve_draw(event:RendererDraw) -> SyntaxExpander:
         program_handle = list(env.pipelines.keys()).index(event.pipeline)
@@ -124,9 +117,9 @@ def solve_renderers(env:Program, buffer_handles:Dict[str,int]) -> Tuple[List[Syn
         ]
         setup += \
         [
-            cast(SyntaxExpander, BindUniformBuffer(
-                binding_index = pipeline.binding_index(binding.binding),
-                handle = buffer_handles[binding.resource]))
+            BindUniformBuffer(
+                binding_index = pipeline.binding_index(binding.name),
+                handle = binding.buffer.handle)
             for binding in event.buffer_bindings()
         ]
         setup += \
@@ -167,25 +160,27 @@ def solve(env:Program) -> SyntaxExpander:
     # expanders for shaders
     shader_handles, build_shaders = solve_shaders(env, solved_structs)
 
-    # GL object handles
-    sampler_handles:Dict[str,int] = solve_handles(env.samplers)
-    texture_handles:Dict[str,int] = solve_handles(env.textures)
-    buffer_handles:Dict[str,int] = solve_handles(env.buffers)
-
     # expanders for struct definitions
-    structs:List[SyntaxExpander] = [GlslStruct(s) for s in solved_structs.values()]
+    structs:List[SyntaxExpander] = []
+    if solved_structs:
+        structs += [GlslStruct(s) for s in solved_structs.values()]
 
     # expanders for various things in the global scope
-    globals:List[SyntaxExpander] = \
-    [
-        shader_handles,
-        SamplerHandles(len(sampler_handles)),
-        TextureHandles(len(texture_handles)),
-        BufferHandles(len(buffer_handles)),
-    ]
+    globals:List[SyntaxExpander] = [shader_handles]
+
+    if env.samplers:
+        globals.append(SamplerHandles(len(env.samplers)))
+
+    if env.textures:
+        globals.append(TextureHandles(len(env.textures)))
+
+    if env.buffers:
+        globals.append(BufferHandles(len(env.buffers)))
 
     # expanders for buffer uploaders
-    uploaders:List[SyntaxExpander] = [BufferUpload(s) for s in solved_structs.values()]
+    uploaders:List[SyntaxExpander] = []
+    if env.buffers:
+        uploaders += [BufferUpload(s) for s in solved_structs.values()]
 
     # expanders for generated code which is called after GL is initialized before rendering starts
     setup:List[SyntaxExpander] = \
@@ -194,24 +189,17 @@ def solve(env:Program) -> SyntaxExpander:
     ]
     setup += build_shaders
 
-    if SamplerHandles:
-        setup.append(CreateSamplers(handle=0, count=len(sampler_handles)))
-        setup += \
-        [
-            SamplerSetup(sampler_handles[sampler.name], sampler)
-            for sampler in env.samplers.values()
-        ]
+    if env.samplers:
+        setup.append(SetupSamplers(env))
 
-    if buffer_handles:
-        setup.append(CreateBuffers(handle=0, count=len(buffer_handles)))
-        setup += \
-        [
-            BufferStorage(handle=buffer_handles[buffer.handle], bytes=solved_structs[buffer.struct].words*4)
-            for buffer in env.buffers.values()
-        ]
+    if env.textures:
+        setup.append(SetupTextures(env))
+
+    if env.buffers:
+        setup.append(SetupBuffers(env, solved_structs))
 
     # expanders defining the available renderers
-    renderers, switch = solve_renderers(env, buffer_handles)
+    renderers, switch = solve_renderers(env)
 
     # emit the generated program
     program = OpenGLWindow()

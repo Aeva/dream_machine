@@ -1,4 +1,4 @@
-﻿#include <graffeine.hpp>
+﻿#include "graffeine.hpp"
 
 
 namespace Glsl
@@ -130,14 +130,33 @@ void InitialSetup()
 		GLuint Stages[2] = { Shaders[2], Shaders[4] };
 		ShaderPrograms[2] = LinkShaders("SplatBlue", &Stages[0], 2);
 	}
-	glCreateSamplers(1, &SamplerHandles[0]);
 	{
-		// Setup sampler "SomeSampler"
-		glSamplerParameteri(SamplerHandles[0], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glSamplerParameteri(SamplerHandles[0], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glCreateSamplers(1, &SamplerHandles[0]);
+		{
+			// sampler "SomeSampler"
+			glSamplerParameteri(SamplerHandles[0], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+			glSamplerParameteri(SamplerHandles[0], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			glObjectLabel(GL_SAMPLER, SamplerHandles[0], -1, "SomeSampler");
+		}
 	}
-	glCreateBuffers(1, &BufferHandles[0]);
-	glNamedBufferStorage(BufferHandles[0], 16, nullptr, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT);
+	{
+		{
+			// texture "YourTextureHere"
+			ImageData Image = ReadPng("woman_taking_in_cheese_from_fire_escape.png");
+			glCreateTextures(GL_TEXTURE_2D, 1, &TextureHandles[0]);
+			glTextureStorage2D(TextureHandles[0], 1, GL_RGBA8, Image.Width, Image.Height);
+			glObjectLabel(GL_TEXTURE, TextureHandles[0], -1, "YourTextureHere");
+			glTextureSubImage2D(TextureHandles[0], 0, 0, 0, Image.Width, Image.Height, GL_RGBA, GL_UNSIGNED_BYTE, Image.Data.data());
+		}
+	}
+	{
+		glCreateBuffers(1, &BufferHandles[0]);
+		{
+			// buffer "SomeHandle"
+			glNamedBufferStorage(BufferHandles[0], 16, nullptr, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT);
+			glObjectLabel(GL_BUFFER, BufferHandles[0], -1, "SomeHandle");
+		}
+	}
 }
 
 

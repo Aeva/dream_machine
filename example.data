@@ -55,7 +55,8 @@
 (buffer SomeHandle FnordType)
 
 
-(texture YourTextureHere BgImageFormat)
+(texture YourTextureHere BgImageFormat
+	(src "woman_taking_in_cheese_from_fire_escape.png"))
 
 
 (renderer Blue

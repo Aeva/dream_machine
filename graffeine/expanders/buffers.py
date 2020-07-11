@@ -1,5 +1,7 @@
 ﻿
+from .glsl_types import *
 from .common import SyntaxExpander
+from ..syntax.grammar import Buffer, Program
 
 
 class BufferHandles(SyntaxExpander):
@@ -7,11 +9,14 @@ class BufferHandles(SyntaxExpander):
 
 
 class CreateBuffers(SyntaxExpander):
-    template = "glCreateBuffers(「count」, &BufferHandles[「handle」]);"
+    template = "glCreateBuffers(「count」, &BufferHandles[「start」]);"
+
+    def __init__(self, count:int, start:int=0):
+        SyntaxExpander.__init__(self, count=count, start=start)
 
 
 class DeleteBuffers(SyntaxExpander):
-    template = "glCreateBuffers(「count」, &BufferHandles[「handle」]);"
+    template = "glDeleteBuffers(「count」, &BufferHandles[「start」]);"
 
 
 class BufferStorage(SyntaxExpander):
@@ -22,11 +27,42 @@ class ResizeBuffer(SyntaxExpander):
     template = "「wrapped」"
     def __init__(self, handle: int, bytes: int) -> None:
         self.wrapped = [
-            DeleteBuffers(handle=handle, count=1),
-            CreateBuffers(handle=handle, count=1), 
+            DeleteBuffers(start=handle, count=1),
+            CreateBuffers(start=handle, count=1), 
             BufferStorage(handle=handle, bytes=bytes)
         ]
 
 
 class BindUniformBuffer(SyntaxExpander):
     template = "glBindBufferBase(GL_UNIFORM_BUFFER, 「binding_index」, BufferHandles[「handle」]);"
+
+
+class BufferSetup(SyntaxExpander):
+    template = """
+{
+	// buffer "「name:str」"
+	glNamedBufferStorage(BufferHandles[「handle:int」], 「bytes:int」, nullptr, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT);
+	glObjectLabel(GL_BUFFER, BufferHandles[「handle:int」], -1, \"「name:str」\");
+}
+""".strip()
+    def __init__(self, buffer:Buffer, struct:StructType):
+        SyntaxExpander.__init__(self)
+        self.name = buffer.name
+        self.handle = buffer.handle
+        self.bytes = struct.bytes
+
+
+class SetupBuffers(SyntaxExpander):
+    template = """
+{
+「wrapped」
+}
+""".strip()
+    indent = ("wrapped",)
+
+    def __init__(self, env:Program, solved_structs:Dict[str,StructType]):
+        SyntaxExpander.__init__(self)
+        self.wrapped:List[SyntaxExpander] = [CreateBuffers(len(env.buffers))]
+        for buffer in env.buffers.values():
+            struct = solved_structs[buffer.struct]
+            self.wrapped.append(BufferSetup(buffer, struct))

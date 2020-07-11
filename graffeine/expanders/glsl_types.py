@@ -15,6 +15,9 @@ class GlslType:
         return (self.name, self.alignment, self.words) == (other.name, other.alignment, other.words)
     def __hash__(self):
         return (self.name, self.alignment, self.words)
+    @property
+    def bytes(self):
+        return self.words * 4
 
 
 class ScalarType(GlslType):
