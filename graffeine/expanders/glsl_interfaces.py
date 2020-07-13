@@ -64,5 +64,6 @@ class TextureInterface(SyntaxExpander):
             return "Buffer"
         elif target == "GL_TEXTURE_2D_MULTISAMPLE":
             return "2DMS"
-        elif target == "GL_TEXTURE_2D_MULTISAMPLE_ARRAY":
+        else:
+            assert(target == "GL_TEXTURE_2D_MULTISAMPLE_ARRAY")
             return "2DMSArray"

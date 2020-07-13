@@ -3,19 +3,19 @@ from .tokens import *
 from .parser import *
 
 
-def set(source:str) -> Parser:
+def reset(source:str) -> Parser:
     p = Parser()
     p.reset(source)
     return p
 
 
 def run(source:str) -> Tuple[Token, ...]:
-    return set(source).parse()
+    return reset(source).parse()
 
 
 def test_valid_numbers():
     def case(src:str) -> TokenNumber:
-        p = set(src)
+        p = reset(src)
         return p.parse_number()
 
     t = case("1234")
@@ -51,7 +51,7 @@ def test_valid_numbers():
 
 def test_valid_words():
     def case(src:str) -> TokenWord:
-        p = set(src)
+        p = reset(src)
         return p.parse_word()
 
     t = case("HailEris")
@@ -69,7 +69,7 @@ def test_valid_words():
 
 def test_valid_strings():
     def case(src:str) -> TokenString:
-        p = set(src)
+        p = reset(src)
         return p.parse_string()
 
     t = case('"hello_world"')
@@ -85,7 +85,7 @@ def test_valid_strings():
 
 def test_valid_expressions():
     def case(src:str) -> TokenList:
-        p = set(src)
+        p = reset(src)
         return p.parse_expression()
 
     def validate(t:TokenList, e:tuple):

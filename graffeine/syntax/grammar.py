@@ -3,10 +3,11 @@ from weakref import ref
 from ..handy import *
 from .tokens import *
 from .parser import Parser
+from .arithmetic import fold, FoldedExpression, UnfoldedExpression
 from ..expanders.glsl_types import glsl_builtins
 
 
-ErrorCallback = Callable[[str, Token], None]
+ErrorCallback = Callable[..., None]
 
 
 class Syntax:
@@ -124,6 +125,17 @@ class Syntax:
 
     def __repr__(self):
         return f'<{type(self).__name__}>'
+
+
+class ArithmeticExpression(Syntax):
+    """
+    This wraps the result from the function "fold" in the arithmetic module.
+    """
+    one = "expr"
+
+    def __init__(self, expr:Union[FoldedExpression, UnfoldedExpression], *args, **kargs):
+        Syntax.__init__(self, *args, **kargs)
+        self.expr = expr
 
 
 class Struct(Syntax):
@@ -482,9 +494,6 @@ class Texture(Syntax):
     many = "textures"
     primary = "name"
     src:Syntax
-    width:Syntax
-    height:Syntax
-    depth:Syntax
 
     def __init__(self, *args, **kargs):
         Syntax.__init__(self, *args, **kargs)
@@ -502,6 +511,21 @@ class Texture(Syntax):
     def sampler(self):
         return self.format.sampler
 
+    @property
+    def width(self):
+        prop = self.dimensions.get("width")
+        return prop.value if prop is not None else None
+
+    @property
+    def height(self):
+        prop = self.dimensions.get("height")
+        return prop.value if prop is not None else None
+
+    @property
+    def depth(self):
+        prop = self.dimensions.get("depth")
+        return prop.value if prop is not None else None
+
     def validate(self):
         Syntax.validate(self)
         if self.name in self.env().samplers:
@@ -511,19 +535,23 @@ class Texture(Syntax):
         if not self.format:
             self.error(f'Unknown format: "{self.format}"')
 
+        has_width = self.width is not None
+        has_height = self.height is not None
+        has_depth = self.depth is not None
+
         if self.format.target == "GL_TEXTURE_2D":
-            if not (self.width and self.height) and not self.src:
+            if not (has_width and has_height) and not self.src:
                 self.error("2D textures must either load a file or specify width and height.")
-            if self.depth:
+            if has_depth:
                 self.error("2D textures can't have depth specified.")
 
         if self.format.target == "GL_TEXTURE_3D":
             if self.src:
                 self.error("3D textures don't current support loading from files.")
-            if not (self.width and self.height and self.depth):
+            if not (has_width and has_height and has_depth):
                 self.error("2D textures must specify width, height, and depth.")
 
-        if self.src and (self.width or self.height or self.depth):
+        if self.src and (has_width or has_height or has_depth):
             self.error("Textures which define a source image can't also specify their dimensions.")
 
         if self.src and self.format.format != "GL_RGBA8":
@@ -555,31 +583,20 @@ class TextureDimension(Syntax):
     """
     Intended to be subclassed.
     """
+    many = "dimensions"
+    primary = "name"
+
     def __init__(self, *args, **kargs):
         Syntax.__init__(self, *args, **kargs)
-        width, number = map(str, cast(TokenList, self.tokens))
-        self.value = cast(TokenNumber, number).value
+        self.name = str(cast(TokenList, self.tokens)[0])
 
-    def validate(self):
-        if self.value < 0:
-            self.error("Texture dimension must be positive.")
-        if self.value != int(self.value):
-            self.error("Texture dimension must be an integer.")
+    @property
+    def value(self):
+        assert(len(self.children) == 1)
+        return self.children[0].expr
 
     def __repr__(self):
-        return str(self.value)
-
-
-class TextureWidth(TextureDimension):
-    one = "width"
-
-
-class TextureHeight(TextureDimension):
-    one = "height"
-
-
-class TextureDepth(TextureDimension):
-    one = "depth"
+        return r'<TextureDimension {self.name} : {str(self.value)}>'
 
 
 class Renderer(Syntax):
@@ -839,6 +856,19 @@ class Exactly(WordRule):
         return f'<Exactly "{self.name}">'
 
 
+class ArithmeticRule(Rule):
+    """
+    This will attempt to match a valid arithmetic expresison.
+    """
+
+    def constructors(self) -> List[type]:
+        return [ArithmeticExpression]
+
+    def validate(self, token:Token, error:ErrorCallback) -> Optional[Syntax]:
+        expr:Union[FoldedExpression, UnfoldedExpression] = fold(token, error)
+        return ArithmeticExpression(expr, token, [], [])
+
+
 class ListRule(Rule):
     """
     Matches a sequence of rules within a TokenList.  When successfully validated,
@@ -933,9 +963,9 @@ GRAMMAR = MatchRule(
     ListRule(Buffer, Exactly("buffer"), WordRule("buffer name"), WordRule("buffer type")),
     ListRule(Texture, Exactly("texture"), WordRule("texture name"), WordRule("texture type"), SPLAT = MatchRule(
         ListRule(TextureSrc, Exactly("src"), StringRule("image path")),
-        ListRule(TextureWidth, Exactly("width"), NumberRule("texture width")),
-        ListRule(TextureHeight, Exactly("height"), NumberRule("texture height")),
-        ListRule(TextureDepth, Exactly("depth"), NumberRule("texture depth")))),
+        ListRule(TextureDimension, Exactly("width"), ArithmeticRule()),
+        ListRule(TextureDimension, Exactly("height"), ArithmeticRule()),
+        ListRule(TextureDimension, Exactly("depth"), ArithmeticRule()))),
     ListRule(Renderer, Exactly("renderer"), WordRule("renderer name"), SPLAT = MatchRule(
         ListRule(RendererUpdate, Exactly("update"), WordRule("handle name")),
         ListRule(RendererDraw, Exactly("draw"), WordRule("draw name"), SPLAT = MatchRule(
@@ -956,19 +986,18 @@ def validate(parser:Parser):
     abstract syntax tree.
     """
 
-    def grammar_error(hint:str, token:Token):
+    def error_handler(hint:str, token:Token, ErrorType=GrammarError):
         message = parser.message(hint, *token.pos(), *token.pos())
-        raise GrammarError(message)
+        raise ErrorType(message)
 
     def validation_error(hint:str, token:Token):
-        message = parser.message(hint, *token.pos(), *token.pos())
-        raise ValidationError(message)
+        error_handler(hint, token, ValidationError)
 
     tokens = parser.parse()
     children:List[Syntax] = []
     for token in tokens:
         if type(token) is not TokenComment:
             token = CAST(TokenList, token)
-            children.append(cast(Syntax, GRAMMAR.validate(token, grammar_error)))
+            children.append(cast(Syntax, GRAMMAR.validate(token, error_handler)))
 
     return Program(validation_error, children, GRAMMAR.constructors())

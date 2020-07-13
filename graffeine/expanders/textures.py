@@ -2,7 +2,7 @@
 from typing import *
 from .common import SyntaxExpander
 from ..handy import CAST
-from ..syntax.grammar import Texture, TextureWidth, TextureHeight, TextureDepth, RendererDrawBind, Program
+from ..syntax.grammar import Texture, TextureDimension, RendererDrawBind, Program
 
 
 class TextureHandles(SyntaxExpander):
@@ -44,8 +44,8 @@ class Texture2DSetup(SyntaxExpander):
         self.name = texture.name
         self.handle = texture.handle
         self.format = texture.format.format
-        self.width = cast(TextureWidth, texture.width).value
-        self.height = cast(TextureHeight, texture.height).value
+        self.width = cast(TextureDimension, texture.width).value
+        self.height = cast(TextureDimension, texture.height).value
 
 
 class Texture3DSetup(SyntaxExpander):
@@ -63,9 +63,9 @@ class Texture3DSetup(SyntaxExpander):
         self.name = texture.name
         self.handle = texture.handle
         self.format = texture.format.format
-        self.width = cast(TextureWidth, texture.width).value
-        self.height = cast(TextureHeight, texture.height).value
-        self.depth = cast(TextureDepth, texture.depth).value
+        self.width = cast(TextureDimension, texture.width).value
+        self.height = cast(TextureDimension, texture.height).value
+        self.depth = cast(TextureDimension, texture.depth).value
 
 
 class BindTexture(SyntaxExpander):
