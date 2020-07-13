@@ -15,9 +15,16 @@ float ScreenScaleY = 1.0;
 bool WindowIsDirty = true;
 GLFWwindow* Window;
 
+
 extern int CurrentRenderer = 0;
 extern void UserSetupCallback(GLFWwindow* Window);
 extern void UserFrameCallback(GLFWwindow* Window);
+
+
+namespace UserVars
+{
+	「user_vars」
+}
 
 
 「globals」

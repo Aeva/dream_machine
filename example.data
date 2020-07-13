@@ -7,6 +7,9 @@
 ; (or for "emphasis")
 
 
+(uservar int MiscVar 2048)
+
+
 (struct FnordType
 	(float ElapsedTime))
 
@@ -57,6 +60,11 @@
 
 (texture YourTextureHere BgImageFormat
 	(src "woman_taking_in_cheese_from_fire_escape.png"))
+
+
+(texture SizedTexture BgImageFormat
+	(width (div MiscVar 2))
+	(height (div MiscVar 2)))
 
 
 (renderer TextureTest

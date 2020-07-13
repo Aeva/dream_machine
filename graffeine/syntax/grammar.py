@@ -19,6 +19,15 @@ COMMON_VARS = \
 )
 
 
+SCALAR_CTYPE_NAMES = \
+(
+    "float",
+    "double",
+    "int",
+    "bool",
+)
+
+
 class Syntax:
     """
     Base class for abstract syntax objects, to be filled out by grammar Rule
@@ -149,7 +158,7 @@ class ArithmeticExpression(Syntax):
     def validate(self, expr:Optional[Any]=None):
         expr = expr or self.expr
         if type(expr) is str:
-            if not expr in COMMON_VARS:
+            if not expr in COMMON_VARS and not expr in self.env().user_vars:
                 self.error(f'Unknown variable "{expr}"', self.tokens)
         elif type(expr) is UnfoldedExpression:
             expr = cast(UnfoldedExpression, expr)
@@ -157,6 +166,27 @@ class ArithmeticExpression(Syntax):
                 self.validate(arg)
         else:
             assert(type(expr) in (int, str))
+
+
+class UserVar(Syntax):
+    """
+    This represents a user-defined variable, which may be used in expressions, and
+    may be changed by user code at run time.
+    """
+    many = "user_vars"
+    primary = "name"
+
+    def __init__(self, *args, **kargs):
+        Syntax.__init__(self, *args, **kargs)
+        uservar, self.ctype, self.name = map(str, cast(TokenList, self.tokens[:3]))
+
+    @property
+    def value(self):
+        return self.expr.expr
+
+    def validate(self):
+        if self.ctype not in SCALAR_CTYPE_NAMES:
+            self.error(f'Invalid scalar ctype: "{self.ctype}"')
 
 
 class Struct(Syntax):
@@ -968,6 +998,7 @@ class MatchRule(Rule):
 
 
 GRAMMAR = MatchRule(
+    ListRule(UserVar, Exactly("uservar"), WordRule("ctype"), WordRule("name"), ArithmeticRule()),
     ListRule(Struct, Exactly("struct"), WordRule("struct name"), SPLAT = ListRule(StructMember, WordRule("type"), WordRule("name"))),
     ListRule(Sampler, Exactly("sampler"), WordRule("sampler name"), SPLAT = MatchRule(
         ListRule(SamplerFilter, Exactly("min"), WordRule("opengl filter enum")),

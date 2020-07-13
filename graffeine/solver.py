@@ -11,6 +11,7 @@ from .expanders.window import *
 from .expanders.glsl_types import *
 from .expanders.glsl_interfaces import *
 from .expanders.cpp_interfaces import *
+from .expanders.cpp_expressions import *
 from .syntax.grammar import *
 
 
@@ -196,6 +197,9 @@ def solve(env:Program) -> SyntaxExpander:
     if env.buffers:
         uploaders += [BufferUpload(s) for s in solved_structs.values()]
 
+    # user-defined variables
+    user_vars:List[SyntaxExpander] = [ExternUserVar(v) for v in env.user_vars.values()]
+
     # expanders for generated code which is called after GL is initialized before rendering starts
     setup:List[SyntaxExpander] = \
     [
@@ -225,6 +229,7 @@ def solve(env:Program) -> SyntaxExpander:
     program.hint_profile = "GLFW_OPENGL_CORE_PROFILE"
     program.structs = structs
     program.globals = globals
+    program.user_vars = user_vars
     program.uploaders = uploaders
     program.initial_setup_hook = setup
     program.renderers = renderers

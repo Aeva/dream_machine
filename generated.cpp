@@ -27,9 +27,16 @@ float ScreenScaleY = 1.0;
 bool WindowIsDirty = true;
 GLFWwindow* Window;
 
+
 extern int CurrentRenderer = 0;
 extern void UserSetupCallback(GLFWwindow* Window);
 extern void UserFrameCallback(GLFWwindow* Window);
+
+
+namespace UserVars
+{
+	extern int MiscVar = 2048;
+}
 
 
 GLuint Shaders[5] = { 0 };
@@ -42,7 +49,7 @@ std::string ShaderPaths[5] = {
 	"generated_shaders\\blue.fs.glsl.0d4bfa50448166804174e28991b2f622.glsl"
 };
 GLuint SamplerHandles[1] = { 0 };
-GLuint TextureHandles[1] = { 0 };
+GLuint TextureHandles[2] = { 0 };
 GLuint BufferHandles[1] = { 0 };
 
 
@@ -147,6 +154,12 @@ void InitialSetup()
 			glTextureStorage2D(TextureHandles[0], 1, GL_RGBA8, Image.Width, Image.Height);
 			glObjectLabel(GL_TEXTURE, TextureHandles[0], -1, "YourTextureHere");
 			glTextureSubImage2D(TextureHandles[0], 0, 0, 0, Image.Width, Image.Height, GL_RGBA, GL_UNSIGNED_BYTE, Image.Data.data());
+		}
+		{
+			// texture "SizedTexture"
+			glCreateTextures(GL_TEXTURE_2D, 1, &TextureHandles[1]);
+			glTextureStorage2D(TextureHandles[1], 1, GL_RGBA8, (GLsizei)(UserVars::MiscVar / 2), (GLsizei)(UserVars::MiscVar / 2));
+			glObjectLabel(GL_TEXTURE, TextureHandles[1], -1, "SizedTexture");
 		}
 	}
 	{

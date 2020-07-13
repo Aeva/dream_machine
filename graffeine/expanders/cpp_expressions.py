@@ -2,6 +2,7 @@
 from typing import *
 from .common import SyntaxExpander
 from ..handy import *
+from ..syntax.grammar import UserVar, COMMON_VARS
 from ..syntax.arithmetic import UnfoldedExpression
 
 
@@ -44,6 +45,8 @@ class ValueExpander(SyntaxExpander):
 
 
 def solve_expression(expr:Any) -> SyntaxExpander:
+    if type(expr) is str and expr not in COMMON_VARS:
+        expr = f'UserVars::{expr}'
     if type(expr) in (int, float, str):
         return ValueExpander(expr)
     else:
@@ -52,3 +55,12 @@ def solve_expression(expr:Any) -> SyntaxExpander:
             return BinaryExpander(expr.cmd, expr.args)
         else:
             return CallExpander(expr.cmd, expr.args)
+
+
+class ExternUserVar(SyntaxExpander):
+    template = "extern 「type」 「name」 = 「value」;"
+    def __init__(self, user_var:UserVar):
+        SyntaxExpander.__init__(self)
+        self.type = user_var.ctype
+        self.name = user_var.name
+        self.value = solve_expression(user_var.value)
