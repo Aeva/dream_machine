@@ -10,6 +10,15 @@ from ..expanders.glsl_types import glsl_builtins
 ErrorCallback = Callable[..., None]
 
 
+COMMON_VARS = \
+(
+    "ScreenWidth",
+    "ScreenHeight",
+    "ScreenScaleX",
+    "ScreenScaleY",
+)
+
+
 class Syntax:
     """
     Base class for abstract syntax objects, to be filled out by grammar Rule
@@ -136,6 +145,18 @@ class ArithmeticExpression(Syntax):
     def __init__(self, expr:Union[FoldedExpression, UnfoldedExpression], *args, **kargs):
         Syntax.__init__(self, *args, **kargs)
         self.expr = expr
+
+    def validate(self, expr:Optional[Any]=None):
+        expr = expr or self.expr
+        if type(expr) is str:
+            if not expr in COMMON_VARS:
+                self.error(f'Unknown variable "{expr}"', self.tokens)
+        elif type(expr) is UnfoldedExpression:
+            expr = cast(UnfoldedExpression, expr)
+            for arg in expr.args:
+                self.validate(arg)
+        else:
+            assert(type(expr) in (int, str))
 
 
 class Struct(Syntax):
@@ -592,8 +613,7 @@ class TextureDimension(Syntax):
 
     @property
     def value(self):
-        assert(len(self.children) == 1)
-        return self.children[0].expr
+        return self.expr.expr
 
     def __repr__(self):
         return r'<TextureDimension {self.name} : {str(self.value)}>'
@@ -899,9 +919,10 @@ class ListRule(Rule):
             syntax = rule.validate(token, error)
             if syntax:
                 children.append(syntax)
+                child_types += rule.constructors()
         if self.splat:
             remainder = cast(Tuple[Token], token_list[len(self.rules):])
-            child_types = self.splat.constructors()
+            child_types += self.splat.constructors()
             for token in remainder:
                 syntax = self.splat.validate(token, error)
                 children.append(cast(Syntax, syntax))
