@@ -24,19 +24,13 @@ class UnfoldedExpression:
     Represents a (potentially foldable) unfolded arithmetic expression, which
     may contain other unfolded arithmetic expressions.
     """
-    def __init__(self, token, error:ErrorCallback, cmd, args):
+    def __init__(self, token, error:ErrorCallback, cmd:str, args):
         self._token = token
         self._error = error
         self.cmd = cmd
         self.args = args
-        pivot = 0
-        for arg in args:
-            if type(arg) in (int, float):
-                pivot += 1
-            else:
-                break
-        self.foldable = self.args[:pivot]
-        self.unfoldable = self.args[pivot:]
+        self.rewrite()
+        self.pivot()
 
     def __repr__(self):
         return f'<UnfoldedExpression ({self.cmd} {" ".join(map(repr, self.args))})>'
@@ -45,8 +39,9 @@ class UnfoldedExpression:
         self._error(hint, self._token, ArithmeticError)
 
     def route(self):
-        fn = getattr(self, f'op_{self.cmd}')
-        if fn is None:
+        try:
+            fn = getattr(self, f'op_{self.cmd}')
+        except AttributeError:
             self.error(f'Unknown arithmetic operation: "{self.cmd}"')
         return fn()
 
@@ -58,6 +53,26 @@ class UnfoldedExpression:
         else:
             prepend = [] if folded is None else [folded]
             return UnfoldedExpression(self._token, self._error, self.cmd, prepend + self.unfoldable)
+
+    def rewrite(self):
+        if self.cmd == "mad":
+            if len(self.args) < 3 or is_even(len(self.args)):
+                self.error(f'Arithmetic operation "{self.cmd}" expects an odd number of at least 3 parameters, got {len(self.args)}.')
+            evens = self.args[::2]
+            odds = self.args[1::2]
+            last = evens.pop()
+            self.args = [UnfoldedExpression(self._token, self._error, "mul", pair).fold() for pair in zip(evens, odds)] + [last]
+            self.cmd = "add"
+
+    def pivot(self):
+        pivot = 0
+        for arg in self.args:
+            if type(arg) in (int, float):
+                pivot += 1
+            else:
+                break
+        self.foldable = self.args[:pivot]
+        self.unfoldable = self.args[pivot:]
 
     def variadic(self, min_args=2):
         if len(self.args) < min_args:
@@ -96,26 +111,6 @@ class UnfoldedExpression:
         self.variadic()
         if self.foldable:
             return reduce(lambda x, y: x / y, self.foldable)
-        return None
-
-    def op_mad(self):
-        if len(self.args) < 3 or is_even(len(self.args)):
-            self.error(f'Arithmetic operation "{self.cmd}" expects an odd number of at least 3 parameters, got {len(self.args)}.')
-        if self.foldable and is_even(len(self.foldable)):
-            self.unfoldable = [self.foldable.pop()] + self.unfoldable
-        if len(self.foldable) < 3:
-            self.unfoldable = self.foldable + self.unfoldable
-            self.foldable = []
-
-        def inner(a, b, *c):
-            if len(c) == 1:
-                return a * b + c[0]
-            else:
-                assert(len(c) >= 3)
-                return a * b + inner(*c)
-
-        if self.foldable:
-            return inner(*self.foldable)
         return None
 
     def op_min(self):
@@ -174,7 +169,7 @@ def fold(token:Token, error:ErrorCallback) -> Union[FoldedExpression, UnfoldedEx
         if type(cmd) is not TokenWord:
             error("Expected TokenWord", cmd)
         args = [fold(t, error) for t in cast(Tuple[Token], tokens[1:])]
-        expr = UnfoldedExpression(token, error, cmd, args)
+        expr = UnfoldedExpression(token, error, str(cmd), args)
         return expr.fold()
 
     else:
