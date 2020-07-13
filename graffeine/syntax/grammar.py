@@ -158,14 +158,14 @@ class ArithmeticExpression(Syntax):
     def validate(self, expr:Optional[Any]=None):
         expr = expr or self.expr
         if type(expr) is str:
-            if not expr in COMMON_VARS and not expr in self.env().user_vars:
+            if not expr in COMMON_VARS and not expr in cast(Program, self.env()).user_vars:
                 self.error(f'Unknown variable "{expr}"', self.tokens)
         elif type(expr) is UnfoldedExpression:
             expr = cast(UnfoldedExpression, expr)
             for arg in expr.args:
                 self.validate(arg)
         else:
-            assert(type(expr) in (int, str))
+            assert(type(expr) in (int, float))
 
 
 class UserVar(Syntax):
@@ -815,6 +815,7 @@ class Program(Syntax):
     This is the syntax graph root, and represents everything within your program.
     """
     many = "programs"
+    user_vars:dict
     structs:dict
     buffers:dict
     samplers:dict

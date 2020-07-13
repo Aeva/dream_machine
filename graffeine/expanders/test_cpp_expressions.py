@@ -21,4 +21,4 @@ def case(source:str):
 def test_basic():
     src = "(div 6 4 2 fnord 5 2)"
     fnord = case(src)
-    assert(str(fnord) == "(0.75 / (fnord * 10))")
+    assert(str(fnord) == "(0.75 / (UserVars::fnord * 10))")
