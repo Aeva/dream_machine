@@ -15,7 +15,7 @@ def case(source:str):
     def error(hint:str, token:Token, ErrorType=GrammarError):
         message = p.message(hint, *token.pos(), *token.pos())
         raise ErrorType(message)
-    return expression_expander(fold(tokens[0], error))
+    return solve_expression(fold(tokens[0], error))
 
 
 def test_basic():

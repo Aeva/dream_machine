@@ -22,12 +22,12 @@ class BinaryExpander(SyntaxExpander):
         self.op = BINARY_REWRITE[cmd]
         if len(args) == 2:
             print("args:", args)
-            self.lhs = expression_expander(args[0])
-            self.rhs = expression_expander(args[1])
+            self.lhs = solve_expression(args[0])
+            self.rhs = solve_expression(args[1])
         else:
             assert(len(args)) > 2
             self.lhs = BinaryExpander(cmd, args[:-1])
-            self.rhs = expression_expander(args[-1])
+            self.rhs = solve_expression(args[-1])
 
 
 class CallExpander(SyntaxExpander):
@@ -36,14 +36,14 @@ class CallExpander(SyntaxExpander):
     def __init__(self, cmd:str, args:list):
         SyntaxExpander.__init__(self)
         self.cmd = cmd
-        self.args = ", ".join([str(expression_expander(a)) for a in args])
+        self.args = ", ".join([str(solve_expression(a)) for a in args])
 
 
 class ValueExpander(SyntaxExpander):
     template = "「wrapped」"
 
 
-def expression_expander(expr:Any) -> SyntaxExpander:
+def solve_expression(expr:Any) -> SyntaxExpander:
     if type(expr) in (int, float, str):
         return ValueExpander(expr)
     else:

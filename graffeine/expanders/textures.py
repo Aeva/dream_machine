@@ -1,6 +1,7 @@
 ﻿
 from typing import *
 from .common import SyntaxExpander
+from .cpp_expressions import solve_expression
 from ..handy import CAST
 from ..syntax.grammar import Texture, TextureDimension, RendererDrawBind, Program
 
@@ -34,7 +35,7 @@ class Texture2DSetup(SyntaxExpander):
 {
 	// texture "「name:str」"
 	glCreateTextures(GL_TEXTURE_2D, 1, &TextureHandles[「handle:int」]);
-	glTextureStorage2D(TextureHandles[「handle:int」], 1, 「format:str」, 「width:int」, 「height:int」);
+	glTextureStorage2D(TextureHandles[「handle:int」], 1, 「format:str」, (GLsizei)「width」, (GLsizei)「height」);
 	glObjectLabel(GL_TEXTURE, TextureHandles[「handle:int」], -1, \"「name:str」\");
 }
 """.strip()
@@ -44,8 +45,8 @@ class Texture2DSetup(SyntaxExpander):
         self.name = texture.name
         self.handle = texture.handle
         self.format = texture.format.format
-        self.width = cast(TextureDimension, texture.width).value
-        self.height = cast(TextureDimension, texture.height).value
+        self.width = solve_expression(texture.width)
+        self.height = solve_expression(texture.height)
 
 
 class Texture3DSetup(SyntaxExpander):
@@ -53,7 +54,7 @@ class Texture3DSetup(SyntaxExpander):
 {
 	// texture "「name:str」"
 	glCreateTextures(GL_TEXTURE_3D, 1, &TextureHandles[「handle:int」]);
-	glTextureStorage3D(TextureHandles[「handle:int」], 1, 「format:str」, 「width:int」, 「height:int」, 「depth:int」);
+	glTextureStorage3D(TextureHandles[「handle:int」], 1, 「format:str」, (GLsizei)「width」, (GLsizei)「height」, (GLsizei)「depth」);
 	glObjectLabel(GL_TEXTURE, TextureHandles[「handle:int」], -1, \"「name:str」\");
 }
 """.strip()
@@ -63,9 +64,9 @@ class Texture3DSetup(SyntaxExpander):
         self.name = texture.name
         self.handle = texture.handle
         self.format = texture.format.format
-        self.width = cast(TextureDimension, texture.width).value
-        self.height = cast(TextureDimension, texture.height).value
-        self.depth = cast(TextureDimension, texture.depth).value
+        self.width = solve_expression(texture.width)
+        self.height = solve_expression(texture.height)
+        self.depth = solve_expression(texture.depth)
 
 
 class BindTexture(SyntaxExpander):
@@ -91,7 +92,7 @@ class SetupTextures(SyntaxExpander):
         for texture in env.textures.values():
             if texture.src:
                 self.wrapped.append(PngTextureSetup(texture))
-            elif texture.format == "GL_TEXTURE_2D":
+            elif texture.format.target == "GL_TEXTURE_2D":
                 self.wrapped.append(Texture2DSetup(texture))
-            elif texture.format == "GL_TEXTURE_3D":
+            elif texture.format.target == "GL_TEXTURE_3D":
                 self.wrapped.append(Texture3DSetup(texture))
