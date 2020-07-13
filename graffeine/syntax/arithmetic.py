@@ -1,14 +1,20 @@
 
 import math
 from typing import *
-from functools import reduce
 from .tokens import *
 from .parser import Parser
 parser:Parser
 
 
+Number = Union[int, float]
+FoldedExpression = Union[Number, str]
+BinaryOperator = Callable[[Any, Number, Number], Number]
 ErrorCallback = Callable[..., None]
-FoldedExpression = Union[int, float, str]
+
+
+def binary_op(fn:BinaryOperator) -> BinaryOperator:
+    setattr(fn, "tag", "binary")
+    return fn
 
 
 class ArithmeticError(Exception):
@@ -30,32 +36,14 @@ class UnfoldedExpression:
         self.cmd = cmd
         self.args = args
         self.rewrite()
-        self.pivot()
 
     def __repr__(self):
         return f'<UnfoldedExpression ({self.cmd} {" ".join(map(repr, self.args))})>'
 
-    def error(self, hint:str):
-        self._error(hint, self._token, ArithmeticError)
-
-    def route(self):
-        try:
-            fn = getattr(self, f'op_{self.cmd}')
-        except AttributeError:
-            self.error(f'Unknown arithmetic operation: "{self.cmd}"')
-        return fn()
-
-    def fold(self):
-        folded = self.route()
-        if not self.unfoldable:
-            assert(folded is not None)
-            return folded
-        else:
-            prepend = [] if folded is None else [folded]
-            return UnfoldedExpression(self._token, self._error, self.cmd, prepend + self.unfoldable)
-
     def rewrite(self):
         if self.cmd == "mad":
+            # Rewrites mads in the form of (add (mul a b) (mul c d) e) to make
+            # constant folding easier and better.
             if len(self.args) < 3 or is_even(len(self.args)):
                 self.error(f'Arithmetic operation "{self.cmd}" expects an odd number of at least 3 parameters, got {len(self.args)}.')
             evens = self.args[::2]
@@ -64,84 +52,103 @@ class UnfoldedExpression:
             self.args = [UnfoldedExpression(self._token, self._error, "mul", pair).fold() for pair in zip(evens, odds)] + [last]
             self.cmd = "add"
 
-    def pivot(self):
-        pivot = 0
+        if self.cmd == "div" and len(self.args) > 2:
+            # Rewrites divs in the form of (div num num (mul pivot etc etc etc))
+            # so everything can be folded instead of just the beginning.
+            pivot = 0
+            for arg in self.args:
+                if type(arg) in (int, float):
+                    pivot += 1
+                else:
+                    break
+            pivot = max(pivot, 1)
+            keep = self.args[:pivot]
+            rewrite = self.args[pivot:]
+            if rewrite:
+                self.args = keep + [UnfoldedExpression(self._token, self._error, "mul", rewrite).fold()]
+
+    def fold_binary_op(self, fn):
+        if len(self.args) < 2:
+            self.error(f'Arithmetic operation "{self.cmd}" expects at least {min_args} parameters, got {len(self.args)}.')
+        new_args = []
+        acc = None
         for arg in self.args:
             if type(arg) in (int, float):
-                pivot += 1
+                if acc is None:
+                    acc = arg
+                    continue
+                acc = fn(acc, arg)
+                continue
             else:
-                break
-        self.foldable = self.args[:pivot]
-        self.unfoldable = self.args[pivot:]
+                if acc is not None:
+                    new_args.append(acc)
+                    acc = None
+                new_args.append(arg)
+                continue
+        if new_args:
+            if acc is not None:
+                new_args.append(acc)
+            self.args = new_args
+            return self
+        else:
+            assert(acc is not None)
+            return acc
 
-    def variadic(self, min_args=2):
-        if len(self.args) < min_args:
-            self.error(f'Arithmetic operation "{self.cmd}" expects at least {min_args} parameters, got {len(self.args)}.')
-        if len(self.foldable) < min_args:
-            self.unfoldable = self.foldable + self.unfoldable
-            self.foldable = []
+    def fold_fixed_op(self, fn):
+        if [i for i in self.args if not type(i) in (int, float)]:
+            return self
+        else:
+            return fn()
+
+    def fold(self):
+        try:
+            fn = getattr(self, f'op_{self.cmd}')
+        except AttributeError:
+            self.error(f'Unknown arithmetic operation: "{self.cmd}"')
+        if getattr(fn, "tag", "") == "binary":
+            return self.fold_binary_op(fn)
+        else:
+            return self.fold_fixed_op(fn)
 
     def fixed(self, expected):
         if len(self.args) < expected:
             self.error(f'Arithmetic operation "{self.cmd}" expects exactly {expected} parameters, got {len(self.args)}.')
-        if self.unfoldable:
-            # all or nothing
-            self.unfoldable = self.foldable + self.unfoldable
-            self.foldable = []
 
-    def op_add(self):
-        self.variadic()
-        if self.foldable:
-            return sum(self.foldable)
-        return None
+    @binary_op
+    def op_add(self, a:Number, b:Number) -> Number:
+        return a + b
 
-    def op_sub(self):
-        self.variadic()
-        if self.foldable:
-            return self.foldable[0] - sum(self.foldable[1:])
-        return None
+    @binary_op
+    def op_sub(self, a:Number, b:Number) -> Number:
+        return a - b
 
-    def op_mul(self):
-        self.variadic()
-        if self.foldable:
-            return reduce(lambda x, y: x * y, self.foldable)
-        return None
+    @binary_op
+    def op_mul(self, a:Number, b:Number) -> Number:
+        return a * b
 
-    def op_div(self):
-        self.variadic()
-        if self.foldable:
-            return reduce(lambda x, y: x / y, self.foldable)
-        return None
+    @binary_op
+    def op_div(self, a:Number, b:Number) -> Number:
+        return a / b
 
-    def op_min(self):
-        self.variadic()
-        if self.foldable:
-            return min(self.foldable)
-        return None
+    @binary_op
+    def op_min(self, a:Number, b:Number) -> Number:
+        return min(a, b)
 
-    def op_max(self):
-        self.variadic()
-        if self.foldable:
-            return max(self.foldable)
-        return None
+    @binary_op
+    def op_max(self, a:Number, b:Number) -> Number:
+        return max(a, b)
 
     def op_sin(self):
         self.fixed(1)
-        if self.foldable:
-            return math.sin(*self.foldable)
-        return None
+        return math.sin(*self.args)
 
     def op_cos(self):
         self.fixed(1)
-        if self.foldable:
-            return math.cos(*self.foldable)
-        return None
+        return math.cos(*self.args)
 
     def op_tan(self):
         self.fixed(1)
-        if self.foldable:
-            return math.tan(*self.foldable)
-        return None
+        return math.tan(*self.args)
 
 
 def fold(token:Token, error:ErrorCallback) -> Union[FoldedExpression, UnfoldedExpression]:

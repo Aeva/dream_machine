@@ -119,3 +119,42 @@ def test_partial_fold_1():
     assert(len(fnord.args) == 2)
     assert(fnord.args[0] == 2 * 3 * 4 * 5 * 6)
     assert(fnord.args[1] == "some_var")
+
+
+def test_partial_fold_2():
+    src = "(mul 2 3 some_var 4 5 6)"
+    fnord = fold_src(src)
+    assert(type(fnord) is UnfoldedExpression)
+    assert(str(fnord.cmd) == "mul")
+    assert(len(fnord.args) == 3)
+    assert(fnord.args[0] == 2 * 3)
+    assert(fnord.args[1] == "some_var")
+    assert(fnord.args[2] == 4 * 5 * 6)
+
+
+def test_partial_fold_3():
+    src = "(mad 2 3 fnord 4 5 6 7)"
+    fnord = fold_src(src)
+    assert(type(fnord) is UnfoldedExpression)
+    assert(type(fnord) is UnfoldedExpression)
+    assert(str(fnord.cmd) == "add")
+    assert(len(fnord.args) == 3)
+    assert(fnord.args[0] == 2 * 3)
+    assert(type(fnord.args[1]) is UnfoldedExpression)
+    assert(len(fnord.args[1].args) == 2)
+    assert(fnord.args[1].args[0] == "fnord")
+    assert(fnord.args[1].args[1] == 4)
+    assert(fnord.args[2] == 37)
+
+
+def test_partial_fold_4():
+    src = "(mul 2 foo 4 bar 6)"
+    fnord = fold_src(src)
+    assert(type(fnord) is UnfoldedExpression)
+    assert(str(fnord.cmd) == "mul")
+    assert(len(fnord.args) == 5)
+    assert(fnord.args[0] == 2)
+    assert(fnord.args[1] == "foo")
+    assert(fnord.args[2] == 4)
+    assert(fnord.args[3] == "bar")
+    assert(fnord.args[4] == 6)
