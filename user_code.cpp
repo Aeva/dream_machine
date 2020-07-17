@@ -20,8 +20,4 @@ extern void UserFrameCallback(GLFWwindow* Window)
 	{
 		CurrentRenderer = 1;
 	}
-	else if (glfwGetKey(Window, GLFW_KEY_3) == GLFW_PRESS)
-	{
-		CurrentRenderer = 2;
-	}
 }

@@ -28,6 +28,84 @@ SCALAR_CTYPE_NAMES = \
 )
 
 
+DEPTH_TEXTURE_FORMATS = \
+(
+    "GL_DEPTH_COMPONENT",
+    "GL_DEPTH_COMPONENT16",
+    " GL_DEPTH_COMPONENT24",
+    "GL_DEPTH_COMPONENT32F",
+)
+
+
+COLOR_TEXTURE_FORMATS = \
+(
+    "GL_R8",
+    "GL_R8_SNORM",
+    "GL_R16",
+    "GL_R16_SNORM",
+    "GL_RG8",
+    "GL_RG8_SNORM",
+    "GL_RG16",
+    "GL_RG16_SNORM",
+    "GL_R3_G3_B2",
+    "GL_RGB4",
+    "GL_RGB5",
+    "GL_RGB8",
+    "GL_RGB8_SNORM",
+    "GL_RGB10",
+    "GL_RGB12",
+    "GL_RGB16_SNORM",
+    "GL_RGBA2",
+    "GL_RGBA4",
+    "GL_RGB5_A1",
+    "GL_RGBA8",
+    "GL_RGBA8_SNORM",
+    "GL_RGB10_A2",
+    "GL_RGB10_A2UI",
+    "GL_RGBA12",
+    "GL_RGBA16",
+    "GL_SRGB8",
+    "GL_SRGB8_ALPHA8",
+    "GL_R16F",
+    "GL_RG16F",
+    "GL_RGB16F",
+    "GL_RGBA16F",
+    "GL_R32F",
+    "GL_RG32F",
+    "GL_RGB32F",
+    "GL_RGBA32F",
+    "GL_R11F_G11F_B10F",
+    "GL_RGB9_E5",
+    "GL_R8I",
+    "GL_R8UI",
+    "GL_R16I",
+    "GL_R16UI",
+    "GL_R32I",
+    "GL_R32UI",
+    "GL_RG8I",
+    "GL_RG8UI",
+    "GL_RG16I",
+    "GL_RG16UI",
+    "GL_RG32I",
+    "GL_RG32UI",
+    "GL_RGB8I",
+    "GL_RGB8UI",
+    "GL_RGB16I",
+    "GL_RGB16UI",
+    "GL_RGB32I",
+    "GL_RGB32UI",
+    "GL_RGBA8I",
+    "GL_RGBA8UI",
+    "GL_RGBA16I",
+    "GL_RGBA16UI",
+    "GL_RGBA32I",
+    "GL_RGBA32UI",
+)
+
+
+ALL_TEXTURE_FORMATS = DEPTH_TEXTURE_FORMATS + COLOR_TEXTURE_FORMATS
+
+
 class Syntax:
     """
     Base class for abstract syntax objects, to be filled out by grammar Rule
@@ -314,7 +392,7 @@ class Format(Syntax):
         Syntax.validate(self)
         if self.target != "GL_TEXTURE_2D":
             self.error(f'Unsupported texture target: "{self.target}"')
-        if self.format != "GL_RGBA8":
+        if self.format not in ALL_TEXTURE_FORMATS:
             self.error(f'Unsupported texture format: "{self.format}"')
         if self.sampler is None:
             self.error(f'Unknown sampler: "{self._sampler}"')
@@ -508,6 +586,66 @@ class PipelineCopy(Syntax):
 
     def __repr__(self):
         return f'<PipelineCopy {self.target}>'
+
+
+class PipelineAttachments(Syntax):
+    """
+    A framebuffer definition.
+    """
+    one = "attachments"
+
+    def __init__(self, *args, **kargs):
+        Syntax.__init__(self, *args, **kargs)
+        self.texture_names = tuple(map(str, cast(TokenList, self.tokens[1:])))
+
+    def is_unique(self) -> bool:
+        """
+        Returns True if this PipelineAttachments has a unique set of textures.
+        """
+        for pipeline in self.env().pipelines.values():
+            if pipeline == self.parent or pipeline.attachments is None:
+                continue
+            if pipeline.attachments.texture_names == self.texture_names:
+                return False
+        return True
+
+    @property
+    def handle(self) -> int:
+        unique_params = sorted(self.env().unique_pipeline_attachments().keys())
+        handles = {names:index for index, names in enumerate(unique_params)}
+        return handles[self.texture_names]
+
+    @property
+    def name(self) -> Optional[str]:
+        if self.is_unique():
+            return self.parent.name
+        else:
+            return None
+
+    @property
+    def textures(self):
+        gen = (self.env().textures.get(n) for n in self.texture_names)
+        return [t for t in gen if t is not None]
+
+    @property
+    def color(self):
+        return [t for t in self.textures if t.format.format in COLOR_TEXTURE_FORMATS]
+
+    @property
+    def depth(self):
+        return [t for t in self.textures if t.format.format in DEPTH_TEXTURE_FORMATS]
+
+    def validate(self):
+        Syntax.validate(self)
+        for name in self.texture_names:
+            texture = self.env().textures.get(name)
+            if texture is None:
+                self.error(f'Unknown texture "{name}"')
+            texture = CAST(Texture, texture)
+            if texture.format.target != "GL_TEXTURE_2D":
+                self.error(f'Texture "{name}" cannot be used as a render target, its format "{texture.format.name}" does not target GL_TEXTURE_2D.')
+        if len(self.depth) > 1:
+            self.error(f'Pipeline outputs can have at most one depth texture, got {(len(self.depth))}.')
 
 
 class Buffer(Syntax):
@@ -829,6 +967,22 @@ class Program(Syntax):
         self.rewrite()
         self.validate()
 
+    def unique_pipeline_attachments(self):
+        return {p.attachments.texture_names:p.attachments for p in self.pipelines.values() if p.attachments}
+
+    @property
+    def pipeline_attachments(self) -> List[PipelineAttachments]:
+        """
+        Returns a list of PipelineAttachments with unique parameters, sorted by
+        handle.  When two or more PipelineAttachments have the same parameters,
+        only one is present in this list.
+
+        Therefor, this should not be used in situations where you might need to
+        map back to source via tokens.
+        """
+        unique = self.unique_pipeline_attachments()
+        return [unique[key] for key in sorted(unique)]
+
 
 class Rule:
     """
@@ -956,7 +1110,8 @@ class ListRule(Rule):
             child_types += self.splat.constructors()
             for token in remainder:
                 syntax = self.splat.validate(token, error)
-                children.append(cast(Syntax, syntax))
+                if syntax is not None:
+                    children.append(cast(Syntax, syntax))
         return self.construct(token_list, children, child_types)
 
     def match(self, token_list:TokenList) -> bool:
@@ -1012,7 +1167,8 @@ GRAMMAR = MatchRule(
         ListRule(PipelineInterface, Exactly("interface"), WordRule("interface name"), WordRule("interface type")),
         ListRule(PipelineFlag, Exactly("enable"), WordRule("opengl capability enum")),
         ListRule(PipelineFlag, Exactly("disable"), WordRule("opengl capability enum")),
-        ListRule(PipelineCopy, Exactly("copy"), WordRule("draw name")))),
+        ListRule(PipelineCopy, Exactly("copy"), WordRule("draw name")),
+        ListRule(PipelineAttachments, Exactly("out"), SPLAT = WordRule("texture name")))),
     ListRule(Buffer, Exactly("buffer"), WordRule("buffer name"), WordRule("buffer type")),
     ListRule(Texture, Exactly("texture"), WordRule("texture name"), WordRule("texture type"), SPLAT = MatchRule(
         ListRule(TextureSrc, Exactly("src"), StringRule("image path")),

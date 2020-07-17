@@ -28,7 +28,30 @@
 	(mag GL_LINEAR))
 
 
+(sampler PointSampler
+	(min GL_NEAREST)
+	(mag GL_NEAREST))
+
+
 (format BgImageFormat GL_TEXTURE_2D GL_RGBA8 SomeSampler)
+
+
+(format DepthFormat GL_TEXTURE_2D GL_DEPTH_COMPONENT32F PointSampler)
+
+
+(texture RedColorTarget BgImageFormat
+	(width ScreenWidth)
+	(height ScreenHeight))
+
+
+(texture BlueColorTarget BgImageFormat
+	(width ScreenWidth)
+	(height ScreenHeight))
+
+
+(texture SomeDepthTarget DepthFormat
+	(width ScreenWidth)
+	(height ScreenHeight))
 
 
 (pipeline TextureTest
@@ -47,12 +70,26 @@
 	(interface Fnord FnordType)
 	(interface Whatsit WhatsitType)
 	(disable GL_DEPTH_TEST)
-	(disable GL_CULL_FACE))
+	(disable GL_CULL_FACE)
+	(out
+		RedColorTarget
+		SomeDepthTarget))
 
 
 (pipeline SplatBlue
 	(copy SplatRed)
-	(fs "shaders/blue.fs.glsl"))
+	(fs "shaders/blue.fs.glsl")
+	(out
+		BlueColorTarget
+		SomeDepthTarget))
+
+
+(pipeline Combiner
+	(vs "shaders/splat.vs.glsl")
+	(fs "shaders/combiner.fs.glsl")
+	(interface Fnord FnordType)
+	(interface RedImage BgImageFormat)
+	(interface BlueImage BgImageFormat))
 
 
 (buffer SomeHandle FnordType)
@@ -62,11 +99,6 @@
 	(src "woman_taking_in_cheese_from_fire_escape.png"))
 
 
-(texture SizedTexture BgImageFormat
-	(width (div MiscVar 2))
-	(height (div MiscVar 2)))
-
-
 (renderer TextureTest
 	(update SomeHandle)
 	(draw TextureTest
@@ -74,13 +106,13 @@
 		(bind BgImage YourTextureHere)))
 
 
-(renderer Blue
-	(update SomeHandle)
-	(draw SplatBlue
-		(bind Fnord SomeHandle)))
-
-
-(renderer Red
+(renderer Multipass
 	(update SomeHandle)
 	(draw SplatRed
+		(bind Fnord SomeHandle))
+	(draw SplatBlue
+		(bind Fnord SomeHandle))
+	(draw Combiner
+		(bind RedImage RedColorTarget)
+		(bind BlueImage BlueColorTarget)
 		(bind Fnord SomeHandle)))

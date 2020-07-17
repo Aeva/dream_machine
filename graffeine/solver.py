@@ -4,6 +4,7 @@ from .expanders.common import *
 from .expanders.buffers import *
 from .expanders.samplers import *
 from .expanders.textures import *
+from .expanders.render_targets import *
 from .expanders.shaders import *
 from .expanders.drawspatch import *
 from .expanders.renderers import *
@@ -118,6 +119,12 @@ def solve_renderers(env:Program) -> Tuple[List[SyntaxExpander], SyntaxExpander]:
         [
             ChangeProgram(program_handle),
         ]
+
+        if (pipeline.attachments):
+            setup.append(BindFrameBuffer(pipeline.attachments))
+        else:
+            setup.append(BindBackBuffer())
+
         setup += \
         [
             BindUniformBuffer(
@@ -189,6 +196,10 @@ def solve(env:Program) -> SyntaxExpander:
     if env.textures:
         globals.append(TextureHandles(len(env.textures)))
 
+    framebuffers = env.pipeline_attachments
+    if framebuffers:
+        globals.append(FrameBufferHandles(len(framebuffers)))
+
     if env.buffers:
         globals.append(BufferHandles(len(env.buffers)))
 
@@ -212,6 +223,9 @@ def solve(env:Program) -> SyntaxExpander:
 
     if env.textures:
         setup.append(SetupTextures(env))
+
+    if framebuffers:
+        setup.append(SetupFrameBuffers(framebuffers))
 
     if env.buffers:
         setup.append(SetupBuffers(env, solved_structs))

@@ -39,17 +39,20 @@ namespace UserVars
 }
 
 
-GLuint Shaders[5] = { 0 };
-GLuint ShaderPrograms[3] = { 0 };
-std::string ShaderPaths[5] = {
+GLuint Shaders[7] = { 0 };
+GLuint ShaderPrograms[4] = { 0 };
+std::string ShaderPaths[7] = {
 	"generated_shaders\\splat.vs.glsl.da0e6628e3cf2c7d201d3564cca3fd66.glsl",
 	"generated_shaders\\texture.fs.glsl.9dde9a16c1c97192c8ca7823dfceb4be.glsl",
 	"generated_shaders\\splat.vs.glsl.3fdbf6c0576b6e6d6cba510e637d0a75.glsl",
-	"generated_shaders\\red.fs.glsl.72e5034f0934a476f7cd05199a16f1d2.glsl",
-	"generated_shaders\\blue.fs.glsl.0d4bfa50448166804174e28991b2f622.glsl"
+	"generated_shaders\\red.fs.glsl.7efb73fe9ee0b2867c967f862c5b3441.glsl",
+	"generated_shaders\\blue.fs.glsl.303e9faa31a7fa65b6a278ccc0d0c40d.glsl",
+	"generated_shaders\\splat.vs.glsl.956f38de568d48ee26a8391493acc0d0.glsl",
+	"generated_shaders\\combiner.fs.glsl.8c213f21c8ddb0c9c81f2badf0d109b0.glsl"
 };
-GLuint SamplerHandles[1] = { 0 };
-GLuint TextureHandles[2] = { 0 };
+GLuint SamplerHandles[2] = { 0 };
+GLuint TextureHandles[4] = { 0 };
+GLuint FrameBufferHandles[2] = { 0 };
 GLuint BufferHandles[1] = { 0 };
 
 
@@ -125,6 +128,8 @@ void InitialSetup()
 	Shaders[2] = CompileShader(ShaderPaths[2], GL_VERTEX_SHADER);
 	Shaders[3] = CompileShader(ShaderPaths[3], GL_FRAGMENT_SHADER);
 	Shaders[4] = CompileShader(ShaderPaths[4], GL_FRAGMENT_SHADER);
+	Shaders[5] = CompileShader(ShaderPaths[5], GL_VERTEX_SHADER);
+	Shaders[6] = CompileShader(ShaderPaths[6], GL_FRAGMENT_SHADER);
 	{
 		GLuint Stages[2] = { Shaders[0], Shaders[1] };
 		ShaderPrograms[0] = LinkShaders("TextureTest", &Stages[0], 2);
@@ -138,28 +143,64 @@ void InitialSetup()
 		ShaderPrograms[2] = LinkShaders("SplatBlue", &Stages[0], 2);
 	}
 	{
-		glCreateSamplers(1, &SamplerHandles[0]);
+		GLuint Stages[2] = { Shaders[5], Shaders[6] };
+		ShaderPrograms[3] = LinkShaders("Combiner", &Stages[0], 2);
+	}
+	{
+		glCreateSamplers(2, &SamplerHandles[0]);
 		{
 			// sampler "SomeSampler"
 			glSamplerParameteri(SamplerHandles[0], GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 			glSamplerParameteri(SamplerHandles[0], GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 			glObjectLabel(GL_SAMPLER, SamplerHandles[0], -1, "SomeSampler");
 		}
+		{
+			// sampler "PointSampler"
+			glSamplerParameteri(SamplerHandles[1], GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+			glSamplerParameteri(SamplerHandles[1], GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			glObjectLabel(GL_SAMPLER, SamplerHandles[1], -1, "PointSampler");
+		}
 	}
 	{
 		{
-			// texture "YourTextureHere"
-			ImageData Image = ReadPng("woman_taking_in_cheese_from_fire_escape.png");
+			// texture "RedColorTarget"
 			glCreateTextures(GL_TEXTURE_2D, 1, &TextureHandles[0]);
-			glTextureStorage2D(TextureHandles[0], 1, GL_RGBA8, Image.Width, Image.Height);
-			glObjectLabel(GL_TEXTURE, TextureHandles[0], -1, "YourTextureHere");
-			glTextureSubImage2D(TextureHandles[0], 0, 0, 0, Image.Width, Image.Height, GL_RGBA, GL_UNSIGNED_BYTE, Image.Data.data());
+			glTextureStorage2D(TextureHandles[0], 1, GL_RGBA8, (GLsizei)ScreenWidth, (GLsizei)ScreenHeight);
+			glObjectLabel(GL_TEXTURE, TextureHandles[0], -1, "RedColorTarget");
 		}
 		{
-			// texture "SizedTexture"
+			// texture "BlueColorTarget"
 			glCreateTextures(GL_TEXTURE_2D, 1, &TextureHandles[1]);
-			glTextureStorage2D(TextureHandles[1], 1, GL_RGBA8, (GLsizei)(UserVars::MiscVar / 2), (GLsizei)(UserVars::MiscVar / 2));
-			glObjectLabel(GL_TEXTURE, TextureHandles[1], -1, "SizedTexture");
+			glTextureStorage2D(TextureHandles[1], 1, GL_RGBA8, (GLsizei)ScreenWidth, (GLsizei)ScreenHeight);
+			glObjectLabel(GL_TEXTURE, TextureHandles[1], -1, "BlueColorTarget");
+		}
+		{
+			// texture "SomeDepthTarget"
+			glCreateTextures(GL_TEXTURE_2D, 1, &TextureHandles[2]);
+			glTextureStorage2D(TextureHandles[2], 1, GL_DEPTH_COMPONENT32F, (GLsizei)ScreenWidth, (GLsizei)ScreenHeight);
+			glObjectLabel(GL_TEXTURE, TextureHandles[2], -1, "SomeDepthTarget");
+		}
+		{
+			// texture "YourTextureHere"
+			ImageData Image = ReadPng("woman_taking_in_cheese_from_fire_escape.png");
+			glCreateTextures(GL_TEXTURE_2D, 1, &TextureHandles[3]);
+			glTextureStorage2D(TextureHandles[3], 1, GL_RGBA8, Image.Width, Image.Height);
+			glObjectLabel(GL_TEXTURE, TextureHandles[3], -1, "YourTextureHere");
+			glTextureSubImage2D(TextureHandles[3], 0, 0, 0, Image.Width, Image.Height, GL_RGBA, GL_UNSIGNED_BYTE, Image.Data.data());
+		}
+	}
+	{
+		{
+			glCreateFramebuffers(1, &FrameBufferHandles[0]);
+			glNamedFramebufferTexture(FrameBufferHandles[0], GL_COLOR_ATTACHMENT0, TextureHandles[1], 0);
+			glNamedFramebufferTexture(FrameBufferHandles[0], GL_DEPTH_ATTACHMENT, TextureHandles[2], 0);
+			glObjectLabel(GL_FRAMEBUFFER, FrameBufferHandles[0], -1, "SplatBlue");
+		}
+		{
+			glCreateFramebuffers(1, &FrameBufferHandles[1]);
+			glNamedFramebufferTexture(FrameBufferHandles[1], GL_COLOR_ATTACHMENT0, TextureHandles[0], 0);
+			glNamedFramebufferTexture(FrameBufferHandles[1], GL_DEPTH_ATTACHMENT, TextureHandles[2], 0);
+			glObjectLabel(GL_FRAMEBUFFER, FrameBufferHandles[1], -1, "SplatRed");
 		}
 	}
 	{
@@ -188,8 +229,9 @@ namespace Renderer
 		{
 			glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "TextureTest");
 			glUseProgram(ShaderPrograms[0]);
+			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 			glBindBufferBase(GL_UNIFORM_BUFFER, 0, BufferHandles[0]);
-			glBindTextureUnit(0, TextureHandles[0]);
+			glBindTextureUnit(0, TextureHandles[3]);
 			glBindSampler(0, SamplerHandles[0]);
 			glDisable(GL_DEPTH_TEST);
 			glDisable(GL_CULL_FACE);
@@ -197,27 +239,7 @@ namespace Renderer
 			glPopDebugGroup();
 		}
 	}
-	void Blue(int FrameIndex, double CurrentTime, double DeltaTime)
-	{
-		glClearColor(0, 0, 0, 1.0);
-		glClear(GL_COLOR_BUFFER_BIT);
-		glClearDepth(0);
-		glClear(GL_DEPTH_BUFFER_BIT);
-		{
-			Glsl::FnordType Data = { (float)(CurrentTime * 0.1) };
-			Upload::FnordType(BufferHandles[0], Data);
-		}
-		{
-			glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "SplatBlue");
-			glUseProgram(ShaderPrograms[2]);
-			glBindBufferBase(GL_UNIFORM_BUFFER, 0, BufferHandles[0]);
-			glDisable(GL_DEPTH_TEST);
-			glDisable(GL_CULL_FACE);
-			glDrawArraysInstanced(GL_TRIANGLES, 0, 6, 1);
-			glPopDebugGroup();
-		}
-	}
-	void Red(int FrameIndex, double CurrentTime, double DeltaTime)
+	void Multipass(int FrameIndex, double CurrentTime, double DeltaTime)
 	{
 		glClearColor(0, 0, 0, 1.0);
 		glClear(GL_COLOR_BUFFER_BIT);
@@ -230,9 +252,32 @@ namespace Renderer
 		{
 			glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "SplatRed");
 			glUseProgram(ShaderPrograms[1]);
+			glBindFramebuffer(GL_FRAMEBUFFER, FrameBufferHandles[1]);
 			glBindBufferBase(GL_UNIFORM_BUFFER, 0, BufferHandles[0]);
 			glDisable(GL_DEPTH_TEST);
 			glDisable(GL_CULL_FACE);
+			glDrawArraysInstanced(GL_TRIANGLES, 0, 6, 1);
+			glPopDebugGroup();
+		}
+		{
+			glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "SplatBlue");
+			glUseProgram(ShaderPrograms[2]);
+			glBindFramebuffer(GL_FRAMEBUFFER, FrameBufferHandles[0]);
+			glBindBufferBase(GL_UNIFORM_BUFFER, 0, BufferHandles[0]);
+			glDisable(GL_DEPTH_TEST);
+			glDisable(GL_CULL_FACE);
+			glDrawArraysInstanced(GL_TRIANGLES, 0, 6, 1);
+			glPopDebugGroup();
+		}
+		{
+			glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Combiner");
+			glUseProgram(ShaderPrograms[3]);
+			glBindFramebuffer(GL_FRAMEBUFFER, 0);
+			glBindBufferBase(GL_UNIFORM_BUFFER, 0, BufferHandles[0]);
+			glBindTextureUnit(0, TextureHandles[0]);
+			glBindTextureUnit(1, TextureHandles[1]);
+			glBindSampler(0, SamplerHandles[0]);
+			glBindSampler(1, SamplerHandles[0]);
 			glDrawArraysInstanced(GL_TRIANGLES, 0, 6, 1);
 			glPopDebugGroup();
 		}
@@ -248,10 +293,7 @@ void DrawFrame(int FrameIndex, double CurrentTime, double DeltaTime)
 		Renderer::TextureTest(FrameIndex, CurrentTime, DeltaTime);
 		break;
 	case 1:
-		Renderer::Blue(FrameIndex, CurrentTime, DeltaTime);
-		break;
-	case 2:
-		Renderer::Red(FrameIndex, CurrentTime, DeltaTime);
+		Renderer::Multipass(FrameIndex, CurrentTime, DeltaTime);
 		break;
 	default:
 		HaltAndCatchFire();
