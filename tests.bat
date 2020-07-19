@@ -1,3 +1,3 @@
 
-python -m mypy graffeine
+python -m mypy dream_machine
 python -m pytest

@@ -1,1 +1,1 @@
-python -m graffeine example.data
+python -m dream_machine example.data
