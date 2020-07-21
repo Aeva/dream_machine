@@ -144,7 +144,7 @@ def solve_renderers(env:Program) -> Tuple[List[SyntaxExpander], SyntaxExpander]:
         return Drawspatch(
             name = pipeline.name,
             setup = setup,
-            draw = InstancedDraw(vertices=6, instances=1))
+            draw = InstancedDraw(vertices=3, instances=1))
 
     def solve_renderer(renderer:Renderer) -> SyntaxExpander:
         calls:List[SyntaxExpander] = [

@@ -261,7 +261,7 @@ namespace Renderer
 			glBindSampler(0, SamplerHandles[0]);
 			glDisable(GL_DEPTH_TEST);
 			glDisable(GL_CULL_FACE);
-			glDrawArraysInstanced(GL_TRIANGLES, 0, 6, 1);
+			glDrawArraysInstanced(GL_TRIANGLES, 0, 3, 1);
 			glPopDebugGroup();
 		}
 	}
@@ -296,7 +296,7 @@ namespace Renderer
 			glBindBufferBase(GL_UNIFORM_BUFFER, 0, BufferHandles[0]);
 			glDisable(GL_DEPTH_TEST);
 			glDisable(GL_CULL_FACE);
-			glDrawArraysInstanced(GL_TRIANGLES, 0, 6, 1);
+			glDrawArraysInstanced(GL_TRIANGLES, 0, 3, 1);
 			glPopDebugGroup();
 		}
 		{
@@ -306,7 +306,7 @@ namespace Renderer
 			glBindBufferBase(GL_UNIFORM_BUFFER, 0, BufferHandles[0]);
 			glDisable(GL_DEPTH_TEST);
 			glDisable(GL_CULL_FACE);
-			glDrawArraysInstanced(GL_TRIANGLES, 0, 6, 1);
+			glDrawArraysInstanced(GL_TRIANGLES, 0, 3, 1);
 			glPopDebugGroup();
 		}
 		{
@@ -318,7 +318,7 @@ namespace Renderer
 			glBindTextureUnit(1, TextureHandles[2]);
 			glBindSampler(0, SamplerHandles[0]);
 			glBindSampler(1, SamplerHandles[0]);
-			glDrawArraysInstanced(GL_TRIANGLES, 0, 6, 1);
+			glDrawArraysInstanced(GL_TRIANGLES, 0, 3, 1);
 			glPopDebugGroup();
 		}
 	}

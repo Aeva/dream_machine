@@ -56,4 +56,4 @@ def splat(index:int , program:ShaderProgram) -> SyntaxExpander:
     return Drawspatch(
         name = program.name,
         setup = ChangeProgram(index),
-        draw = InstancedDraw(vertices=6, instances=1))
+        draw = InstancedDraw(vertices=3, instances=1))
