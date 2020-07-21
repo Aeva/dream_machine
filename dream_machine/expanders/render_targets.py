@@ -68,12 +68,17 @@ class CreateFrameBuffer(SyntaxExpander):
 class RebuildFrameBuffer(CreateFrameBuffer):
     template = """
 {
+	// recreate framebuffer "「name:str」"
 	glDeleteFramebuffers(1, &FrameBufferHandles[「handle:int」]);
 	glCreateFramebuffers(1, &FrameBufferHandles[「handle:int」]);
 「expanders」
 }
 """.strip()
     indent = ("expanders",)
+
+    def __init__(self, pipeline:Pipeline):
+        CreateFrameBuffer.__init__(self, pipeline)
+        self.name = pipeline.name
 
 
 class SetupFrameBuffers(SyntaxExpander):
@@ -91,11 +96,8 @@ class SetupFrameBuffers(SyntaxExpander):
 
 class ResizeFrameBuffers(SyntaxExpander):
     template = """
-{
 「wrapped」
-}
 """.strip()
-    indent = ("wrapped",)
 
     def __init__(self, env:Program):
         SyntaxExpander.__init__(self)
