@@ -42,6 +42,7 @@ class Texture2DSetup(SyntaxExpander):
 
     def __init__(self, texture:Texture):
         SyntaxExpander.__init__(self)
+        assert(texture.format.target == "GL_TEXTURE_2D")
         self.name = texture.name
         self.handle = texture.handle
         self.format = texture.format.format
@@ -61,12 +62,45 @@ class Texture3DSetup(SyntaxExpander):
 
     def __init__(self, texture:Texture):
         SyntaxExpander.__init__(self)
+        assert(texture.format.target == "GL_TEXTURE_3D")
         self.name = texture.name
         self.handle = texture.handle
         self.format = texture.format.format
         self.width = solve_expression(texture.width)
         self.height = solve_expression(texture.height)
         self.depth = solve_expression(texture.depth)
+
+
+class ResizeTexture2D(Texture2DSetup):
+    template = """
+{
+	// resize texture "「name:str」"
+	glDeleteTextures(1, &TextureHandles[「handle:int」]);
+	glCreateTextures(GL_TEXTURE_2D, 1, &TextureHandles[「handle:int」]);
+	glTextureStorage2D(TextureHandles[「handle:int」], 1, 「format:str」, (GLsizei)「width」, (GLsizei)「height」);
+	glObjectLabel(GL_TEXTURE, TextureHandles[「handle:int」], -1, \"「name:str」\");
+}
+""".strip()
+
+
+class ResizeTexture3D(Texture3DSetup):
+    template = """
+{
+	// resize texture "「name:str」"
+	glDeleteTextures(1, &TextureHandles[「handle:int」]);
+	glCreateTextures(GL_TEXTURE_3D, 1, &TextureHandles[「handle:int」]);
+	glTextureStorage3D(TextureHandles[「handle:int」], 1, 「format:str」, (GLsizei)「width」, (GLsizei)「height」, (GLsizei)「depth」);
+	glObjectLabel(GL_TEXTURE, TextureHandles[「handle:int」], -1, \"「name:str」\");
+}
+""".strip()
+
+
+def ResizeTexture(texture:Texture) -> SyntaxExpander:
+    if texture.format.target == "GL_TEXTURE_2D":
+        return ResizeTexture2D(texture)
+    else:
+        assert(texture.format.target == "GL_TEXTURE_3D")
+        return ResizeTexture3D(texture)
 
 
 class BindTexture(SyntaxExpander):

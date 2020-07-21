@@ -3,8 +3,10 @@
 
 namespace Glsl
 {
-	struct FnordType
+	struct WindowParamsType
 	{
+		vec4 WindowSize;
+		vec4 WindowScale;
 		float ElapsedTime;
 	};
 	struct SomeType
@@ -39,17 +41,16 @@ namespace UserVars
 }
 
 
-GLuint Shaders[8] = { 0 };
+GLuint Shaders[7] = { 0 };
 GLuint ShaderPrograms[4] = { 0 };
-std::string ShaderPaths[8] = {
-	"generated_shaders\\splat.vs.glsl.69aa914eec7fece415c06dde9a2fdd95.glsl",
-	"generated_shaders\\texture.fs.glsl.b16d280251bd597c2d58dc7dbaf94232.glsl",
-	"generated_shaders\\splat.vs.glsl.a39d95be9d1ce01d658722511bf320e8.glsl",
-	"generated_shaders\\red.fs.glsl.799c4f6c0b7ffc115132508a0937cb2c.glsl",
-	"generated_shaders\\splat.vs.glsl.9a68d58b953f5fa40a364b783548a2b1.glsl",
-	"generated_shaders\\blue.fs.glsl.801cb3096d48e283b3424b8d7672e0ba.glsl",
-	"generated_shaders\\splat.vs.glsl.bdb91f3cb75a2836e14f84beb139dfc7.glsl",
-	"generated_shaders\\combiner.fs.glsl.3cf09821e3f6cbe428e55c2281b342df.glsl"
+std::string ShaderPaths[7] = {
+	"generated_shaders\\splat.vs.glsl.3617cd1a7c393db7d63fa081462160cb.glsl",
+	"generated_shaders\\texture.fs.glsl.3e0614a92c4d2394807faf38eb237a36.glsl",
+	"generated_shaders\\splat.vs.glsl.47d065ffb14cdc019f77274fed6c505a.glsl",
+	"generated_shaders\\red.fs.glsl.e27c34cae30a790b21dd71528868119f.glsl",
+	"generated_shaders\\blue.fs.glsl.d76a46ffe93e604d64ff4315f1b81dce.glsl",
+	"generated_shaders\\splat.vs.glsl.26aa73cf0deb87ccdbb7f72a30b02023.glsl",
+	"generated_shaders\\combiner.fs.glsl.ecf4735ddbe4b4b33d07043aae129f89.glsl"
 };
 GLuint SamplerHandles[2] = { 0 };
 GLuint TextureHandles[4] = { 0 };
@@ -59,15 +60,17 @@ GLuint BufferHandles[1] = { 0 };
 
 namespace Upload
 {
-	void FnordType (GLuint Handle, Glsl::FnordType& Data)
+	void WindowParamsType (GLuint Handle, Glsl::WindowParamsType& Data)
 	{
-		std::int32_t* Mapped = (std::int32_t*)glMapNamedBufferRange(Handle, 0, 16, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
+		std::int32_t* Mapped = (std::int32_t*)glMapNamedBufferRange(Handle, 0, 48, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
 		if (Mapped == nullptr)
 		{
-			std::cout << "Fatal error in function \"Upload::FnordType\": glMapNamedBufferRange returned nullptr.\n";
+			std::cout << "Fatal error in function \"Upload::WindowParamsType\": glMapNamedBufferRange returned nullptr.\n";
 			HaltAndCatchFire();
 		}
-		Reflow<float>(Mapped, 0, Data.ElapsedTime);
+		Reflow< vec4>(Mapped, 0, Data.WindowSize);
+		Reflow< vec4>(Mapped, 4, Data.WindowScale);
+		Reflow<float>(Mapped, 8, Data.ElapsedTime);
 		glUnmapNamedBuffer(Handle);
 	}
 	void SomeType (GLuint Handle, Glsl::SomeType& Data)
@@ -95,7 +98,7 @@ namespace Upload
 }
 
 
-void WindowSizeCallback(GLFWwindow* Window, int Width, int Height)
+void GlfwWindowSizeCallback(GLFWwindow* Window, int Width, int Height)
 {
 	if (ScreenWidth != Width || ScreenHeight != Height)
 	{
@@ -106,7 +109,7 @@ void WindowSizeCallback(GLFWwindow* Window, int Width, int Height)
 }
 
 
-void WindowContentScaleCallback(GLFWwindow* Window, float ScaleX, float ScaleY)
+void GlfwWindowContentScaleCallback(GLFWwindow* Window, float ScaleX, float ScaleY)
 {
 	if (ScreenScaleX != ScaleX || ScreenScaleY != ScaleY)
 	{
@@ -128,10 +131,9 @@ void InitialSetup()
 	Shaders[1] = CompileShader(ShaderPaths[1], GL_FRAGMENT_SHADER);
 	Shaders[2] = CompileShader(ShaderPaths[2], GL_VERTEX_SHADER);
 	Shaders[3] = CompileShader(ShaderPaths[3], GL_FRAGMENT_SHADER);
-	Shaders[4] = CompileShader(ShaderPaths[4], GL_VERTEX_SHADER);
-	Shaders[5] = CompileShader(ShaderPaths[5], GL_FRAGMENT_SHADER);
-	Shaders[6] = CompileShader(ShaderPaths[6], GL_VERTEX_SHADER);
-	Shaders[7] = CompileShader(ShaderPaths[7], GL_FRAGMENT_SHADER);
+	Shaders[4] = CompileShader(ShaderPaths[4], GL_FRAGMENT_SHADER);
+	Shaders[5] = CompileShader(ShaderPaths[5], GL_VERTEX_SHADER);
+	Shaders[6] = CompileShader(ShaderPaths[6], GL_FRAGMENT_SHADER);
 	{
 		GLuint Stages[2] = { Shaders[0], Shaders[1] };
 		ShaderPrograms[0] = LinkShaders("TextureTest", &Stages[0], 2);
@@ -141,11 +143,11 @@ void InitialSetup()
 		ShaderPrograms[1] = LinkShaders("SplatRed", &Stages[0], 2);
 	}
 	{
-		GLuint Stages[2] = { Shaders[4], Shaders[5] };
+		GLuint Stages[2] = { Shaders[2], Shaders[4] };
 		ShaderPrograms[2] = LinkShaders("SplatBlue", &Stages[0], 2);
 	}
 	{
-		GLuint Stages[2] = { Shaders[6], Shaders[7] };
+		GLuint Stages[2] = { Shaders[5], Shaders[6] };
 		ShaderPrograms[3] = LinkShaders("Combiner", &Stages[0], 2);
 	}
 	{
@@ -217,7 +219,7 @@ void InitialSetup()
 		glCreateBuffers(1, &BufferHandles[0]);
 		{
 			// buffer "WindowParams"
-			glNamedBufferStorage(BufferHandles[0], 16, nullptr, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT);
+			glNamedBufferStorage(BufferHandles[0], 48, nullptr, GL_DYNAMIC_STORAGE_BIT | GL_MAP_WRITE_BIT);
 			glObjectLabel(GL_BUFFER, BufferHandles[0], -1, "WindowParams");
 		}
 	}
@@ -233,8 +235,22 @@ namespace Renderer
 		glClearDepth(0);
 		glClear(GL_DEPTH_BUFFER_BIT);
 		{
-			Glsl::FnordType Data = { (float)(CurrentTime * 0.1) };
-			Upload::FnordType(BufferHandles[0], Data);
+			Glsl::WindowParamsType Data = 	{
+				{
+					(float)(ScreenWidth),
+					(float)(ScreenHeight),
+					1.0f / (float)(ScreenWidth),
+					1.0f / (float)(ScreenHeight),
+				},
+				{
+					ScreenScaleX,
+					ScreenScaleY,
+					1.0f / ScreenScaleX,
+					1.0f / ScreenScaleY,
+				},
+				(float)(CurrentTime * 0.1),
+			};
+			Upload::WindowParamsType(BufferHandles[0], Data);
 		}
 		{
 			glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "<Pipeline TextureTest>");
@@ -256,13 +272,28 @@ namespace Renderer
 		glClearDepth(0);
 		glClear(GL_DEPTH_BUFFER_BIT);
 		{
-			Glsl::FnordType Data = { (float)(CurrentTime * 0.1) };
-			Upload::FnordType(BufferHandles[0], Data);
+			Glsl::WindowParamsType Data = 	{
+				{
+					(float)(ScreenWidth),
+					(float)(ScreenHeight),
+					1.0f / (float)(ScreenWidth),
+					1.0f / (float)(ScreenHeight),
+				},
+				{
+					ScreenScaleX,
+					ScreenScaleY,
+					1.0f / ScreenScaleX,
+					1.0f / ScreenScaleY,
+				},
+				(float)(CurrentTime * 0.1),
+			};
+			Upload::WindowParamsType(BufferHandles[0], Data);
 		}
 		{
 			glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "<Pipeline SplatRed>");
 			glUseProgram(ShaderPrograms[1]);
 			glBindFramebuffer(GL_FRAMEBUFFER, FrameBufferHandles[1]);
+			glBindBufferBase(GL_UNIFORM_BUFFER, 0, BufferHandles[0]);
 			glDisable(GL_DEPTH_TEST);
 			glDisable(GL_CULL_FACE);
 			glDrawArraysInstanced(GL_TRIANGLES, 0, 6, 1);
@@ -272,6 +303,7 @@ namespace Renderer
 			glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "<Pipeline SplatBlue>");
 			glUseProgram(ShaderPrograms[2]);
 			glBindFramebuffer(GL_FRAMEBUFFER, FrameBufferHandles[2]);
+			glBindBufferBase(GL_UNIFORM_BUFFER, 0, BufferHandles[0]);
 			glDisable(GL_DEPTH_TEST);
 			glDisable(GL_CULL_FACE);
 			glDrawArraysInstanced(GL_TRIANGLES, 0, 6, 1);
@@ -309,6 +341,48 @@ void DrawFrame(int FrameIndex, double CurrentTime, double DeltaTime)
 }
 
 
+void WindowResized()
+{
+{
+	{
+		// resize texture "BlueColorTarget"
+		glDeleteTextures(1, &TextureHandles[2]);
+		glCreateTextures(GL_TEXTURE_2D, 1, &TextureHandles[2]);
+		glTextureStorage2D(TextureHandles[2], 1, GL_RGBA8, (GLsizei)ScreenWidth, (GLsizei)ScreenHeight);
+		glObjectLabel(GL_TEXTURE, TextureHandles[2], -1, "BlueColorTarget");
+	}
+	{
+		// resize texture "RedColorTarget"
+		glDeleteTextures(1, &TextureHandles[1]);
+		glCreateTextures(GL_TEXTURE_2D, 1, &TextureHandles[1]);
+		glTextureStorage2D(TextureHandles[1], 1, GL_RGBA8, (GLsizei)ScreenWidth, (GLsizei)ScreenHeight);
+		glObjectLabel(GL_TEXTURE, TextureHandles[1], -1, "RedColorTarget");
+	}
+	{
+		// resize texture "SomeDepthTarget"
+		glDeleteTextures(1, &TextureHandles[3]);
+		glCreateTextures(GL_TEXTURE_2D, 1, &TextureHandles[3]);
+		glTextureStorage2D(TextureHandles[3], 1, GL_RGBA8, (GLsizei)ScreenWidth, (GLsizei)ScreenHeight);
+		glObjectLabel(GL_TEXTURE, TextureHandles[3], -1, "SomeDepthTarget");
+	}
+	{
+		glDeleteFramebuffers(1, &FrameBufferHandles[1]);
+		glCreateFramebuffers(1, &FrameBufferHandles[1]);
+		glNamedFramebufferTexture(FrameBufferHandles[1], GL_COLOR_ATTACHMENT0, TextureHandles[1], 0);
+		glNamedFramebufferTexture(FrameBufferHandles[1], GL_COLOR_ATTACHMENT1, TextureHandles[3], 0);
+		glObjectLabel(GL_FRAMEBUFFER, FrameBufferHandles[1], -1, "SplatRed");
+	}
+	{
+		glDeleteFramebuffers(1, &FrameBufferHandles[2]);
+		glCreateFramebuffers(1, &FrameBufferHandles[2]);
+		glNamedFramebufferTexture(FrameBufferHandles[2], GL_COLOR_ATTACHMENT0, TextureHandles[2], 0);
+		glNamedFramebufferTexture(FrameBufferHandles[2], GL_COLOR_ATTACHMENT1, TextureHandles[3], 0);
+		glObjectLabel(GL_FRAMEBUFFER, FrameBufferHandles[2], -1, "SplatBlue");
+	}
+}
+}
+
+
 int main()
 {
 #if DEBUG_BUILD
@@ -331,6 +405,8 @@ int main()
 	glfwWindowHint(GLFW_STENCIL_BITS, GLFW_DONT_CARE);
 #if RENDER_TO_IMAGES
 	glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
+#else
+	glfwWindowHint(GLFW_SCALE_TO_MONITOR, GL_TRUE);
 #endif // RENDER_TO_IMAGES
 
 	Window = glfwCreateWindow(ScreenWidth, ScreenHeight, WindowTitle, NULL, NULL);
@@ -344,10 +420,10 @@ int main()
 	glfwMakeContextCurrent(Window);
 
 	glfwGetWindowSize(Window, &ScreenWidth, &ScreenHeight);
-	glfwSetWindowSizeCallback(Window, WindowSizeCallback);
+	glfwSetWindowSizeCallback(Window, GlfwWindowSizeCallback);
 
 	glfwGetWindowContentScale(Window, &ScreenScaleX, &ScreenScaleY);
-	glfwSetWindowContentScaleCallback(Window, WindowContentScaleCallback);
+	glfwSetWindowContentScaleCallback(Window, GlfwWindowContentScaleCallback);
 
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
 	{
@@ -389,6 +465,12 @@ int main()
 
 	while (!glfwWindowShouldClose(Window))
 	{
+		if (WindowIsDirty)
+		{
+			WindowResized();
+			WindowIsDirty = false;
+		}
+		glViewport(0, 0, ScreenWidth, ScreenHeight);
 		static int FrameIndex = 0;
 		static double DeltaTime = 0.0;
 		static double StartTime = glfwGetTime();

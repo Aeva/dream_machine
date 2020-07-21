@@ -19,7 +19,22 @@ from .syntax.grammar import *
 class FakeUpload(SyntaxExpander):
     template = """
 {
-	Glsl::「struct_name」 Data = { (float)(CurrentTime * 0.1) };
+	Glsl::「struct_name」 Data = \
+	{
+		{
+			(float)(ScreenWidth),
+			(float)(ScreenHeight),
+			1.0f / (float)(ScreenWidth),
+			1.0f / (float)(ScreenHeight),
+		},
+		{
+			ScreenScaleX,
+			ScreenScaleY,
+			1.0f / ScreenScaleX,
+			1.0f / ScreenScaleY,
+		},
+		(float)(CurrentTime * 0.1),
+	};
 	Upload::「struct_name」(BufferHandles[「handle」], Data);
 }
 """.strip()
@@ -74,10 +89,11 @@ def solve_shaders(env:Program, solved_structs:Dict[str,StructType]) -> Tuple[Sha
         uniforms:List[SyntaxExpander] = [UniformInterface(solved_structs[u.struct], u) for u in pipeline.uniforms]
         textures:List[SyntaxExpander] = [TextureInterface(t) for t in pipeline.textures]
         targets:List[SyntaxExpander] = []
-        if pipeline.uses_backbuffer:
-            targets = [TargetInterface(None)]
-        else:
-            targets = [TargetInterface(c) for c in pipeline.color_targets]
+        if stage == "fragment":
+            if pipeline.uses_backbuffer:
+                targets = [TargetInterface(None)]
+            else:
+                targets = [TargetInterface(c) for c in pipeline.color_targets]
         return ShaderStage(stage, shader.path, structs + uniforms + textures + targets)
 
     shaders:List[ShaderStage] = []
@@ -207,6 +223,11 @@ def solve(env:Program) -> SyntaxExpander:
     if env.buffers:
         setup.append(SetupBuffers(env, solved_structs))
 
+    # expanders for the window resized event
+    reallocate:List[SyntaxExpander] = []
+    if env.pipelines:
+        reallocate.append(ResizeFrameBuffers(env))
+
     # expanders defining the available renderers
     renderers, switch = solve_renderers(env)
 
@@ -223,6 +244,7 @@ def solve(env:Program) -> SyntaxExpander:
     program.user_vars = user_vars
     program.uploaders = uploaders
     program.initial_setup_hook = setup
+    program.resize_hook = reallocate
     program.renderers = renderers
     program.draw_frame_hook = switch
     return program

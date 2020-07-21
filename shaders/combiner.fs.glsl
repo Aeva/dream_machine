@@ -24,10 +24,10 @@ vec2 GridUV(vec2 UV)
 
 void main()
 {
-	vec2 UV = gl_FragCoord.xy / 512.0;
+	vec2 UV = gl_FragCoord.xy * WindowSize.zw;
 	UV.x += sin(UV.y + ElapsedTime);
 	UV.y += cos(UV.x + ElapsedTime);
-	ivec2 Tile = ivec2(GridUV(UV) * 512.0) / 32;
+	ivec2 Tile = ivec2(GridUV(UV) * WindowSize.xy) / 32;
 	vec3 Red = texture(RedColorTarget, UV).rgb;
 	vec3 Blue = texture(BlueColorTarget, UV).rgb;
 	float Alpha;

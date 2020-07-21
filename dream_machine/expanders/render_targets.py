@@ -65,11 +65,15 @@ class CreateFrameBuffer(SyntaxExpander):
         self.expanders.append(FramebufferLabel(handle=pipeline.index, name=pipeline.name))
 
 
-class DeleteFrameBuffer(SyntaxExpander):
-    template = "glDeleteFramebuffers(1, &FrameBufferHandles[「handle」]);"
-
-    def __init__(self, pipeline:Pipeline):
-        SyntaxExpander.__init__(self, handle = pipeline.index)
+class RebuildFrameBuffer(CreateFrameBuffer):
+    template = """
+{
+	glDeleteFramebuffers(1, &FrameBufferHandles[「handle:int」]);
+	glCreateFramebuffers(1, &FrameBufferHandles[「handle:int」]);
+「expanders」
+}
+""".strip()
+    indent = ("expanders",)
 
 
 class SetupFrameBuffers(SyntaxExpander):
@@ -83,3 +87,25 @@ class SetupFrameBuffers(SyntaxExpander):
     def __init__(self, env:Program):
         SyntaxExpander.__init__(self)
         self.wrapped:List[SyntaxExpander] = [CreateFrameBuffer(pipeline) for pipeline in env.pipelines.values()]
+
+
+class ResizeFrameBuffers(SyntaxExpander):
+    template = """
+{
+「wrapped」
+}
+""".strip()
+    indent = ("wrapped",)
+
+    def __init__(self, env:Program):
+        SyntaxExpander.__init__(self)
+        self.wrapped:List[SyntaxExpander] = []
+
+        pipelines = [p for p in env.pipelines.values() if not p.uses_backbuffer]
+        texture_names = sorted({out.texture.name for p in pipelines for out in p.outputs})
+
+        for name in texture_names:
+            self.wrapped.append(ResizeTexture(env.textures[name]))
+
+        for pipeline in pipelines:
+            self.wrapped.append(RebuildFrameBuffer(pipeline))

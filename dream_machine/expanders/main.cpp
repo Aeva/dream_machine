@@ -36,7 +36,7 @@ namespace Upload
 }
 
 
-void WindowSizeCallback(GLFWwindow* Window, int Width, int Height)
+void GlfwWindowSizeCallback(GLFWwindow* Window, int Width, int Height)
 {
 	if (ScreenWidth != Width || ScreenHeight != Height)
 	{
@@ -47,7 +47,7 @@ void WindowSizeCallback(GLFWwindow* Window, int Width, int Height)
 }
 
 
-void WindowContentScaleCallback(GLFWwindow* Window, float ScaleX, float ScaleY)
+void GlfwWindowContentScaleCallback(GLFWwindow* Window, float ScaleX, float ScaleY)
 {
 	if (ScreenScaleX != ScaleX || ScreenScaleY != ScaleY)
 	{
@@ -76,6 +76,12 @@ void DrawFrame(int FrameIndex, double CurrentTime, double DeltaTime)
 }
 
 
+void WindowResized()
+{
+「resize_hook」
+}
+
+
 int main()
 {
 #if DEBUG_BUILD
@@ -98,6 +104,8 @@ int main()
 	glfwWindowHint(GLFW_STENCIL_BITS, GLFW_DONT_CARE);
 #if RENDER_TO_IMAGES
 	glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
+#else
+	glfwWindowHint(GLFW_SCALE_TO_MONITOR, GL_TRUE);
 #endif // RENDER_TO_IMAGES
 
 	Window = glfwCreateWindow(ScreenWidth, ScreenHeight, WindowTitle, NULL, NULL);
@@ -111,10 +119,10 @@ int main()
 	glfwMakeContextCurrent(Window);
 
 	glfwGetWindowSize(Window, &ScreenWidth, &ScreenHeight);
-	glfwSetWindowSizeCallback(Window, WindowSizeCallback);
+	glfwSetWindowSizeCallback(Window, GlfwWindowSizeCallback);
 
 	glfwGetWindowContentScale(Window, &ScreenScaleX, &ScreenScaleY);
-	glfwSetWindowContentScaleCallback(Window, WindowContentScaleCallback);
+	glfwSetWindowContentScaleCallback(Window, GlfwWindowContentScaleCallback);
 
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
 	{
@@ -156,6 +164,12 @@ int main()
 
 	while (!glfwWindowShouldClose(Window))
 	{
+		if (WindowIsDirty)
+		{
+			WindowResized();
+			WindowIsDirty = false;
+		}
+		glViewport(0, 0, ScreenWidth, ScreenHeight);
 		static int FrameIndex = 0;
 		static double DeltaTime = 0.0;
 		static double StartTime = glfwGetTime();

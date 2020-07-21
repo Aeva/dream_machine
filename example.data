@@ -10,7 +10,9 @@
 (uservar int MiscVar 2048)
 
 
-(struct FnordType
+(struct WindowParamsType
+	(vec4 WindowSize)
+	(vec4 WindowScale)
 	(float ElapsedTime))
 
 
@@ -33,7 +35,7 @@
 	(mag GL_NEAREST))
 
 
-(buffer WindowParams FnordType)
+(buffer WindowParams WindowParamsType)
 
 
 (format ColorFormat GL_TEXTURE_2D GL_RGBA8 LinearSampler)
@@ -74,6 +76,7 @@
 (pipeline SplatRed
 	(vs "shaders/splat.vs.glsl")
 	(fs "shaders/red.fs.glsl")
+	(in WindowParams)
 	(out RedColorTarget)
 	(out SomeDepthTarget)
 	(disable GL_DEPTH_TEST)
@@ -83,6 +86,7 @@
 (pipeline SplatBlue
 	(vs "shaders/splat.vs.glsl")
 	(fs "shaders/blue.fs.glsl")
+	(in WindowParams)
 	(out BlueColorTarget)
 	(out SomeDepthTarget)
 	(disable GL_DEPTH_TEST)

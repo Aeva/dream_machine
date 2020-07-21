@@ -1,8 +1,11 @@
 #version 420
-layout(location = 0)
- out vec4 RedColorTarget;
-layout(location = 1)
- out vec4 SomeDepthTarget;
+layout(std140, binding = 0)
+uniform WindowParams
+{
+	vec4 WindowSize;
+	vec4 WindowScale;
+	float ElapsedTime;
+};
 
 void main()
 {
