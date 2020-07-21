@@ -8,8 +8,8 @@ layout(binding = 0)
 uniform sampler2D RedColorTarget;
 layout(binding = 1)
 uniform sampler2D BlueColorTarget;
-
-layout(location = 0) out vec4 OutColor;
+layout(location = 0)
+ out vec4 OutColor;
 
 
 float GridFix(float Coord)

@@ -11,8 +11,9 @@ uniform WindowParams
 };
 layout(binding = 0)
 uniform sampler2D FancyTexture;
+layout(location = 0)
+ out vec4 OutColor;
 
-layout(location = 0) out vec4 OutColor;
 
 void main()
 {

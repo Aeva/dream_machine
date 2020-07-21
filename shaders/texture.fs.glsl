@@ -1,7 +1,6 @@
 #version 420
 「interfaces」
 
-layout(location = 0) out vec4 OutColor;
 
 void main()
 {

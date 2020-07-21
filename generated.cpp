@@ -39,16 +39,17 @@ namespace UserVars
 }
 
 
-GLuint Shaders[7] = { 0 };
+GLuint Shaders[8] = { 0 };
 GLuint ShaderPrograms[4] = { 0 };
-std::string ShaderPaths[7] = {
-	"generated_shaders\\splat.vs.glsl.5497a189fdfb76a95b0e0f26702778b2.glsl",
-	"generated_shaders\\texture.fs.glsl.7ce97d954962ce5888577c868ff02431.glsl",
-	"generated_shaders\\splat.vs.glsl.08a884f33d310b52d885de6488577633.glsl",
-	"generated_shaders\\red.fs.glsl.632c2093717c2dc377913861ca5699bb.glsl",
-	"generated_shaders\\blue.fs.glsl.51b4743e5fd1a43f0dabec44c330000c.glsl",
-	"generated_shaders\\splat.vs.glsl.a31fbe0727541e444e8f5aed46740a15.glsl",
-	"generated_shaders\\combiner.fs.glsl.91e03989d241687fa732253118476225.glsl"
+std::string ShaderPaths[8] = {
+	"generated_shaders\\splat.vs.glsl.69aa914eec7fece415c06dde9a2fdd95.glsl",
+	"generated_shaders\\texture.fs.glsl.b16d280251bd597c2d58dc7dbaf94232.glsl",
+	"generated_shaders\\splat.vs.glsl.a39d95be9d1ce01d658722511bf320e8.glsl",
+	"generated_shaders\\red.fs.glsl.799c4f6c0b7ffc115132508a0937cb2c.glsl",
+	"generated_shaders\\splat.vs.glsl.9a68d58b953f5fa40a364b783548a2b1.glsl",
+	"generated_shaders\\blue.fs.glsl.801cb3096d48e283b3424b8d7672e0ba.glsl",
+	"generated_shaders\\splat.vs.glsl.bdb91f3cb75a2836e14f84beb139dfc7.glsl",
+	"generated_shaders\\combiner.fs.glsl.3cf09821e3f6cbe428e55c2281b342df.glsl"
 };
 GLuint SamplerHandles[2] = { 0 };
 GLuint TextureHandles[4] = { 0 };
@@ -127,9 +128,10 @@ void InitialSetup()
 	Shaders[1] = CompileShader(ShaderPaths[1], GL_FRAGMENT_SHADER);
 	Shaders[2] = CompileShader(ShaderPaths[2], GL_VERTEX_SHADER);
 	Shaders[3] = CompileShader(ShaderPaths[3], GL_FRAGMENT_SHADER);
-	Shaders[4] = CompileShader(ShaderPaths[4], GL_FRAGMENT_SHADER);
-	Shaders[5] = CompileShader(ShaderPaths[5], GL_VERTEX_SHADER);
-	Shaders[6] = CompileShader(ShaderPaths[6], GL_FRAGMENT_SHADER);
+	Shaders[4] = CompileShader(ShaderPaths[4], GL_VERTEX_SHADER);
+	Shaders[5] = CompileShader(ShaderPaths[5], GL_FRAGMENT_SHADER);
+	Shaders[6] = CompileShader(ShaderPaths[6], GL_VERTEX_SHADER);
+	Shaders[7] = CompileShader(ShaderPaths[7], GL_FRAGMENT_SHADER);
 	{
 		GLuint Stages[2] = { Shaders[0], Shaders[1] };
 		ShaderPrograms[0] = LinkShaders("TextureTest", &Stages[0], 2);
@@ -139,11 +141,11 @@ void InitialSetup()
 		ShaderPrograms[1] = LinkShaders("SplatRed", &Stages[0], 2);
 	}
 	{
-		GLuint Stages[2] = { Shaders[2], Shaders[4] };
+		GLuint Stages[2] = { Shaders[4], Shaders[5] };
 		ShaderPrograms[2] = LinkShaders("SplatBlue", &Stages[0], 2);
 	}
 	{
-		GLuint Stages[2] = { Shaders[5], Shaders[6] };
+		GLuint Stages[2] = { Shaders[6], Shaders[7] };
 		ShaderPrograms[3] = LinkShaders("Combiner", &Stages[0], 2);
 	}
 	{

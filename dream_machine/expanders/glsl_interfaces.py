@@ -1,6 +1,6 @@
 ﻿
 from .glsl_types import *
-from ..syntax.grammar import PipelineInput
+from ..syntax.grammar import PipelineInput, PipelineOutput
 
 
 class GlslMember(SyntaxExpander):
@@ -67,3 +67,18 @@ class TextureInterface(SyntaxExpander):
         else:
             assert(target == "GL_TEXTURE_2D_MULTISAMPLE_ARRAY")
             return "2DMSArray"
+
+
+class TargetInterface(SyntaxExpander):
+    template = "layout(location = 「index:int」)\n out 「type:str」 「name:str」;"
+
+    def __init__(self, output: Optional[PipelineOutput]):
+        SyntaxExpander.__init__(self)
+        if output is not None:
+            self.index = output.color_index
+            self.name = output.texture.name
+            self.type = "vec4"
+        else:
+            self.index = 0
+            self.name = "OutColor"
+            self.type = "vec4"

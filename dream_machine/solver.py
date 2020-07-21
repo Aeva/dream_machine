@@ -70,21 +70,15 @@ def solve_shaders(env:Program, solved_structs:Dict[str,StructType]) -> Tuple[Sha
             "fs" : "fragment",
             "cs" : "compute",
         }[stage]
-        structs:List[SyntaxExpander] = \
-        [
-            GlslStruct(solved_structs[use.struct])
-            for use in pipeline.structs
-        ]
-        uniforms:List[SyntaxExpander] = \
-        [
-            UniformInterface(solved_structs[input.struct], input)
-            for input in pipeline.uniforms
-        ]
-        textures:List[SyntaxExpander] = \
-        [
-            TextureInterface(t) for t in pipeline.textures
-        ]
-        return ShaderStage(stage, shader.path, structs + uniforms + textures)
+        structs:List[SyntaxExpander] = [GlslStruct(solved_structs[use.struct]) for use in pipeline.structs]
+        uniforms:List[SyntaxExpander] = [UniformInterface(solved_structs[u.struct], u) for u in pipeline.uniforms]
+        textures:List[SyntaxExpander] = [TextureInterface(t) for t in pipeline.textures]
+        targets:List[SyntaxExpander] = []
+        if pipeline.uses_backbuffer:
+            targets = [TargetInterface(None)]
+        else:
+            targets = [TargetInterface(c) for c in pipeline.color_targets]
+        return ShaderStage(stage, shader.path, structs + uniforms + textures + targets)
 
     shaders:List[ShaderStage] = []
     programs:List[ShaderProgram] = []

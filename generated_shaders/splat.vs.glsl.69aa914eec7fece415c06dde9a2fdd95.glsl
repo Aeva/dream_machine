@@ -1,13 +1,18 @@
 #version 420
+struct SomeType
+{
+	mat4 Whatever;
+	float Etc;
+};
 layout(std140, binding = 0)
 uniform WindowParams
 {
 	float ElapsedTime;
 };
 layout(binding = 0)
-uniform sampler2D RedColorTarget;
-layout(binding = 1)
-uniform sampler2D BlueColorTarget;
+uniform sampler2D FancyTexture;
+layout(location = 0)
+ out vec4 OutColor;
 
 void main()
 {
