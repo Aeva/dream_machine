@@ -1,13 +1,13 @@
 #version 420
 layout(std140, binding = 0)
-uniform Fnord
+uniform WindowParams
 {
 	float ElapsedTime;
 };
 layout(binding = 0)
-uniform sampler2D RedImage;
+uniform sampler2D RedColorTarget;
 layout(binding = 1)
-uniform sampler2D BlueImage;
+uniform sampler2D BlueColorTarget;
 
 void main()
 {

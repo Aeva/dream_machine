@@ -1,7 +1,7 @@
 ﻿
 from .glsl_types import *
 from .common import SyntaxExpander
-from ..syntax.grammar import Buffer, Program
+from ..syntax.grammar import Buffer, PipelineInput, Program
 
 
 class BufferHandles(SyntaxExpander):
@@ -34,7 +34,12 @@ class ResizeBuffer(SyntaxExpander):
 
 
 class BindUniformBuffer(SyntaxExpander):
-    template = "glBindBufferBase(GL_UNIFORM_BUFFER, 「binding_index」, BufferHandles[「handle」]);"
+    template = "glBindBufferBase(GL_UNIFORM_BUFFER, 「binding_index:int」, BufferHandles[「handle:int」]);"
+
+    def __init__(self, input:PipelineInput):
+        SyntaxExpander.__init__(self)
+        self.binding_index = input.uniform_index
+        self.handle = input.buffer.handle
 
 
 class BufferSetup(SyntaxExpander):

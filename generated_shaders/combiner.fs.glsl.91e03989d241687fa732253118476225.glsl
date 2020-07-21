@@ -1,13 +1,13 @@
 #version 420
 layout(std140, binding = 0)
-uniform Fnord
+uniform WindowParams
 {
 	float ElapsedTime;
 };
 layout(binding = 0)
-uniform sampler2D RedImage;
+uniform sampler2D RedColorTarget;
 layout(binding = 1)
-uniform sampler2D BlueImage;
+uniform sampler2D BlueColorTarget;
 
 layout(location = 0) out vec4 OutColor;
 
@@ -38,8 +38,8 @@ void main()
 	UV.x += sin(UV.y + ElapsedTime);
 	UV.y += cos(UV.x + ElapsedTime);
 	ivec2 Tile = ivec2(GridUV(UV) * 512.0) / 32;
-	vec3 Red = texture(RedImage, UV).rgb;
-	vec3 Blue = texture(BlueImage, UV).rgb;
+	vec3 Red = texture(RedColorTarget, UV).rgb;
+	vec3 Blue = texture(BlueColorTarget, UV).rgb;
 	float Alpha;
 	if (Tile.x % 2 == Tile.y % 2)
 	{

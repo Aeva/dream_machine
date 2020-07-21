@@ -5,15 +5,12 @@ struct SomeType
 	float Etc;
 };
 layout(std140, binding = 0)
-uniform Fnord
+uniform WindowParams
 {
 	float ElapsedTime;
 };
-layout(std140, binding = 1)
-uniform Whatsit
-{
-	SomeType Moop;
-};
+layout(binding = 0)
+uniform sampler2D FancyTexture;
 
 void main()
 {

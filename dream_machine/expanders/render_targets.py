@@ -1,6 +1,6 @@
 ﻿
 from .textures import *
-from ..syntax.grammar import PipelineAttachments
+from ..syntax.grammar import Pipeline, PipelineOutput
 
 
 class FrameBufferHandles(SyntaxExpander):
@@ -10,8 +10,8 @@ class FrameBufferHandles(SyntaxExpander):
 class BindFrameBuffer(SyntaxExpander):
     template = "glBindFramebuffer(GL_FRAMEBUFFER, FrameBufferHandles[「handle:int」]);"
 
-    def __init__(self, attachments:PipelineAttachments):
-        SyntaxExpander.__init__(self, attachments.handle)
+    def __init__(self, pipeline:Pipeline):
+        SyntaxExpander.__init__(self, pipeline.index)
 
 
 class BindBackBuffer(SyntaxExpander):
@@ -21,24 +21,24 @@ class BindBackBuffer(SyntaxExpander):
 class FrameBufferAttachment(SyntaxExpander):
     template = "glNamedFramebufferTexture(FrameBufferHandles[「rt_handle:int」], 「attachment:str」, TextureHandles[「tex_handle:int」], 「mip:int」);"
 
-    def __init__(self, attachments:PipelineAttachments, buffer_texture:Texture, attachment:str, mip:int):
+    def __init__(self, pipeline:Pipeline, output:PipelineOutput, attachment:str, mip:int):
         SyntaxExpander.__init__(self)
-        self.rt_handle = attachments.handle
-        self.tex_handle = buffer_texture.handle
+        self.rt_handle = pipeline.index
+        self.tex_handle = output.handle
         self.attachment = attachment
         assert(mip >= 0)
         self.mip = mip
 
 
 class DepthAttachment(FrameBufferAttachment):
-    def __init__(self, attachments:PipelineAttachments, buffer_texture:Texture, mip:int = 0):
-        FrameBufferAttachment.__init__(self, attachments, buffer_texture, "GL_DEPTH_ATTACHMENT", mip)
+    def __init__(self, pipeline:Pipeline, mip:int = 0):
+        FrameBufferAttachment.__init__(self, pipeline, pipeline.depth_target, "GL_DEPTH_ATTACHMENT", mip)
 
 
 class ColorAttachment(FrameBufferAttachment):
-    def __init__(self, attachments:PipelineAttachments, buffer_texture:Texture, index:int, mip:int = 0):
-        assert(index >= 0)
-        FrameBufferAttachment.__init__(self, attachments, buffer_texture, f"GL_COLOR_ATTACHMENT{str(index)}", mip)
+    def __init__(self, pipeline:Pipeline, output:PipelineOutput, mip:int = 0):
+        assert(output in pipeline.color_targets)
+        FrameBufferAttachment.__init__(self, pipeline, output, f"GL_COLOR_ATTACHMENT{str(output.color_index)}", mip)
 
 
 class FramebufferLabel(SyntaxExpander):
@@ -54,23 +54,22 @@ class CreateFrameBuffer(SyntaxExpander):
 """.strip()
     indent = ("expanders",)
 
-    def __init__(self, attachments:PipelineAttachments):
+    def __init__(self, pipeline:Pipeline):
         SyntaxExpander.__init__(self)
-        self.handle = attachments.handle
+        self.handle = pipeline.index
         self.expanders:List[SyntaxExpander] = []
-        for index, texture in enumerate(attachments.color):
-            self.expanders.append(ColorAttachment(attachments, texture, index))
-        if attachments.depth:
-            self.expanders.append(DepthAttachment(attachments, attachments.depth[0]))
-        if attachments.name is not None:
-            self.expanders.append(FramebufferLabel(handle=attachments.handle, name=attachments.name))
+        for color_target in pipeline.color_targets:
+            self.expanders.append(ColorAttachment(pipeline, color_target))
+        if pipeline.depth_target:
+            self.expanders.append(DepthAttachment(pipeline, pipeline.depth_target))
+        self.expanders.append(FramebufferLabel(handle=pipeline.index, name=pipeline.name))
 
 
 class DeleteFrameBuffer(SyntaxExpander):
     template = "glDeleteFramebuffers(1, &FrameBufferHandles[「handle」]);"
 
-    def __init__(self, attachments:PipelineAttachments):
-        SyntaxExpander.__init__(self, handle = attachments.handle)
+    def __init__(self, pipeline:Pipeline):
+        SyntaxExpander.__init__(self, handle = pipeline.index)
 
 
 class SetupFrameBuffers(SyntaxExpander):
@@ -81,6 +80,6 @@ class SetupFrameBuffers(SyntaxExpander):
 """.strip()
     indent = ("wrapped",)
 
-    def __init__(self, framebuffers:List[PipelineAttachments]):
+    def __init__(self, env:Program):
         SyntaxExpander.__init__(self)
-        self.wrapped:List[SyntaxExpander] = [CreateFrameBuffer(a) for a in framebuffers]
+        self.wrapped:List[SyntaxExpander] = [CreateFrameBuffer(pipeline) for pipeline in env.pipelines.values()]

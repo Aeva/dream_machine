@@ -77,12 +77,12 @@ def solve_shaders(env:Program, solved_structs:Dict[str,StructType]) -> Tuple[Sha
         ]
         uniforms:List[SyntaxExpander] = \
         [
-            UniformInterface(solved_structs[uniform.type], binding, uniform.name)
-            for (binding, uniform) in enumerate(pipeline.uniforms())
+            UniformInterface(solved_structs[input.struct], input)
+            for input in pipeline.uniforms
         ]
         textures:List[SyntaxExpander] = \
         [
-            TextureInterface(t) for t in pipeline.textures()
+            TextureInterface(t) for t in pipeline.textures
         ]
         return ShaderStage(stage, shader.path, structs + uniforms + textures)
 
@@ -111,46 +111,28 @@ def solve_renderers(env:Program) -> Tuple[List[SyntaxExpander], SyntaxExpander]:
             struct_name = event.buffer.struct,
             handle = event.buffer.handle)
 
-    def solve_draw(event:RendererDraw) -> SyntaxExpander:
-        program_handle = list(env.pipelines.keys()).index(event.pipeline)
-        pipeline = env.pipelines[event.pipeline]
-
+    def solve_draw(event:RendererDraw, previous:Optional[RendererDraw]) -> SyntaxExpander:
+        pipeline = event.pipeline
         setup:List[SyntaxExpander] = \
         [
-            ChangeProgram(program_handle),
+            ChangeProgram(pipeline.index),
         ]
 
-        if (pipeline.attachments):
-            setup.append(BindFrameBuffer(pipeline.attachments))
-        else:
+        if pipeline.uses_backbuffer:
             setup.append(BindBackBuffer())
+        else:
+            setup.append(BindFrameBuffer(pipeline))
 
-        setup += \
-        [
-            BindUniformBuffer(
-                binding_index = pipeline.binding_index(binding.name),
-                handle = binding.buffer.handle)
-            for binding in event.buffer_bindings()
-        ]
-        setup += \
-        [
-            BindTexture(t) for t in event.texture_bindings()
-        ]
-
-        explicit_samplers = {b.name:b for b in event.sampler_bindings()}
-        implicit_samplers = {b.name:b for b in event.texture_bindings() if b.name not in explicit_samplers}
-        sampler_bindings = list(implicit_samplers.values()) + list(explicit_samplers.values())
-        setup += \
-        [
-            BindSampler(t) for t in sampler_bindings
-        ]
+        setup += [BindUniformBuffer(u) for u in pipeline.uniforms]
+        setup += [BindTexture(t) for t in pipeline.textures]
+        setup += [BindSampler(t) for t in pipeline.textures]
         setup += \
         [
             Capability(flag.flag, flag.value())
             for flag in pipeline.flags.values()
         ]
         return Drawspatch(
-            name = event.pipeline,
+            name = pipeline,
             setup = setup,
             draw = InstancedDraw(vertices=6, instances=1))
 
@@ -159,11 +141,13 @@ def solve_renderers(env:Program) -> Tuple[List[SyntaxExpander], SyntaxExpander]:
             ColorClear(0, 0, 0),
             DepthClear(0),
         ]
+        previous_draw = None
         for event in renderer.children:
             if type(event) is RendererUpdate:
                 calls.append(solve_uploader(event))
             elif type(event) is RendererDraw:
-                calls.append(solve_draw(event))
+                calls.append(solve_draw(event, previous_draw))
+                previous_draw = event
         return RendererCall(name=renderer.name, calls=calls)
 
     callbacks = list(map(solve_renderer, env.renderers))
@@ -196,9 +180,8 @@ def solve(env:Program) -> SyntaxExpander:
     if env.textures:
         globals.append(TextureHandles(len(env.textures)))
 
-    framebuffers = env.pipeline_attachments
-    if framebuffers:
-        globals.append(FrameBufferHandles(len(framebuffers)))
+    if env.pipelines:
+        globals.append(FrameBufferHandles(len(env.pipelines)))
 
     if env.buffers:
         globals.append(BufferHandles(len(env.buffers)))
@@ -224,8 +207,8 @@ def solve(env:Program) -> SyntaxExpander:
     if env.textures:
         setup.append(SetupTextures(env))
 
-    if framebuffers:
-        setup.append(SetupFrameBuffers(framebuffers))
+    if env.pipelines:
+        setup.append(SetupFrameBuffers(env))
 
     if env.buffers:
         setup.append(SetupBuffers(env, solved_structs))

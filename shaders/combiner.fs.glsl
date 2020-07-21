@@ -30,8 +30,8 @@ void main()
 	UV.x += sin(UV.y + ElapsedTime);
 	UV.y += cos(UV.x + ElapsedTime);
 	ivec2 Tile = ivec2(GridUV(UV) * 512.0) / 32;
-	vec3 Red = texture(RedImage, UV).rgb;
-	vec3 Blue = texture(BlueImage, UV).rgb;
+	vec3 Red = texture(RedColorTarget, UV).rgb;
+	vec3 Blue = texture(BlueColorTarget, UV).rgb;
 	float Alpha;
 	if (Tile.x % 2 == Tile.y % 2)
 	{

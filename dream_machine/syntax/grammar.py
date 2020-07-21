@@ -37,15 +37,15 @@ PIPELINE_FS_RULE = ListRule(PipelineShader, Exactly("fs"), StringRule("shader pa
 
 PIPELINE_USE_RULE = ListRule(PipelineUse, Exactly("use"), WordRule("struct or interface or texture name"))
 
-PIPELINE_INTERFACE_RULE = ListRule(PipelineInterface, Exactly("interface"), WordRule("interface name"), WordRule("interface type"))
-
 PIPELINE_ENABLE_RULE = ListRule(PipelineFlag, Exactly("enable"), WordRule("opengl capability enum"))
 
 PIPELINE_DISABLE_RULE = ListRule(PipelineFlag, Exactly("disable"), WordRule("opengl capability enum"))
 
 PIPELINE_COPY_RULE = ListRule(PipelineCopy, Exactly("copy"), WordRule("draw name"))
 
-PIPELINE_OUT_RULE = ListRule(PipelineAttachments, Exactly("out"), SPLAT = WordRule("texture name"))
+PIPELINE_IN_RULE = ListRule(PipelineInput, Exactly("in"), WordRule("resource name"))
+
+PIPELINE_OUT_RULE = ListRule(PipelineOutput, Exactly("out"), WordRule("resource name"))
 
 PIPELINE_RULE = ListRule(Pipeline, Exactly("pipeline"), WordRule("draw name"),
                          SPLAT = MatchSplat(r'PIPELINE_[A-Z]+?_RULE'))
@@ -69,8 +69,7 @@ TEXTURE_RULE = \
 
 RENDERER_UPDATE_RULE = ListRule(RendererUpdate, Exactly("update"), WordRule("handle name"))
 
-RENDERER_DRAW_RULE = ListRule(RendererDraw, Exactly("draw"), WordRule("draw name"),
-                              SPLAT = MatchRule(ListRule(RendererDrawBind, Exactly("bind"), WordRule("binding point"), WordRule("handle name"))))
+RENDERER_DRAW_RULE = ListRule(RendererDraw, Exactly("draw"), WordRule("draw name"))
 
 RENDERER_RULE = \
     ListRule(Renderer, Exactly("renderer"), WordRule("renderer name"),

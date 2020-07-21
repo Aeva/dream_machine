@@ -1,11 +1,5 @@
 #version 420
-layout(std140, binding = 0)
-uniform Fnord
-{
-	float ElapsedTime;
-};
-layout(binding = 0)
-uniform sampler2D BgImage;
+
 
 void main()
 {

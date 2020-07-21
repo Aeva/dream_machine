@@ -1,7 +1,7 @@
 ﻿
 from typing import *
 from .common import SyntaxExpander
-from ..syntax.grammar import Sampler, RendererDrawBind, Program
+from ..syntax.grammar import Sampler, PipelineInput, Program
 
 
 class SamplerHandles(SyntaxExpander):
@@ -26,10 +26,10 @@ class SamplerFloatParam(SyntaxExpander):
 class BindSampler(SyntaxExpander):
     template = "glBindSampler(「texture_unit」, SamplerHandles[「handle」]);"
 
-    def __init__(self, binding:RendererDrawBind):
+    def __init__(self, binding:PipelineInput):
         SyntaxExpander.__init__(self)
-        self.texture_unit = binding.interface.texture_unit
-        self.handle = binding.sampler.handle
+        self.texture_unit = binding.texture_index
+        self.handle = binding.texture.sampler.handle
 
 
 class SamplerSetup(SyntaxExpander):

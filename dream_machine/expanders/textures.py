@@ -3,7 +3,7 @@ from typing import *
 from .common import SyntaxExpander
 from .cpp_expressions import solve_expression
 from ..handy import CAST
-from ..syntax.grammar import Texture, TextureDimension, RendererDrawBind, Program
+from ..syntax.grammar import Texture, TextureDimension, PipelineInput, Program
 
 
 class TextureHandles(SyntaxExpander):
@@ -72,9 +72,9 @@ class Texture3DSetup(SyntaxExpander):
 class BindTexture(SyntaxExpander):
     template = "glBindTextureUnit(「texture_unit」, TextureHandles[「handle」]);"
 
-    def __init__(self, binding:RendererDrawBind):
+    def __init__(self, binding:PipelineInput):
         SyntaxExpander.__init__(self)
-        self.texture_unit = binding.interface.texture_unit
+        self.texture_unit = binding.texture_index
         self.handle = binding.texture.handle
 
 

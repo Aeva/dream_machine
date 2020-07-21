@@ -23,7 +23,7 @@
 	(SomeType Moop))
 
 
-(sampler SomeSampler
+(sampler LinearSampler
 	(min GL_LINEAR)
 	(mag GL_LINEAR))
 
@@ -33,23 +33,30 @@
 	(mag GL_NEAREST))
 
 
-(format BgImageFormat GL_TEXTURE_2D GL_RGBA8 SomeSampler)
+(buffer WindowParams FnordType)
+
+
+(format ColorFormat GL_TEXTURE_2D GL_RGBA8 LinearSampler)
 
 
 (format DepthFormat GL_TEXTURE_2D GL_DEPTH_COMPONENT32F PointSampler)
 
 
-(texture RedColorTarget BgImageFormat
+(texture FancyTexture ColorFormat
+	(src "woman_taking_in_cheese_from_fire_escape.png"))
+
+
+(texture RedColorTarget ColorFormat
 	(width ScreenWidth)
 	(height ScreenHeight))
 
 
-(texture BlueColorTarget BgImageFormat
+(texture BlueColorTarget ColorFormat
 	(width ScreenWidth)
 	(height ScreenHeight))
 
 
-(texture SomeDepthTarget DepthFormat
+(texture SomeDepthTarget ColorFormat
 	(width ScreenWidth)
 	(height ScreenHeight))
 
@@ -57,8 +64,9 @@
 (pipeline TextureTest
 	(vs "shaders/splat.vs.glsl")
 	(fs "shaders/texture.fs.glsl")
-	(interface Fnord FnordType)
-	(interface BgImage BgImageFormat)
+	(use SomeType)
+	(in WindowParams)
+	(in FancyTexture)
 	(disable GL_DEPTH_TEST)
 	(disable GL_CULL_FACE))
 
@@ -66,53 +74,36 @@
 (pipeline SplatRed
 	(vs "shaders/splat.vs.glsl")
 	(fs "shaders/red.fs.glsl")
-	(use SomeType)
-	(interface Fnord FnordType)
-	(interface Whatsit WhatsitType)
+	(out RedColorTarget)
+	(out SomeDepthTarget)
 	(disable GL_DEPTH_TEST)
-	(disable GL_CULL_FACE)
-	(out
-		RedColorTarget
-		SomeDepthTarget))
+	(disable GL_CULL_FACE))
 
 
 (pipeline SplatBlue
-	(copy SplatRed)
+	(vs "shaders/splat.vs.glsl")
 	(fs "shaders/blue.fs.glsl")
-	(out
-		BlueColorTarget
-		SomeDepthTarget))
+	(out BlueColorTarget)
+	(out SomeDepthTarget)
+	(disable GL_DEPTH_TEST)
+	(disable GL_CULL_FACE))
 
 
 (pipeline Combiner
 	(vs "shaders/splat.vs.glsl")
 	(fs "shaders/combiner.fs.glsl")
-	(interface Fnord FnordType)
-	(interface RedImage BgImageFormat)
-	(interface BlueImage BgImageFormat))
-
-
-(buffer SomeHandle FnordType)
-
-
-(texture YourTextureHere BgImageFormat
-	(src "woman_taking_in_cheese_from_fire_escape.png"))
+	(in WindowParams)
+	(in RedColorTarget)
+	(in BlueColorTarget))
 
 
 (renderer TextureTest
-	(update SomeHandle)
-	(draw TextureTest
-		(bind Fnord SomeHandle)
-		(bind BgImage YourTextureHere)))
+	(update WindowParams)
+	(draw TextureTest))
 
 
 (renderer Multipass
-	(update SomeHandle)
-	(draw SplatRed
-		(bind Fnord SomeHandle))
-	(draw SplatBlue
-		(bind Fnord SomeHandle))
-	(draw Combiner
-		(bind RedImage RedColorTarget)
-		(bind BlueImage BlueColorTarget)
-		(bind Fnord SomeHandle)))
+	(update WindowParams)
+	(draw SplatRed)
+	(draw SplatBlue)
+	(draw Combiner))

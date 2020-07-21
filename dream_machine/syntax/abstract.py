@@ -1,5 +1,5 @@
 
-from weakref import ref
+from weakref import ref, ReferenceType
 from ..handy import *
 from .tokens import *
 from .parser import Parser
@@ -136,12 +136,16 @@ class Syntax:
         self.children = children
         self.child_types = child_types
         self._keys = dedupe([cast(str, c.many or c.one) for c in child_types])
-        self.env:Optional[Program] = None
+        self._env:"Optional[ReferenceType[Program]]" = None
         self._parent:Optional[ref] = None
         self.error_callback:Optional[ErrorCallback] = None
         for child in self.children:
             child.parent = self
         self.populate(self.children)
+
+    @property
+    def env(self):
+        return CAST(Program, self._env())
 
     @property
     def parent(self):
@@ -194,7 +198,7 @@ class Syntax:
                 getattr(child, method_name)(*args, **kargs)
 
     def set_env(self, env, error_callback:ErrorCallback):
-        self.env = cast(Program, ref(env))
+        self._env = ref(env)
         self.error_callback = error_callback
         self.dispatch("set_env", env, error_callback)
 
@@ -236,7 +240,7 @@ class ArithmeticExpression(Syntax):
     def validate(self, expr:Optional[Any]=None):
         expr = expr or self.expr
         if type(expr) is str:
-            if not expr in COMMON_VARS and not expr in cast(Program, self.env()).user_vars:
+            if not expr in COMMON_VARS and not expr in self.env.user_vars:
                 self.error(f'Unknown variable "{expr}"', self.tokens)
         elif type(expr) is UnfoldedExpression:
             expr = cast(UnfoldedExpression, expr)
@@ -294,7 +298,7 @@ class Struct(Syntax):
                 names.append(member.name)
             if member.type == self.name:
                 member.error(f"Struct members can't use the type of the struct it belongs to.")
-            if member.type in self.env().structs and member.type not in self.referenced:
+            if member.type in self.env.structs and member.type not in self.referenced:
                 self.referenced.append(member.type)
 
     def __repr__(self):
@@ -313,7 +317,7 @@ class StructMember(Syntax):
 
     def validate(self):
         Syntax.validate(self)
-        if self.type not in glsl_builtins and self.type not in self.env().structs:
+        if self.type not in glsl_builtins and self.type not in self.env.structs:
             self.error(f'Undefined type name: "{self.type}"')
 
     def __repr__(self):
@@ -335,7 +339,7 @@ class Sampler(Syntax):
 
     @property
     def handle(self):
-        return list(self.env().samplers.keys()).index(self.name)
+        return list(self.env.samplers.keys()).index(self.name)
 
     def validate(self):
         Syntax.validate(self)
@@ -386,7 +390,7 @@ class Format(Syntax):
 
     @property
     def sampler(self):
-        return self.env().samplers.get(self._sampler)
+        return self.env.samplers.get(self._sampler)
 
     def validate(self):
         Syntax.validate(self)
@@ -396,7 +400,7 @@ class Format(Syntax):
             self.error(f'Unsupported texture format: "{self.format}"')
         if self.sampler is None:
             self.error(f'Unknown sampler: "{self._sampler}"')
-        if self.name in self.env().structs:
+        if self.name in self.env.structs:
             self.error(f'There cannot be a format named "{self.name}", because there is already a struct of the same name.')
 
     def __repr__(self):
@@ -412,12 +416,12 @@ class Pipeline(Syntax):
     primary = "name"
     structs:dict
     shaders:dict
-    interfaces:dict
+    inputs:list
+    outputs:list
 
     def __init__(self, *args, **kargs):
         Syntax.__init__(self, *args, **kargs)
         pipeline, self.name = map(str, cast(TokenList, self.tokens)[:2])
-        self.bindings:List[str] = []
 
     def rewrite(self):
         Syntax.rewrite(self)
@@ -427,16 +431,12 @@ class Pipeline(Syntax):
                 target = cast(PipelineCopy, child).target
                 if target == self.name:
                     child.error("A pipeline can't copy itself!")
-                found = self.env().pipelines.get(target)
+                found = self.env.pipelines.get(target)
                 if found:
                     new_children += found.children
             else:
                 new_children.append(child)
         self.populate(new_children)
-        for interface in self.interfaces.values():
-            if interface.name in self.bindings:
-                self.error(f'Pipeline "{self.name}" contains more than one interface named "{interface.name}".')
-            self.bindings.append(interface.name)
 
     def validate(self):
         Syntax.validate(self)
@@ -449,26 +449,59 @@ class Pipeline(Syntax):
             if "fs" not in self.shaders:
                 self.error("Raster pipelines must declare a fragment shader.")
 
-    def __repr__(self):
-        return f'<Pipeline {self.name}>'
+        depth_targets = [i for i in self.outputs if i.is_depth]
+        if len(depth_targets) > 1:
+            self.error(f'Pipeline "{self.name}" has {len(depth_targets)} depth outputs, but pipelines can have only one depth output.')
 
+    @property
+    def index(self) -> int:
+        return list(self.env.pipelines.values()).index(self)
+
+    @property
     def uniforms(self) -> tuple: #Tuple[PipelineInterface, ...]:
         """
-        Returns the pipeline's uniform interfaces.
+        Returns the pipeline's uniform inputs.
         """
-        return tuple([i for i in self.interfaces.values() if i.is_uniform])
+        return tuple([i for i in self.inputs if i.is_uniform])
 
+    @property
     def textures(self) -> tuple: #Tuple[PipelineInterface, ...]:
         """
-        Returns the pipeline's texture interfaces.
+        Returns the pipeline's texture inputs.
         """
-        return tuple([i for i in self.interfaces.values() if i.is_texture])
+        return tuple([i for i in self.inputs if i.is_texture])
 
-    def binding_index(self, name:str) -> int:
-        return [i.name for i in self.uniforms()].index(name)
+    @property
+    def color_targets(self):
+        return [i for i in self.outputs if i.is_color]
 
-    def texture_unit(self, name:str) -> int:
-        return [i.name for i in self.textures()].index(name)
+    @property
+    def depth_target(self):
+        targets = [i for i in self.outputs if i.is_depth]
+        if len(targets) == 1:
+            return targets[0]
+        else:
+            return None
+
+    @property
+    def uses_backbuffer(self):
+        return self.depth_target is None and len(self.color_targets) == 0
+
+    def compatible_with(self, other):
+        """
+        Compare this pipeline object with another, and return True if the two use
+        the same output buffers in the same order.
+        """
+        if len(self.outputs) == len(other.outputs):
+            for lhs, rhs in zip(self.outputs, other.outputs):
+                if lhs.resource_name != rhs.resource_name:
+                    return False
+            return True
+        else:
+            return False
+
+    def __repr__(self):
+        return f'<Pipeline {self.name}>'
 
 
 class PipelineShader(Syntax):
@@ -499,55 +532,11 @@ class PipelineUse(Syntax):
 
     def validate(self):
         Syntax.validate(self)
-        if self.struct not in self.env().structs:
+        if self.struct not in self.env.structs:
             self.error(f'Unknown struct "{self.struct}"')
 
     def __repr__(self):
         return f'<PipelineUse {self.struct}>'
-
-
-class PipelineInterface(Syntax):
-    """
-    Defines a uniform block or a texture binding point to be used in the
-    pipeline's shaders.
-    """
-    many = "interfaces"
-    primary = "name"
-
-    def __init__(self, *args, **kargs):
-        Syntax.__init__(self, *args, **kargs)
-        interface, self.name, self.type = map(str, cast(TokenList, self.tokens))
-        self.is_texture = False
-        self.is_uniform = False
-
-    def rewrite(self):
-        Syntax.rewrite(self)
-        self.is_texture = self.type in self.env().formats
-        self.is_uniform = self.type in self.env().structs
-
-    @property
-    def format(self):
-        return self.env().formats.get(self.type)
-
-    @property
-    def binding_index(self):
-        assert(self.is_texture)
-        return self.parent.binding_index(self.name)
-
-    @property
-    def texture_unit(self):
-        assert(self.is_texture)
-        return self.parent.texture_unit(self.name)
-
-    def validate(self):
-        Syntax.validate(self)
-        if not (self.is_texture or self.is_uniform):
-            self.error(f'Unknown texture or struct type: "{self.type}"')
-        # strictly speaking it should be an error to be both, but it is more useful
-        # for it to be an error to have a struct and a format of the same name.
-
-    def __repr__(self):
-        return f'<PipelineInterface {self.name} {self.type}>'
 
 
 class PipelineFlag(Syntax):
@@ -581,71 +570,117 @@ class PipelineCopy(Syntax):
 
     def validate(self):
         Syntax.validate(self)
-        if self.target not in self.env().pipelines:
+        if self.target not in self.env.pipelines:
             self.error(f'Unknown pipeline copy target: "{self.target}"')
 
     def __repr__(self):
         return f'<PipelineCopy {self.target}>'
 
 
-class PipelineAttachments(Syntax):
+class PipelineInput(Syntax):
     """
-    A framebuffer definition.
+    A buffer or texture input for a pipeline.
     """
-    one = "attachments"
+    many = "inputs"
 
     def __init__(self, *args, **kargs):
         Syntax.__init__(self, *args, **kargs)
-        self.texture_names = tuple(map(str, cast(TokenList, self.tokens[1:])))
-
-    def is_unique(self) -> bool:
-        """
-        Returns True if this PipelineAttachments has a unique set of textures.
-        """
-        for pipeline in self.env().pipelines.values():
-            if pipeline == self.parent or pipeline.attachments is None:
-                continue
-            if pipeline.attachments.texture_names == self.texture_names:
-                return False
-        return True
+        cmd, self.resource_name = tuple(map(str, cast(TokenList, self.tokens[:2])))
 
     @property
-    def handle(self) -> int:
-        unique_params = sorted(self.env().unique_pipeline_attachments().keys())
-        handles = {names:index for index, names in enumerate(unique_params)}
-        return handles[self.texture_names]
+    def binding_name(self):
+        return self.resource_name
 
     @property
-    def name(self) -> Optional[str]:
-        if self.is_unique():
-            return self.parent.name
-        else:
-            return None
+    def is_texture(self):
+        return self.resource_name in self.env.textures
 
     @property
-    def textures(self):
-        gen = (self.env().textures.get(n) for n in self.texture_names)
-        return [t for t in gen if t is not None]
+    def is_uniform(self):
+        return self.resource_name in self.env.buffers
 
     @property
-    def color(self):
-        return [t for t in self.textures if t.format.format in COLOR_TEXTURE_FORMATS]
+    def texture(self):
+        return self.env.textures.get(self.resource_name)
 
     @property
-    def depth(self):
-        return [t for t in self.textures if t.format.format in DEPTH_TEXTURE_FORMATS]
+    def format(self):
+        return self.texture.format
+
+    @property
+    def buffer(self):
+        return self.env.buffers.get(self.resource_name)
+
+    @property
+    def struct(self):
+        return self.buffer.struct
+
+    @property
+    def uniform_index(self):
+        assert(self.is_uniform)
+        return self.parent.uniforms.index(self)
+
+    @property
+    def texture_index(self):
+        assert(self.is_texture)
+        return self.parent.textures.index(self)
 
     def validate(self):
         Syntax.validate(self)
-        for name in self.texture_names:
-            texture = self.env().textures.get(name)
-            if texture is None:
-                self.error(f'Unknown texture "{name}"')
-            texture = CAST(Texture, texture)
-            if texture.format.target != "GL_TEXTURE_2D":
-                self.error(f'Texture "{name}" cannot be used as a render target, its format "{texture.format.name}" does not target GL_TEXTURE_2D.')
-        if len(self.depth) > 1:
-            self.error(f'Pipeline outputs can have at most one depth texture, got {(len(self.depth))}.')
+        if not (self.is_texture or self.is_uniform):
+            self.error(f'Unable to determine input type for resource "{self.resource_name}" on pipeline "{self.parent.name}".')
+        # Strictly speaking it should be an error to be both, but it is more
+        # useful to raise the error for buffers and structs of the same name.
+
+    def __repr__(self):
+        mode = "texture" if self.is_texture else "uniform"
+        return f'<PipelineInput {mode} {self.resource_name}>'
+
+
+class PipelineOutput(Syntax):
+    """
+    A render target output for a pipeline.
+    """
+    many = "outputs"
+
+    def __init__(self, *args, **kargs):
+        Syntax.__init__(self, *args, **kargs)
+        cmd, self.resource_name = tuple(map(str, cast(TokenList, self.tokens[:2])))
+
+    @property
+    def texture(self):
+        return self.env.textures.get(self.resource_name)
+
+    @property
+    def handle(self):
+        return self.texture.handle
+
+    @property
+    def is_color(self):
+        return self.texture.format.format in COLOR_TEXTURE_FORMATS
+
+    @property
+    def is_depth(self):
+        return self.texture.format.format in DEPTH_TEXTURE_FORMATS
+
+    @property
+    def color_index(self):
+        assert(self.is_color)
+        return self.parent.color_targets.index(self)
+
+    def validate(self):
+        Syntax.validate(self)
+        if self.texture is None:
+            self.error(f'Can\'t find resource "{self.resource_name}".')
+        if not self.is_color and not self.is_depth:
+            self.error(f'Output texture "{self.resource_name}" does not have a format which is valid for use as a render target.')
+        for texture in self.parent.textures:
+            if texture == self.texture:
+                self.error(f'Texture "{self.resource_name}" cannot be used as both an input and output to pipeline "{self.parent.name}".')
+
+    def __repr__(self):
+        mode = "color" if self.is_color else "depth"
+        return f'<PipelineOutput {mode} {self.resource_name}>'
 
 
 class Buffer(Syntax):
@@ -662,13 +697,13 @@ class Buffer(Syntax):
 
     @property
     def handle(self):
-        return list(self.env().buffers.keys()).index(self.name)
+        return list(self.env.buffers.keys()).index(self.name)
 
     def validate(self):
         Syntax.validate(self)
-        if self.name in self.env().samplers:
+        if self.name in self.env.samplers:
             self.error(f'Buffer cannot be named "{self.name}", because there is already a sampler of the same name.')
-        if self.struct not in self.env().structs:
+        if self.struct not in self.env.structs:
             self.error(f'Unknown struct: "{self.struct}"')
 
     def __repr__(self):
@@ -690,11 +725,11 @@ class Texture(Syntax):
 
     @property
     def format(self):
-        return self.env().formats[self._format]
+        return self.env.formats[self._format]
 
     @property
     def handle(self):
-        return list(self.env().textures.keys()).index(self.name)
+        return list(self.env.textures.keys()).index(self.name)
 
     @property
     def sampler(self):
@@ -717,9 +752,9 @@ class Texture(Syntax):
 
     def validate(self):
         Syntax.validate(self)
-        if self.name in self.env().samplers:
+        if self.name in self.env.samplers:
             self.error(f'Texture cannot be named "{self.name}", because there is already a sampler of the same name.')
-        if self.name in self.env().buffers:
+        if self.name in self.env.buffers:
             self.error(f'Texture cannot be named "{self.name}", because there is already a buffer of the same name.')
         if not self.format:
             self.error(f'Unknown format: "{self.format}"')
@@ -815,16 +850,16 @@ class RendererUpdate(Syntax):
 
     def validate(self):
         Syntax.validate(self)
-        if self.resource not in self.env().textures and self.resource not in self.env().buffers:
+        if self.resource not in self.env.textures and self.resource not in self.env.buffers:
             self.error(f'Unknown texture or buffer: "{self.resource}"')
 
     @property
     def texture(self):
-        return self.env().textures.get(self.resource)
+        return self.env.textures.get(self.resource)
 
     @property
     def buffer(self):
-        return self.env().buffers.get(self.resource)
+        return self.env.buffers.get(self.resource)
 
     def __repr__(self):
         return f'<RendererUpdate {self.resource}>'
@@ -835,117 +870,24 @@ class RendererDraw(Syntax):
     A draw call.
     """
     many = "draws"
-    binds:tuple #Tuple[RendererDrawBind]
 
     def __init__(self, *args, **kargs):
         Syntax.__init__(self, *args, **kargs)
-        draw, self.pipeline = map(str, cast(TokenList, self.tokens)[:2])
+        draw, self.pipeline_name = map(str, cast(TokenList, self.tokens)[:2])
 
     def validate(self):
         Syntax.validate(self)
 
         # verify that the referenced pipeline exists
-        if self.pipeline not in self.env().pipelines:
+        if self.pipeline_name not in self.env.pipelines:
             self.error(f'Unknown pipeline: "{self.pipeline}"')
-        pipeline = self.env().pipelines[self.pipeline]
 
-        # verify the draw's bindings against the referenced pipeline
-        for bind in self.binds:
-
-            # the pipeline should reference an interface within the pipeline
-            if bind.name not in pipeline.bindings:
-                bind.error(f'Binding "{bind.name}" is not an interface in this draw\'s pipeline.  See pipeline "{self.pipeline}."')
-
-            # check the binding against the referenced pipeline
-            interface:PipelineInterface = pipeline.interfaces[bind.name]
-            if interface.is_uniform:
-                # the interface is a uniform block
-                if bind.is_texture:
-                    bind.error("Cannot bind a texture to a uniform buffer block.")
-                elif bind.is_sampler:
-                    bind.error("Cannot bind a sampler to a uniform buffer block.")
-                else:
-                    assert(bind.is_buffer)
-                    buffer = self.env().buffers[bind.resource]
-                    if buffer.struct != interface.type:
-                        bind.error(f'Buffer is type "{buffer.struct}", but the interface expects "{interface.type}"')
-            else:
-                # the interface is a texture unit
-                assert(interface.is_texture)
-                if bind.is_buffer:
-                    bind.error("Cannot bind a buffer to a texture unit.")
-                elif bind.is_texture:
-                    if bind.texture.format.name != interface.type:
-                        # TODO: really we just care if the target is compatible, and maybe if the channels are the same
-                        bind.error(f'Texture is format "{texture.format}", but the interface expects "{interface.type}"')
-                else:
-                    assert(bind.is_sampler)
+    @property
+    def pipeline(self):
+        return self.env.pipelines[self.pipeline_name]
 
     def __repr__(self):
-        return f'<RendererDraw {self.pipeline}>'
-
-    def buffer_bindings(self) -> tuple: #Tuple[RendererDrawBind, ...]:
-        """
-        Returns the draw's uniform bindings.
-        """
-        return tuple([i for i in self.binds if i.is_buffer])
-
-    def texture_bindings(self) -> tuple: #Tuple[RendererDrawBind, ...]:
-        """
-        Returns the draw's texture bindings.
-        """
-        return tuple([i for i in self.binds if i.is_texture])
-
-    def sampler_bindings(self) -> tuple: #Tuple[RendererDrawBind, ...]:
-        """
-        Returns the draw's sampler bindings.
-        """
-        return tuple([i for i in self.binds if i.is_sampler])
-
-
-class RendererDrawBind(Syntax):
-    """
-    A resource binding for a draw call.
-    """
-    many = "binds"
-
-    def __init__(self, *args, **kargs):
-        Syntax.__init__(self, *args, **kargs)
-        bind, self.name, self.resource = map(str, cast(TokenList, self.tokens))
-        self.is_sampler = False
-        self.is_texture = False
-        self.is_buffer = False
-
-    def rewrite(self):
-        Syntax.rewrite(self)
-        self.is_sampler = self.resource in self.env().samplers
-        self.is_texture = self.resource in self.env().textures
-        self.is_buffer = self.resource in self.env().buffers
-        if not (self.is_sampler or self.is_texture or self.is_buffer):
-            self.error(f'Unknown texture, buffer, or sampler: "{self.resource}"')
-
-    @property
-    def interface(self):
-        pipeline = self.env().pipelines[self.parent.pipeline]
-        return pipeline.interfaces[self.name]
-
-    @property
-    def texture(self):
-        return self.env().textures.get(self.resource)
-
-    @property
-    def sampler(self):
-        if self.is_texture:
-            return self.texture.sampler
-        else:
-            return self.env().samplers.get(self.resource)
-
-    @property
-    def buffer(self):
-        return self.env().buffers.get(self.resource)
-
-    def __repr__(self):
-        return f'<RendererDrawBind {self.name}, {self.resource}>'
+        return f'<RendererDraw {self.pipeline_name}>'
 
 
 class Program(Syntax):
@@ -966,19 +908,3 @@ class Program(Syntax):
         self.set_env(self, error_handler)
         self.rewrite()
         self.validate()
-
-    def unique_pipeline_attachments(self):
-        return {p.attachments.texture_names:p.attachments for p in self.pipelines.values() if p.attachments}
-
-    @property
-    def pipeline_attachments(self) -> List[PipelineAttachments]:
-        """
-        Returns a list of PipelineAttachments with unique parameters, sorted by
-        handle.  When two or more PipelineAttachments have the same parameters,
-        only one is present in this list.
-
-        Therefor, this should not be used in situations where you might need to
-        map back to source via tokens.
-        """
-        unique = self.unique_pipeline_attachments()
-        return [unique[key] for key in sorted(unique)]

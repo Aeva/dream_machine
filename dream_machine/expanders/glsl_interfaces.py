@@ -1,6 +1,6 @@
 ﻿
 from .glsl_types import *
-from ..syntax.grammar import PipelineInterface
+from ..syntax.grammar import PipelineInput
 
 
 class GlslMember(SyntaxExpander):
@@ -24,24 +24,24 @@ class GlslStruct(SyntaxExpander):
 
 
 class UniformInterface(SyntaxExpander):
-    template = "layout(std140, binding = 「binding_point」)\nuniform 「name」\n{\n「members」\n}「instance_name」;"
+    template = "layout(std140, binding = 「binding_point」)\nuniform 「block_name」\n{\n「members」\n}「instance_name」;"
     indent = ("members",)
-    def __init__(self, struct: StructType, binding_point: int, block_name: str, instance_name: str = ""):
+    def __init__(self, struct: StructType, input: PipelineInput):
         SyntaxExpander.__init__(self)
-        self.name = block_name
-        self.binding_point = binding_point
+        self.block_name = input.binding_name
+        self.binding_point = input.uniform_index
         self.members = [GlslMember(*member) for member in struct.members.items()]
-        self.instance_name = instance_name
+        self.instance_name = ""
 
 
 class TextureInterface(SyntaxExpander):
     template = "layout(binding = 「binding_point」)\nuniform sampler「mode:str」 「name:str」;"
 
-    def __init__(self, interface: PipelineInterface):
+    def __init__(self, input: PipelineInput):
         SyntaxExpander.__init__(self)
-        self.binding_point = interface.texture_unit
-        self.mode = self.sampler_type(interface.format.target)
-        self.name = interface.name
+        self.binding_point = input.texture_index
+        self.mode = self.sampler_type(input.format.target)
+        self.name = input.binding_name
 
     def sampler_type(self, target:str) -> str:
         if target == "GL_TEXTURE_1D":
