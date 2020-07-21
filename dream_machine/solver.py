@@ -142,7 +142,7 @@ def solve_renderers(env:Program) -> Tuple[List[SyntaxExpander], SyntaxExpander]:
             for flag in pipeline.flags.values()
         ]
         return Drawspatch(
-            name = pipeline,
+            name = pipeline.name,
             setup = setup,
             draw = InstancedDraw(vertices=6, instances=1))
 

@@ -253,7 +253,7 @@ namespace Renderer
 			Upload::WindowParamsType(BufferHandles[0], Data);
 		}
 		{
-			glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "<Pipeline TextureTest>");
+			glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "TextureTest");
 			glUseProgram(ShaderPrograms[0]);
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 			glBindBufferBase(GL_UNIFORM_BUFFER, 0, BufferHandles[0]);
@@ -290,7 +290,7 @@ namespace Renderer
 			Upload::WindowParamsType(BufferHandles[0], Data);
 		}
 		{
-			glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "<Pipeline SplatRed>");
+			glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "SplatRed");
 			glUseProgram(ShaderPrograms[1]);
 			glBindFramebuffer(GL_FRAMEBUFFER, FrameBufferHandles[1]);
 			glBindBufferBase(GL_UNIFORM_BUFFER, 0, BufferHandles[0]);
@@ -300,7 +300,7 @@ namespace Renderer
 			glPopDebugGroup();
 		}
 		{
-			glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "<Pipeline SplatBlue>");
+			glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "SplatBlue");
 			glUseProgram(ShaderPrograms[2]);
 			glBindFramebuffer(GL_FRAMEBUFFER, FrameBufferHandles[2]);
 			glBindBufferBase(GL_UNIFORM_BUFFER, 0, BufferHandles[0]);
@@ -310,7 +310,7 @@ namespace Renderer
 			glPopDebugGroup();
 		}
 		{
-			glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "<Pipeline Combiner>");
+			glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Combiner");
 			glUseProgram(ShaderPrograms[3]);
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 			glBindBufferBase(GL_UNIFORM_BUFFER, 0, BufferHandles[0]);
