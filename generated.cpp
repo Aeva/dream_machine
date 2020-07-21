@@ -343,43 +343,43 @@ void DrawFrame(int FrameIndex, double CurrentTime, double DeltaTime)
 
 void WindowResized()
 {
-{
 	{
-		// resize texture "BlueColorTarget"
-		glDeleteTextures(1, &TextureHandles[2]);
-		glCreateTextures(GL_TEXTURE_2D, 1, &TextureHandles[2]);
-		glTextureStorage2D(TextureHandles[2], 1, GL_RGBA8, (GLsizei)ScreenWidth, (GLsizei)ScreenHeight);
-		glObjectLabel(GL_TEXTURE, TextureHandles[2], -1, "BlueColorTarget");
+		{
+			// resize texture "BlueColorTarget"
+			glDeleteTextures(1, &TextureHandles[2]);
+			glCreateTextures(GL_TEXTURE_2D, 1, &TextureHandles[2]);
+			glTextureStorage2D(TextureHandles[2], 1, GL_RGBA8, (GLsizei)ScreenWidth, (GLsizei)ScreenHeight);
+			glObjectLabel(GL_TEXTURE, TextureHandles[2], -1, "BlueColorTarget");
+		}
+		{
+			// resize texture "RedColorTarget"
+			glDeleteTextures(1, &TextureHandles[1]);
+			glCreateTextures(GL_TEXTURE_2D, 1, &TextureHandles[1]);
+			glTextureStorage2D(TextureHandles[1], 1, GL_RGBA8, (GLsizei)ScreenWidth, (GLsizei)ScreenHeight);
+			glObjectLabel(GL_TEXTURE, TextureHandles[1], -1, "RedColorTarget");
+		}
+		{
+			// resize texture "SomeDepthTarget"
+			glDeleteTextures(1, &TextureHandles[3]);
+			glCreateTextures(GL_TEXTURE_2D, 1, &TextureHandles[3]);
+			glTextureStorage2D(TextureHandles[3], 1, GL_RGBA8, (GLsizei)ScreenWidth, (GLsizei)ScreenHeight);
+			glObjectLabel(GL_TEXTURE, TextureHandles[3], -1, "SomeDepthTarget");
+		}
+		{
+			glDeleteFramebuffers(1, &FrameBufferHandles[1]);
+			glCreateFramebuffers(1, &FrameBufferHandles[1]);
+			glNamedFramebufferTexture(FrameBufferHandles[1], GL_COLOR_ATTACHMENT0, TextureHandles[1], 0);
+			glNamedFramebufferTexture(FrameBufferHandles[1], GL_COLOR_ATTACHMENT1, TextureHandles[3], 0);
+			glObjectLabel(GL_FRAMEBUFFER, FrameBufferHandles[1], -1, "SplatRed");
+		}
+		{
+			glDeleteFramebuffers(1, &FrameBufferHandles[2]);
+			glCreateFramebuffers(1, &FrameBufferHandles[2]);
+			glNamedFramebufferTexture(FrameBufferHandles[2], GL_COLOR_ATTACHMENT0, TextureHandles[2], 0);
+			glNamedFramebufferTexture(FrameBufferHandles[2], GL_COLOR_ATTACHMENT1, TextureHandles[3], 0);
+			glObjectLabel(GL_FRAMEBUFFER, FrameBufferHandles[2], -1, "SplatBlue");
+		}
 	}
-	{
-		// resize texture "RedColorTarget"
-		glDeleteTextures(1, &TextureHandles[1]);
-		glCreateTextures(GL_TEXTURE_2D, 1, &TextureHandles[1]);
-		glTextureStorage2D(TextureHandles[1], 1, GL_RGBA8, (GLsizei)ScreenWidth, (GLsizei)ScreenHeight);
-		glObjectLabel(GL_TEXTURE, TextureHandles[1], -1, "RedColorTarget");
-	}
-	{
-		// resize texture "SomeDepthTarget"
-		glDeleteTextures(1, &TextureHandles[3]);
-		glCreateTextures(GL_TEXTURE_2D, 1, &TextureHandles[3]);
-		glTextureStorage2D(TextureHandles[3], 1, GL_RGBA8, (GLsizei)ScreenWidth, (GLsizei)ScreenHeight);
-		glObjectLabel(GL_TEXTURE, TextureHandles[3], -1, "SomeDepthTarget");
-	}
-	{
-		glDeleteFramebuffers(1, &FrameBufferHandles[1]);
-		glCreateFramebuffers(1, &FrameBufferHandles[1]);
-		glNamedFramebufferTexture(FrameBufferHandles[1], GL_COLOR_ATTACHMENT0, TextureHandles[1], 0);
-		glNamedFramebufferTexture(FrameBufferHandles[1], GL_COLOR_ATTACHMENT1, TextureHandles[3], 0);
-		glObjectLabel(GL_FRAMEBUFFER, FrameBufferHandles[1], -1, "SplatRed");
-	}
-	{
-		glDeleteFramebuffers(1, &FrameBufferHandles[2]);
-		glCreateFramebuffers(1, &FrameBufferHandles[2]);
-		glNamedFramebufferTexture(FrameBufferHandles[2], GL_COLOR_ATTACHMENT0, TextureHandles[2], 0);
-		glNamedFramebufferTexture(FrameBufferHandles[2], GL_COLOR_ATTACHMENT1, TextureHandles[3], 0);
-		glObjectLabel(GL_FRAMEBUFFER, FrameBufferHandles[2], -1, "SplatBlue");
-	}
-}
 }
 
 
