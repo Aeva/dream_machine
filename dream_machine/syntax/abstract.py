@@ -1,4 +1,5 @@
 
+from math import *
 from weakref import ref, ReferenceType
 from ..handy import *
 from .tokens import *
@@ -313,12 +314,25 @@ class StructMember(Syntax):
 
     def __init__(self, *args, **kargs):
         Syntax.__init__(self, *args, **kargs)
-        self.type, self.name = map(str, cast(TokenList, self.tokens))
+        token_list = CAST(TokenList, self.tokens)
+        self.name = str(token_list[0])
+        if str(token_list[1]) == "array":
+            self.array = CAST(TokenNumber, token_list[2])
+            self.type = str(token_list[3])
+        else:
+            self.array = None
+            self.type = str(token_list[1])
 
     def validate(self):
         Syntax.validate(self)
         if self.type not in glsl_builtins and self.type not in self.env.structs:
             self.error(f'Undefined type name: "{self.type}"')
+        if self.array is not None:
+            number = CAST(TokenNumber, self.array)
+            if number.value < 1:
+                self.error("Array size can't be less than 1", number)
+            if number.value != floor(number.value):
+                pass
 
     def __repr__(self):
         return f'<StructMember {self.name} {self.type}>'

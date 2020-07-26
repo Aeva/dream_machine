@@ -36,11 +36,11 @@ def test_pipeline_inputs():
     (width ScreenWidth)
     (height ScreenHeight))
 (struct SomeStruct1
-    (vec4 Fnord)
-    (float Meep))
+    (Fnord vec4)
+    (Meep float))
 (struct SomeStruct2
-    (vec4 Moop)
-    (float Bloop))
+    (Moop vec4)
+    (Bloop float))
 (buffer SomeBuffer1 SomeStruct1)
 (buffer SomeBuffer2 SomeStruct2)
 (pipeline TestPass

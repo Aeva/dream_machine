@@ -11,18 +11,19 @@
 
 
 (struct WindowParamsType
-	(vec4 WindowSize)
-	(vec4 WindowScale)
-	(float ElapsedTime))
+	(WindowSize vec4)
+	(WindowScale vec4)
+	(ElapsedTime float))
 
 
 (struct SomeType
-	(mat4 Whatever)
-	(float Etc))
+	(Whatever mat4)
+	(SomeArray array 10 float))
+
 
 
 (struct WhatsitType
-	(SomeType Moop))
+	(Moop SomeType))
 
 
 (sampler LinearSampler

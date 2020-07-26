@@ -1,4 +1,5 @@
 
+import itertools
 from .abstract import *
 
 
@@ -10,6 +11,10 @@ class Rule:
         return []
 
     def validate(self, token:Token, error:ErrorCallback) -> Optional[Syntax]:
+        raise NotImplementedError
+        return False
+
+    def match(self, token:Token) -> bool:
         raise NotImplementedError
         return False
 
@@ -26,6 +31,11 @@ class AtomRule(Rule):
         if not type(token) == self.atom:
             error(f"Expected {self.hint} to be a {self.atom}, got {type(token).__name__}", token)
         return None
+
+    def match(self, token:Token) -> bool:
+        # we don't want to be too strict in the pattern match,
+        # so we just ensure that we have an atom here.
+        return type(token) is not TokenList
 
     def __repr__(self):
         return f'<{type(self).__name__} "{self.hint}">'
@@ -76,7 +86,7 @@ class Exactly(WordRule):
             return False
 
     def __repr__(self):
-        return f'<Exactly "{self.name}">'
+        return f'<Exactly "{self.hint}">'
 
 
 class ArithmeticRule(Rule):
@@ -84,12 +94,19 @@ class ArithmeticRule(Rule):
     This will attempt to match a valid arithmetic expresison.
     """
 
+    def __init__(self, hint:str):
+        self.hint = hint
+
     def constructors(self) -> List[type]:
         return [ArithmeticExpression]
 
     def validate(self, token:Token, error:ErrorCallback) -> Optional[Syntax]:
         expr:Union[FoldedExpression, UnfoldedExpression] = fold(token, error)
         return ArithmeticExpression(expr, token, [], [])
+
+    def match(self, token:Token) -> bool:
+        # expressions can look like lots of things
+        return True
 
 
 class ListRule(Rule):
@@ -132,13 +149,11 @@ class ListRule(Rule):
                     children.append(cast(Syntax, syntax))
         return self.construct(token_list, children, child_types)
 
-    def match(self, token_list:TokenList) -> bool:
-        assert(len([r for r in self.rules if type(r) is Exactly]) == 1)
-        assert(type(self.rules[0]) is Exactly)
+    def match(self, token:Token) -> bool:
+        token_list = CAST(TokenList, token)
         for rule, token in zip(self.rules, token_list):
-            if type(rule) is Exactly:
-                if not cast(Exactly, rule).match(token):
-                    return False
+            if not rule.match(token):
+                return False
         return True
 
     def __repr__(self):
@@ -161,7 +176,6 @@ class MatchRule(Rule):
         if token_list.is_nil():
             error("Expected non-empty TokenList", token_list)
         for rule in self.rules:
-            assert(type(rule) is ListRule)
             if rule.match(token_list):
                 return rule.validate(token_list, error)
         error("Unkown expression", token_list)

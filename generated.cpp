@@ -12,7 +12,7 @@ namespace Glsl
 	struct SomeType
 	{
 		mat4 Whatever;
-		float Etc;
+		float SomeArray[0];
 	};
 	struct WhatsitType
 	{
@@ -44,8 +44,8 @@ namespace UserVars
 GLuint Shaders[7] = { 0 };
 GLuint ShaderPrograms[4] = { 0 };
 std::string ShaderPaths[7] = {
-	"generated_shaders\\splat.vs.glsl.3617cd1a7c393db7d63fa081462160cb.glsl",
-	"generated_shaders\\texture.fs.glsl.3e0614a92c4d2394807faf38eb237a36.glsl",
+	"generated_shaders\\splat.vs.glsl.9711e0b6715ace3d1c523ad8da281db5.glsl",
+	"generated_shaders\\texture.fs.glsl.e8a8ab38ee8cbb2b62fc23a034c44176.glsl",
 	"generated_shaders\\splat.vs.glsl.47d065ffb14cdc019f77274fed6c505a.glsl",
 	"generated_shaders\\red.fs.glsl.e27c34cae30a790b21dd71528868119f.glsl",
 	"generated_shaders\\blue.fs.glsl.d76a46ffe93e604d64ff4315f1b81dce.glsl",
@@ -75,24 +75,24 @@ namespace Upload
 	}
 	void SomeType (GLuint Handle, Glsl::SomeType& Data)
 	{
-		std::int32_t* Mapped = (std::int32_t*)glMapNamedBufferRange(Handle, 0, 80, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
+		std::int32_t* Mapped = (std::int32_t*)glMapNamedBufferRange(Handle, 0, 224, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
 		if (Mapped == nullptr)
 		{
 			std::cout << "Fatal error in function \"Upload::SomeType\": glMapNamedBufferRange returned nullptr.\n";
 			HaltAndCatchFire();
 		}
-		Reflow<float>(Mapped, 16, Data.Etc);
+
 		glUnmapNamedBuffer(Handle);
 	}
 	void WhatsitType (GLuint Handle, Glsl::WhatsitType& Data)
 	{
-		std::int32_t* Mapped = (std::int32_t*)glMapNamedBufferRange(Handle, 0, 80, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
+		std::int32_t* Mapped = (std::int32_t*)glMapNamedBufferRange(Handle, 0, 224, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
 		if (Mapped == nullptr)
 		{
 			std::cout << "Fatal error in function \"Upload::WhatsitType\": glMapNamedBufferRange returned nullptr.\n";
 			HaltAndCatchFire();
 		}
-		Reflow<float>(Mapped, 16, Data.Moop.Etc);
+
 		glUnmapNamedBuffer(Handle);
 	}
 }

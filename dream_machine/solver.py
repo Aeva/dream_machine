@@ -56,6 +56,10 @@ def solve_struct(struct:Struct, env:Program) -> StructType:
                 members[member.name] = solve_struct(env.structs[member.type], env)
             except RecursionError:
                 struct.error(f'Circular reference w/ other structs via member "{member.name}".')
+        if member.array is not None:
+            number = CAST(TokenNumber, member.array).value
+            members[member.name] = ArrayType(members[member.name], number)
+
     return StructType(struct.name, **members)
 
 

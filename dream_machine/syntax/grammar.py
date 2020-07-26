@@ -4,13 +4,19 @@ from .abstract import *
 from .rules import *
 
 
-def MatchSplat(pattern):
+def MatchSplat(pattern, fnord=False):
     return MatchRule(*[rule for (name,rule) in globals().items() if re.match(pattern, name)])
 
 
+STRUCT_MEMBER_ARRAY_RULE = \
+    ListRule(StructMember, WordRule("name"), Exactly("array"), NumberRule("array size"), WordRule("type"))
+
+STRUCT_MEMBER_RULE = \
+    ListRule(StructMember, WordRule("name"), WordRule("type"))
+
 STRUCT_RULE = \
     ListRule(Struct, Exactly("struct"), WordRule("struct name"),
-             SPLAT = ListRule(StructMember, WordRule("type"), WordRule("name")))
+             SPLAT = MatchSplat(r'STRUCT_MEMBER[A-Z_]*?_RULE', fnord=True))
 
 
 FORMAT_RULE = \
@@ -19,7 +25,7 @@ FORMAT_RULE = \
 
 
 USER_VAR_RULE = \
-    ListRule(UserVar, Exactly("uservar"), WordRule("ctype"), WordRule("name"), ArithmeticRule())
+    ListRule(UserVar, Exactly("uservar"), WordRule("ctype"), WordRule("name"), ArithmeticRule("value"))
 
 
 SAMPLER_MIN_RULE = ListRule(SamplerFilter, Exactly("min"), WordRule("opengl filter enum"))
@@ -56,11 +62,11 @@ BUFFER_RULE = ListRule(Buffer, Exactly("buffer"), WordRule("buffer name"), WordR
 
 TEXTURE_SRC_RULE = ListRule(TextureSrc, Exactly("src"), StringRule("image path"))
 
-TEXTURE_WIDTH_RULE = ListRule(TextureDimension, Exactly("width"), ArithmeticRule())
+TEXTURE_WIDTH_RULE = ListRule(TextureDimension, Exactly("width"), ArithmeticRule("value"))
 
-TEXTURE_HEIGHT_RULE = ListRule(TextureDimension, Exactly("height"), ArithmeticRule())
+TEXTURE_HEIGHT_RULE = ListRule(TextureDimension, Exactly("height"), ArithmeticRule("value"))
 
-TEXTURE_DEPTH_RULE = ListRule(TextureDimension, Exactly("depth"), ArithmeticRule())
+TEXTURE_DEPTH_RULE = ListRule(TextureDimension, Exactly("depth"), ArithmeticRule("value"))
 
 TEXTURE_RULE = \
     ListRule(Texture, Exactly("texture"), WordRule("texture name"), WordRule("texture type"),

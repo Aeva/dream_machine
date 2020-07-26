@@ -2,7 +2,7 @@
 struct SomeType
 {
 	mat4 Whatever;
-	float Etc;
+	float SomeArray[0];
 };
 layout(std140, binding = 0)
 uniform WindowParams
@@ -13,14 +13,8 @@ uniform WindowParams
 };
 layout(binding = 0)
 uniform sampler2D FancyTexture;
-layout(location = 0)
- out vec4 OutColor;
-
 
 void main()
 {
-	vec2 UV = gl_FragCoord.xy * WindowSize.zw;
-	UV.x += sin(UV.y + ElapsedTime);
-	UV.y += cos(UV.x + ElapsedTime);
-	OutColor = texture(FancyTexture, UV);
+	gl_Position = vec4(-1.0 + float((gl_VertexID & 1) << 2), -1.0 + float((gl_VertexID & 2) << 1), 0, 1);
 }
