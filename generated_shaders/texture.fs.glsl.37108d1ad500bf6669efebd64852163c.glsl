@@ -2,7 +2,7 @@
 struct SomeType
 {
 	mat4 Whatever;
-	float SomeArray[0];
+	float SomeArray[10];
 };
 layout(std140, binding = 0)
 uniform WindowParams

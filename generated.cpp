@@ -12,7 +12,7 @@ namespace Glsl
 	struct SomeType
 	{
 		mat4 Whatever;
-		float SomeArray[0];
+		float SomeArray[10];
 	};
 	struct WhatsitType
 	{
@@ -44,8 +44,8 @@ namespace UserVars
 GLuint Shaders[7] = { 0 };
 GLuint ShaderPrograms[4] = { 0 };
 std::string ShaderPaths[7] = {
-	"generated_shaders\\splat.vs.glsl.9711e0b6715ace3d1c523ad8da281db5.glsl",
-	"generated_shaders\\texture.fs.glsl.e8a8ab38ee8cbb2b62fc23a034c44176.glsl",
+	"generated_shaders\\splat.vs.glsl.07af7ffb8a6f0e7f5fd2ad7609180639.glsl",
+	"generated_shaders\\texture.fs.glsl.37108d1ad500bf6669efebd64852163c.glsl",
 	"generated_shaders\\splat.vs.glsl.47d065ffb14cdc019f77274fed6c505a.glsl",
 	"generated_shaders\\red.fs.glsl.e27c34cae30a790b21dd71528868119f.glsl",
 	"generated_shaders\\blue.fs.glsl.d76a46ffe93e604d64ff4315f1b81dce.glsl",
@@ -81,7 +81,20 @@ namespace Upload
 			std::cout << "Fatal error in function \"Upload::SomeType\": glMapNamedBufferRange returned nullptr.\n";
 			HaltAndCatchFire();
 		}
-
+		Reflow< vec4>(Mapped, 0, Data.Whatever[0]);
+		Reflow< vec4>(Mapped, 4, Data.Whatever[1]);
+		Reflow< vec4>(Mapped, 8, Data.Whatever[2]);
+		Reflow< vec4>(Mapped, 12, Data.Whatever[3]);
+		Reflow<float>(Mapped, 16, Data.SomeArray[0]);
+		Reflow<float>(Mapped, 20, Data.SomeArray[1]);
+		Reflow<float>(Mapped, 24, Data.SomeArray[2]);
+		Reflow<float>(Mapped, 28, Data.SomeArray[3]);
+		Reflow<float>(Mapped, 32, Data.SomeArray[4]);
+		Reflow<float>(Mapped, 36, Data.SomeArray[5]);
+		Reflow<float>(Mapped, 40, Data.SomeArray[6]);
+		Reflow<float>(Mapped, 44, Data.SomeArray[7]);
+		Reflow<float>(Mapped, 48, Data.SomeArray[8]);
+		Reflow<float>(Mapped, 52, Data.SomeArray[9]);
 		glUnmapNamedBuffer(Handle);
 	}
 	void WhatsitType (GLuint Handle, Glsl::WhatsitType& Data)
@@ -92,7 +105,20 @@ namespace Upload
 			std::cout << "Fatal error in function \"Upload::WhatsitType\": glMapNamedBufferRange returned nullptr.\n";
 			HaltAndCatchFire();
 		}
-
+		Reflow< vec4>(Mapped, 0, Data.Moop.Whatever[0]);
+		Reflow< vec4>(Mapped, 4, Data.Moop.Whatever[1]);
+		Reflow< vec4>(Mapped, 8, Data.Moop.Whatever[2]);
+		Reflow< vec4>(Mapped, 12, Data.Moop.Whatever[3]);
+		Reflow<float>(Mapped, 16, Data.Moop.SomeArray[0]);
+		Reflow<float>(Mapped, 20, Data.Moop.SomeArray[1]);
+		Reflow<float>(Mapped, 24, Data.Moop.SomeArray[2]);
+		Reflow<float>(Mapped, 28, Data.Moop.SomeArray[3]);
+		Reflow<float>(Mapped, 32, Data.Moop.SomeArray[4]);
+		Reflow<float>(Mapped, 36, Data.Moop.SomeArray[5]);
+		Reflow<float>(Mapped, 40, Data.Moop.SomeArray[6]);
+		Reflow<float>(Mapped, 44, Data.Moop.SomeArray[7]);
+		Reflow<float>(Mapped, 48, Data.Moop.SomeArray[8]);
+		Reflow<float>(Mapped, 52, Data.Moop.SomeArray[9]);
 		glUnmapNamedBuffer(Handle);
 	}
 }

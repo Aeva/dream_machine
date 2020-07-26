@@ -34,11 +34,12 @@ class VectorType(GlslType):
 
 class ArrayType(GlslType):
     def __init__(self, base: GlslType, size: int) -> None:
+        words = align(base.words, 4)
+        GlslType.__init__(self, f"{base.name}", base.alignment, words * size)
         self.array_size = size
         self.item_type = base
-        self.item_type.words = align(base.words, 4)
+        self.item_type.words = words
         self.item_type.alignment = base.alignment
-        GlslType.__init__(self, f"{base.name}", self.item_type.alignment, self.item_type.words * size)
 
 
 class MatrixType(ArrayType):
