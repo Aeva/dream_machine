@@ -1,4 +1,5 @@
 
+from __future__ import annotations
 from math import *
 from weakref import ref, ReferenceType
 from ..handy import *
@@ -9,6 +10,7 @@ from ..expanders.glsl_types import glsl_builtins
 
 
 ErrorCallback = Callable[..., None]
+ExpressionTree = Union[FoldedExpression, UnfoldedExpression]
 
 
 COMMON_VARS = \
@@ -129,32 +131,31 @@ class Syntax:
     many:Optional[str] = None
     primary:Optional[str] = None
 
-    def __init__(self, tokens:Optional[TokenList], children, child_types):
+    def __init__(self, tokens:Optional[TokenList], children:List[Syntax], child_types:List[Type[Syntax]]):
         assert((type(self.one) is str and self.many is None) or (type(self.many) is str and self.one is None))
-        cast(List[Syntax], children)
-        cast(List[Type[Syntax]], child_types)
         self.tokens = tokens
         self.children = children
         self.child_types = child_types
         self._keys = dedupe([cast(str, c.many or c.one) for c in child_types])
-        self._env:"Optional[ReferenceType[Program]]" = None
-        self._parent:Optional[ref] = None
+        self._env:Optional[ReferenceType] = None
+        self._parent:Optional[ReferenceType] = None
         self.error_callback:Optional[ErrorCallback] = None
         for child in self.children:
             child.parent = self
         self.populate(self.children)
 
     @property
-    def env(self):
-        return CAST(Program, self._env())
+    def env(self) -> Program:
+        reference = cast(ReferenceType, self._env)
+        return CAST(Program, reference())
 
     @property
-    def parent(self):
+    def parent(self) -> Syntax:
         assert(self._parent is not None)
         return cast(Syntax, self._parent())
 
     @parent.setter
-    def parent(self, parent):
+    def parent(self, parent:Syntax):
         assert(self._parent is None)
         self._parent = ref(parent)
 
@@ -169,7 +170,7 @@ class Syntax:
         error_callback = cast(ErrorCallback, self.error_callback)
         error_callback(hint, token or CAST(TokenList, self.tokens))
 
-    def populate(self, all_children):
+    def populate(self, all_children:List[Syntax]):
         for match in self.child_types:
             children = [c for c in all_children if type(c) == match]
             if match.many is not None:
@@ -182,7 +183,7 @@ class Syntax:
                 child = children[-1] if len(children) else None
                 setattr(self, match.one, child)
 
-    def subset(self, subset_name):
+    def subset(self, subset_name:str) -> Union[List[Syntax], Dict[str,Syntax], Syntax]:
         subset = getattr(self, subset_name)
         if is_mapping(subset):
             return subset.values()
@@ -234,7 +235,7 @@ class ArithmeticExpression(Syntax):
     """
     one = "expr"
 
-    def __init__(self, expr:Union[FoldedExpression, UnfoldedExpression], *args, **kargs):
+    def __init__(self, expr:ExpressionTree, *args, **kargs):
         Syntax.__init__(self, *args, **kargs)
         self.expr = expr
 
@@ -258,13 +259,14 @@ class UserVar(Syntax):
     """
     many = "user_vars"
     primary = "name"
+    expr:ArithmeticExpression
 
     def __init__(self, *args, **kargs):
         Syntax.__init__(self, *args, **kargs)
         uservar, self.ctype, self.name = map(str, cast(TokenList, self.tokens[:3]))
 
     @property
-    def value(self):
+    def value(self) -> ExpressionTree:
         return self.expr.expr
 
     def validate(self):
@@ -279,7 +281,7 @@ class Struct(Syntax):
     """
     many = "structs"
     primary = "name"
-    members:dict
+    members:List[StructMember]
 
     def __init__(self, *args, **kargs):
         Syntax.__init__(self, *args, **kargs)
@@ -345,14 +347,14 @@ class Sampler(Syntax):
     """
     many = "samplers"
     primary = "name"
-    filters:dict
+    filters:Dict[str,SamplerFilter]
 
     def __init__(self, *args, **kargs):
         Syntax.__init__(self, *args, **kargs)
         sampler, self.name = map(str, cast(TokenList, self.tokens)[:2])
 
     @property
-    def handle(self):
+    def handle(self) -> int:
         return list(self.env.samplers.keys()).index(self.name)
 
     def validate(self):
@@ -403,8 +405,8 @@ class Format(Syntax):
         format, self.name, self.target, self.format, self._sampler = map(str, cast(TokenList, self.tokens))
 
     @property
-    def sampler(self):
-        return self.env.samplers.get(self._sampler)
+    def sampler(self) -> Sampler:
+        return CAST(Sampler, self.env.samplers.get(self._sampler))
 
     def validate(self):
         Syntax.validate(self)
@@ -428,10 +430,11 @@ class Pipeline(Syntax):
     """
     many = "pipelines"
     primary = "name"
-    structs:dict
-    shaders:dict
-    inputs:list
-    outputs:list
+    structs:List[PipelineUse]
+    shaders:Dict[str,PipelineShader]
+    inputs:List[PipelineInput]
+    outputs:List[PipelineOutput]
+    flags:Dict[str,PipelineFlag]
 
     def __init__(self, *args, **kargs):
         Syntax.__init__(self, *args, **kargs)
@@ -472,25 +475,25 @@ class Pipeline(Syntax):
         return list(self.env.pipelines.values()).index(self)
 
     @property
-    def uniforms(self) -> tuple: #Tuple[PipelineInterface, ...]:
+    def uniforms(self) -> Tuple[PipelineInput, ...]:
         """
         Returns the pipeline's uniform inputs.
         """
         return tuple([i for i in self.inputs if i.is_uniform])
 
     @property
-    def textures(self) -> tuple: #Tuple[PipelineInterface, ...]:
+    def textures(self) -> Tuple[PipelineInput, ...]:
         """
         Returns the pipeline's texture inputs.
         """
         return tuple([i for i in self.inputs if i.is_texture])
 
     @property
-    def color_targets(self):
-        return [i for i in self.outputs if i.is_color]
+    def color_targets(self) -> Tuple[PipelineOutput, ...]:
+        return tuple([i for i in self.outputs if i.is_color])
 
     @property
-    def depth_target(self):
+    def depth_target(self) -> Optional[PipelineOutput]:
         targets = [i for i in self.outputs if i.is_depth]
         if len(targets) == 1:
             return targets[0]
@@ -498,10 +501,10 @@ class Pipeline(Syntax):
             return None
 
     @property
-    def uses_backbuffer(self):
+    def uses_backbuffer(self) -> bool:
         return self.depth_target is None and len(self.color_targets) == 0
 
-    def compatible_with(self, other):
+    def compatible_with(self, other) -> bool:
         """
         Compare this pipeline object with another, and return True if the two use
         the same output buffers in the same order.
@@ -602,42 +605,42 @@ class PipelineInput(Syntax):
         cmd, self.resource_name = tuple(map(str, cast(TokenList, self.tokens[:2])))
 
     @property
-    def binding_name(self):
+    def binding_name(self) -> str:
         return self.resource_name
 
     @property
-    def is_texture(self):
+    def is_texture(self) -> bool:
         return self.resource_name in self.env.textures
 
     @property
-    def is_uniform(self):
+    def is_uniform(self) -> bool:
         return self.resource_name in self.env.buffers
 
     @property
-    def texture(self):
+    def texture(self) -> Optional[Texture]:
         return self.env.textures.get(self.resource_name)
 
     @property
-    def format(self):
-        return self.texture.format
+    def format(self) -> Format:
+        return CAST(Texture, self.texture).format
 
     @property
-    def buffer(self):
+    def buffer(self) -> Optional[Buffer]:
         return self.env.buffers.get(self.resource_name)
 
     @property
-    def struct(self):
-        return self.buffer.struct
+    def struct(self) -> str:
+        return CAST(Buffer, self.buffer).struct
 
     @property
-    def uniform_index(self):
+    def uniform_index(self) -> int:
         assert(self.is_uniform)
-        return self.parent.uniforms.index(self)
+        return cast(Pipeline, self.parent).uniforms.index(self)
 
     @property
-    def texture_index(self):
+    def texture_index(self) -> int:
         assert(self.is_texture)
-        return self.parent.textures.index(self)
+        return cast(Pipeline, self.parent).textures.index(self)
 
     def validate(self):
         Syntax.validate(self)
@@ -662,25 +665,25 @@ class PipelineOutput(Syntax):
         cmd, self.resource_name = tuple(map(str, cast(TokenList, self.tokens[:2])))
 
     @property
-    def texture(self):
-        return self.env.textures.get(self.resource_name)
+    def texture(self) -> Texture:
+        return self.env.textures[self.resource_name]
 
     @property
-    def handle(self):
+    def handle(self) -> int:
         return self.texture.handle
 
     @property
-    def is_color(self):
+    def is_color(self) -> bool:
         return self.texture.format.format in COLOR_TEXTURE_FORMATS
 
     @property
-    def is_depth(self):
+    def is_depth(self) -> bool:
         return self.texture.format.format in DEPTH_TEXTURE_FORMATS
 
     @property
-    def color_index(self):
+    def color_index(self) -> int:
         assert(self.is_color)
-        return self.parent.color_targets.index(self)
+        return cast(Pipeline, self.parent).color_targets.index(self)
 
     def validate(self):
         Syntax.validate(self)
@@ -710,7 +713,7 @@ class Buffer(Syntax):
         buffer, self.name, self.struct = map(str, cast(TokenList, self.tokens))
 
     @property
-    def handle(self):
+    def handle(self) -> int:
         return list(self.env.buffers.keys()).index(self.name)
 
     def validate(self):
@@ -731,36 +734,37 @@ class Texture(Syntax):
     """
     many = "textures"
     primary = "name"
-    src:Syntax
+    src:TextureSrc
+    dimensions:Dict[str,TextureDimension]
 
     def __init__(self, *args, **kargs):
         Syntax.__init__(self, *args, **kargs)
         buffer, self.name, self._format = map(str, cast(TokenList, self.tokens[:3]))
 
     @property
-    def format(self):
+    def format(self) -> Format:
         return self.env.formats[self._format]
 
     @property
-    def handle(self):
+    def handle(self) -> int:
         return list(self.env.textures.keys()).index(self.name)
 
     @property
-    def sampler(self):
+    def sampler(self) -> Sampler:
         return self.format.sampler
 
     @property
-    def width(self):
+    def width(self) -> Optional[ExpressionTree]:
         prop = self.dimensions.get("width")
         return prop.value if prop is not None else None
 
     @property
-    def height(self):
+    def height(self) -> Optional[ExpressionTree]:
         prop = self.dimensions.get("height")
         return prop.value if prop is not None else None
 
     @property
-    def depth(self):
+    def depth(self) -> Optional[ExpressionTree]:
         prop = self.dimensions.get("depth")
         return prop.value if prop is not None else None
 
@@ -823,13 +827,14 @@ class TextureDimension(Syntax):
     """
     many = "dimensions"
     primary = "name"
+    expr:ArithmeticExpression
 
     def __init__(self, *args, **kargs):
         Syntax.__init__(self, *args, **kargs)
         self.name = str(cast(TokenList, self.tokens)[0])
 
     @property
-    def value(self):
+    def value(self) -> ExpressionTree:
         return self.expr.expr
 
     def __repr__(self):
@@ -868,11 +873,11 @@ class RendererUpdate(Syntax):
             self.error(f'Unknown texture or buffer: "{self.resource}"')
 
     @property
-    def texture(self):
+    def texture(self) -> Optional[Texture]:
         return self.env.textures.get(self.resource)
 
     @property
-    def buffer(self):
+    def buffer(self) -> Optional[Buffer]:
         return self.env.buffers.get(self.resource)
 
     def __repr__(self):
@@ -897,7 +902,7 @@ class RendererDraw(Syntax):
             self.error(f'Unknown pipeline: "{self.pipeline}"')
 
     @property
-    def pipeline(self):
+    def pipeline(self) -> Pipeline:
         return self.env.pipelines[self.pipeline_name]
 
     def __repr__(self):
@@ -909,13 +914,14 @@ class Program(Syntax):
     This is the syntax graph root, and represents everything within your program.
     """
     many = "programs"
-    user_vars:dict
-    structs:dict
-    buffers:dict
-    samplers:dict
-    textures:dict
-    pipelines:dict
-    renderers:dict
+    user_vars:Dict[str,UserVar]
+    structs:Dict[str,Struct]
+    buffers:Dict[str,Buffer]
+    formats:Dict[str,Format]
+    samplers:Dict[str,Sampler]
+    textures:Dict[str,Texture]
+    pipelines:Dict[str,Pipeline]
+    renderers:List[Renderer]
 
     def __init__(self, error_handler:ErrorCallback, *args, **kargs):
         Syntax.__init__(self, None, *args, **kargs)

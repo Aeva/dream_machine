@@ -34,17 +34,24 @@ def rewrite(template: str) -> str:
     return template.replace("{", "{{").replace("}", "}}").replace("「", "{").replace("」", "}")
 
 
-class SyntaxExpanderMeta(type):
+class SyntaxExpander:
     """
-    Metaclass for SyntaxExpander.
-    This rewrites the "template" class variable on new classes so to use a more C++
-    friendly formatting syntax, and populates the "params" class variable w/ extracted
-    template parameters.  See the function "rewrite" for the exact rewrite rules.
+    Syntax expanders are simple templates, which are primarily intended to be used to
+    generate C++ and GLSL code.
     """
-    def __new__(cls, name, bases, dct):
-        newclass = super().__new__(cls, name, bases, dct)
-        template = dct.get("template")
-        if template:
+    template = ""
+    params: Tuple[str, ...] = tuple()
+    indent: Tuple[str, ...] = tuple()
+    _types: Dict[str, str] = {}
+
+    def __init_subclass__(newclass):
+        """
+        This rewrites the "template" class variable on new classes so to use a more C++
+        friendly formatting syntax, and populates the "params" class variable w/ extracted
+        template parameters.  See the function "rewrite" for the exact rewrite rules.
+        """
+        super().__init_subclass__()
+        if template := newclass.__dict__.get("template"):
             found = re.findall(r"「([a-zA-Z]\w+)(:[a-zA-Z]\w+)?」", template)
             params = [f[0] for f in found]
             newclass._types = {}
@@ -63,17 +70,6 @@ class SyntaxExpanderMeta(type):
             if param in ["template", "params", "indent", "_dict", "_types"]:
                 raise SyntaxError(f"\"{param}\" can't be used as a parameter name in SyntaxExpander template strings.")
         return newclass
-
-
-class SyntaxExpander(metaclass=SyntaxExpanderMeta):
-    """
-    Syntax expanders are simple templates, which are primarily intended to be used to
-    generate C++ and GLSL code.
-    """
-    template = ""
-    params: Tuple[str, ...] = tuple()
-    indent: Tuple[str, ...] = tuple()
-    _types: Dict[str, str] = {}
 
     def __init__(self, *args, **kwargs) -> None:
         if len(self.params) == 1 and len(args) > 0:

@@ -121,9 +121,10 @@ def solve_renderers(env:Program) -> Tuple[List[SyntaxExpander], SyntaxExpander]:
     """
 
     def solve_uploader(event:RendererUpdate) -> SyntaxExpander:
+        buffer = CAST(Buffer, event.buffer)
         return FakeUpload(
-            struct_name = event.buffer.struct,
-            handle = event.buffer.handle)
+            struct_name = buffer.struct,
+            handle = buffer.handle)
 
     def solve_draw(event:RendererDraw, previous:Optional[RendererDraw]) -> SyntaxExpander:
         pipeline = event.pipeline
@@ -155,11 +156,13 @@ def solve_renderers(env:Program) -> Tuple[List[SyntaxExpander], SyntaxExpander]:
             ColorClear(0, 0, 0),
             DepthClear(0),
         ]
-        previous_draw = None
+        previous_draw:Optional[RendererDraw] = None
         for event in renderer.children:
             if type(event) is RendererUpdate:
+                event = cast(RendererUpdate, event)
                 calls.append(solve_uploader(event))
             elif type(event) is RendererDraw:
+                event = cast(RendererDraw, event)
                 calls.append(solve_draw(event, previous_draw))
                 previous_draw = event
         return RendererCall(name=renderer.name, calls=calls)

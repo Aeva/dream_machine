@@ -109,7 +109,7 @@ class BindTexture(SyntaxExpander):
     def __init__(self, binding:PipelineInput):
         SyntaxExpander.__init__(self)
         self.texture_unit = binding.texture_index
-        self.handle = binding.texture.handle
+        self.handle = CAST(Texture, binding.texture).handle
 
 
 class SetupTextures(SyntaxExpander):

@@ -32,7 +32,7 @@ class FrameBufferAttachment(SyntaxExpander):
 
 class DepthAttachment(FrameBufferAttachment):
     def __init__(self, pipeline:Pipeline, mip:int = 0):
-        FrameBufferAttachment.__init__(self, pipeline, pipeline.depth_target, "GL_DEPTH_ATTACHMENT", mip)
+        FrameBufferAttachment.__init__(self, pipeline, CAST(PipelineOutput, pipeline.depth_target), "GL_DEPTH_ATTACHMENT", mip)
 
 
 class ColorAttachment(FrameBufferAttachment):
@@ -61,7 +61,7 @@ class CreateFrameBuffer(SyntaxExpander):
         for color_target in pipeline.color_targets:
             self.expanders.append(ColorAttachment(pipeline, color_target))
         if pipeline.depth_target:
-            self.expanders.append(DepthAttachment(pipeline, pipeline.depth_target))
+            self.expanders.append(DepthAttachment(pipeline))
         self.expanders.append(FramebufferLabel(handle=pipeline.index, name=pipeline.name))
 
 

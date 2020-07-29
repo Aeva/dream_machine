@@ -1,7 +1,8 @@
 ﻿
 from typing import *
 from .common import SyntaxExpander
-from ..syntax.grammar import Sampler, PipelineInput, Program
+from ..handy import CAST
+from ..syntax.grammar import Texture, Sampler, PipelineInput, Program
 
 
 class SamplerHandles(SyntaxExpander):
@@ -29,7 +30,7 @@ class BindSampler(SyntaxExpander):
     def __init__(self, binding:PipelineInput):
         SyntaxExpander.__init__(self)
         self.texture_unit = binding.texture_index
-        self.handle = binding.texture.sampler.handle
+        self.handle = CAST(Texture, binding.texture).sampler.handle
 
 
 class SamplerSetup(SyntaxExpander):

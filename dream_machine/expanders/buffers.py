@@ -1,6 +1,7 @@
 ﻿
 from .glsl_types import *
 from .common import SyntaxExpander
+from ..handy import CAST
 from ..syntax.grammar import Buffer, PipelineInput, Program
 
 
@@ -39,7 +40,7 @@ class BindUniformBuffer(SyntaxExpander):
     def __init__(self, input:PipelineInput):
         SyntaxExpander.__init__(self)
         self.binding_index = input.uniform_index
-        self.handle = input.buffer.handle
+        self.handle = CAST(Buffer, input.buffer).handle
 
 
 class BufferSetup(SyntaxExpander):
