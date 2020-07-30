@@ -44,13 +44,13 @@ namespace UserVars
 GLuint Shaders[7] = { 0 };
 GLuint ShaderPrograms[4] = { 0 };
 std::string ShaderPaths[7] = {
-	"generated_shaders\\splat.vs.glsl.07af7ffb8a6f0e7f5fd2ad7609180639.glsl",
-	"generated_shaders\\texture.fs.glsl.37108d1ad500bf6669efebd64852163c.glsl",
-	"generated_shaders\\splat.vs.glsl.47d065ffb14cdc019f77274fed6c505a.glsl",
-	"generated_shaders\\red.fs.glsl.e27c34cae30a790b21dd71528868119f.glsl",
-	"generated_shaders\\blue.fs.glsl.d76a46ffe93e604d64ff4315f1b81dce.glsl",
-	"generated_shaders\\splat.vs.glsl.26aa73cf0deb87ccdbb7f72a30b02023.glsl",
-	"generated_shaders\\combiner.fs.glsl.ecf4735ddbe4b4b33d07043aae129f89.glsl"
+	"generated_shaders\\splat.vs.glsl.54a146f5566a4e8a32a3cb09dd254ea4.glsl",
+	"generated_shaders\\texture.fs.glsl.8e03a553fb50a2568bb17718d4d9caa4.glsl",
+	"generated_shaders\\splat.vs.glsl.7507a6012f4ff1581240ae63e0a5d98c.glsl",
+	"generated_shaders\\red.fs.glsl.cfa7d3bc66b4402f3a52586a36e7ea5c.glsl",
+	"generated_shaders\\blue.fs.glsl.5bbaf9ce50d9b3db932fa9d61b8ea400.glsl",
+	"generated_shaders\\splat.vs.glsl.6c58c5899dd195928ff9b9840ded3d5e.glsl",
+	"generated_shaders\\combiner.fs.glsl.ce6165079c64914828a4d3ded6b18874.glsl"
 };
 GLuint SamplerHandles[2] = { 0 };
 GLuint TextureHandles[4] = { 0 };
