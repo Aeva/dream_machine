@@ -15,7 +15,7 @@
 
 
 from typing import *
-from .common import SyntaxExpander, align
+from ..expanders import SyntaxExpander, align
 
 
 class GlslType:

@@ -14,7 +14,7 @@
 # limitations under the License.
 
 
-from .common import SyntaxExpander
+from ..expanders import SyntaxExpander
 from .shaders import ShaderProgram, ChangeProgram
 
 

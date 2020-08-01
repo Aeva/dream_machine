@@ -15,7 +15,7 @@
 
 
 from typing import *
-from .common import SyntaxExpander
+from ..expanders import SyntaxExpander
 from ..handy import CAST
 from ..syntax.grammar import Texture, Sampler, PipelineInput, Program
 

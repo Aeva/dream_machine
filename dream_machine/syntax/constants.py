@@ -1,4 +1,4 @@
-﻿
+
 # Copyright 2020 Aeva Palecek
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,33 +14,10 @@
 # limitations under the License.
 
 
-from ..expanders.common import SyntaxExpander
+from enum import Enum, auto
 
 
-class RendererCall(SyntaxExpander):
-    template = """
-void 「name」(int FrameIndex, double CurrentTime, double DeltaTime)
-{
-「calls」
-}
-""".strip()
-    indent = ("calls",)
-
-
-class RendererCase(SyntaxExpander):
-    template = """
-case 「index」:
-	Renderer::「name」(FrameIndex, CurrentTime, DeltaTime);
-	break;
-""".strip()
-
-
-class RendererSwitch(SyntaxExpander):
-    template = """
-switch (CurrentRenderer)
-{
-「cases」
-default:
-	HaltAndCatchFire();
-}
-""".strip()
+class BackendAPI(Enum):
+    INVALID = -1
+    OpenGL = auto()
+    WebGL = auto()

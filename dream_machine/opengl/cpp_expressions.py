@@ -15,7 +15,7 @@
 
 
 from typing import *
-from .common import SyntaxExpander
+from ..expanders import SyntaxExpander
 from ..handy import *
 from ..syntax.grammar import UserVar, COMMON_VARS
 from ..syntax.arithmetic import UnfoldedExpression

@@ -15,7 +15,7 @@
 
 
 from typing import *
-from .common import SyntaxExpander
+from ..expanders import SyntaxExpander
 from .cpp_expressions import solve_expression
 from ..handy import CAST
 from ..syntax.grammar import Texture, TextureDimension, PipelineInput, Program

@@ -21,6 +21,9 @@
 ; some sequeces of alphanumeric characters have to be wrapped in quotation marks for Reasons
 
 
+(backend OpenGL)
+
+
 (uservar int MiscVar 2048)
 
 

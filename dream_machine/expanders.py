@@ -17,7 +17,7 @@
 import re
 import os
 from collections.abc import Iterable
-from ..handy import *
+from .handy import *
 
 
 def external(path_part: str) -> str:

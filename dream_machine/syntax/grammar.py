@@ -23,6 +23,10 @@ def MatchSplat(pattern, fnord=False):
     return MatchRule(*[rule for (name,rule) in globals().items() if re.match(pattern, name)])
 
 
+META_BACKEND_RULE = \
+    ListRule(Backend, Exactly("backend"), WordRule("name"))
+
+
 STRUCT_MEMBER_ARRAY_RULE = \
     ListRule(StructMember, WordRule("name"), Exactly("array"), NumberRule("array size"), WordRule("type"))
 
@@ -98,6 +102,7 @@ RENDERER_RULE = \
 
 
 GRAMMAR = MatchRule(
+    META_BACKEND_RULE,
     USER_VAR_RULE,
     STRUCT_RULE,
     BUFFER_RULE,

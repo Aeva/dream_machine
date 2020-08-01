@@ -1,4 +1,4 @@
-
+﻿
 # Copyright 2020 Aeva Palecek
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,9 +14,33 @@
 # limitations under the License.
 
 
-from .common import SyntaxExpander, external
+from ..expanders import SyntaxExpander
 
 
-class OpenGLWindow(SyntaxExpander):
-    template = external("main.cpp")
-    indent = ("initial_setup_hook", "resize_hook", "draw_frame_hook", "renderers", "structs", "uploaders")
+class RendererCall(SyntaxExpander):
+    template = """
+void 「name」(int FrameIndex, double CurrentTime, double DeltaTime)
+{
+「calls」
+}
+""".strip()
+    indent = ("calls",)
+
+
+class RendererCase(SyntaxExpander):
+    template = """
+case 「index」:
+	Renderer::「name」(FrameIndex, CurrentTime, DeltaTime);
+	break;
+""".strip()
+
+
+class RendererSwitch(SyntaxExpander):
+    template = """
+switch (CurrentRenderer)
+{
+「cases」
+default:
+	HaltAndCatchFire();
+}
+""".strip()

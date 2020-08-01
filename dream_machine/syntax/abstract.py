@@ -20,8 +20,9 @@ from weakref import ref, ReferenceType
 from ..handy import *
 from .tokens import *
 from .parser import Parser
+from .constants import *
 from .arithmetic import fold, FoldedExpression, UnfoldedExpression
-from ..expanders.glsl_types import glsl_builtins
+from ..opengl.glsl_types import glsl_builtins
 
 
 ErrorCallback = Callable[..., None]
@@ -924,11 +925,29 @@ class RendererDraw(Syntax):
         return f'<RendererDraw {self.pipeline_name}>'
 
 
+class Backend(Syntax):
+    """
+    The rendering API to generate code for.
+    """
+    one = "backend"
+
+    def __init__(self, *args, **kargs):
+        Syntax.__init__(self, *args, **kargs)
+        ignore, name = map(str, cast(TokenList, self.tokens)[:2])
+        self.api = getattr(BackendAPI, name, BackendAPI.INVALID)
+
+    def validate(self):
+        Syntax.validate(self)
+        if self.api == BackendAPI.INVALID:
+            self.error("Invalid backend API")
+
+
 class Program(Syntax):
     """
     This is the syntax graph root, and represents everything within your program.
     """
     many = "programs"
+    backend:Backend
     user_vars:Dict[str,UserVar]
     structs:Dict[str,Struct]
     buffers:Dict[str,Buffer]

@@ -14,21 +14,21 @@
 # limitations under the License.
 
 
-from .handy import *
-from .expanders.common import *
-from .expanders.buffers import *
-from .expanders.samplers import *
-from .expanders.textures import *
-from .expanders.render_targets import *
-from .expanders.shaders import *
-from .expanders.drawspatch import *
-from .expanders.renderers import *
-from .expanders.window import *
-from .expanders.glsl_types import *
-from .expanders.glsl_interfaces import *
-from .expanders.cpp_interfaces import *
-from .expanders.cpp_expressions import *
-from .syntax.grammar import *
+from ..handy import *
+from ..syntax.grammar import *
+from ..expanders import *
+from .buffers import *
+from .samplers import *
+from .textures import *
+from .render_targets import *
+from .shaders import *
+from .drawspatch import *
+from .renderers import *
+from .window import *
+from .glsl_types import *
+from .glsl_interfaces import *
+from .cpp_interfaces import *
+from .cpp_expressions import *
 
 
 class FakeUpload(SyntaxExpander):

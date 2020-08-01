@@ -15,7 +15,7 @@
 
 
 from .glsl_types import *
-from .common import SyntaxExpander
+from ..expanders import SyntaxExpander
 from ..handy import CAST
 from ..syntax.grammar import Buffer, PipelineInput, Program
 
