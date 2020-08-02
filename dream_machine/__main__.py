@@ -19,6 +19,7 @@ from .syntax.parser import Parser
 from .syntax.grammar import validate, ValidationError
 from .syntax.constants import BackendAPI
 from .opengl.solver import solve as solve_for_opengl
+from .webgl.solver import solve as solve_for_webgl
 from .build import build
 
 
@@ -38,10 +39,14 @@ if __name__ == "__main__":
 
     elif env.backend.api == BackendAPI.OpenGL:
         solved = solve_for_opengl(env)
+        assert(solved is not None)
+        with open("generated.cpp", "w", encoding="utf-8") as outfile:
+            outfile.write(str(solved))
+        build("generated.cpp", "user_code.cpp", out_path="generated.exe", debug=True)
 
     elif env.backend.api == BackendAPI.WebGL:
-        raise NotImplementedError("WebGL")
+        solved = solve_for_webgl(env)
+        assert(solved is not None)
+        with open("generated.js", "w", encoding="utf-8") as outfile:
+            outfile.write(str(solved))
 
-    with open("generated.cpp", "w", encoding="utf-8") as outfile:
-        outfile.write(str(solved))
-    build("generated.cpp", "user_code.cpp", out_path="generated.exe", debug=True)
