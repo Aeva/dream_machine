@@ -19,4 +19,4 @@ from ..expanders import SyntaxExpander, external
 
 class WebGLWindow(SyntaxExpander):
     template = external("webgl/main.js")
-    indent = ("initial_setup_hook", "renderers", "draw_frame_hook", "resize_hook")
+    indent = ("user_vars", "initial_setup_hook", "renderers", "draw_frame_hook", "resize_hook")

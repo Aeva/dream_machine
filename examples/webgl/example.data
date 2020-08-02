@@ -22,3 +22,5 @@
 
 
 (backend WebGL)
+
+(uservar int MiscVar 2048)

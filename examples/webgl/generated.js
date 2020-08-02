@@ -1,7 +1,9 @@
 ﻿"use strict";
 
 
-
+let UserVars = {
+	MiscVar : 2048,
+}
 let CurrentRenderer = 0;
 let gl = null;
 
@@ -12,15 +14,18 @@ let gl = null;
 	let ScreenWidth = null;
 	let ScreenHeight = null;
 
-	let InitialSetup = function() {
+	const InitialSetup = function() {
+		{
+		let vao = gl.createVertexArray();
+		gl.bindVertexArray(vao);
+	}
+	}
+
+	const Renderer = {
 	
 	}
 
-	let Renderer = {
-	
-	}
-
-	let DrawFrame = function(FrameIndex, CurrentTime, DeltaTime) {
+	const DrawFrame = function(FrameIndex, CurrentTime, DeltaTime) {
 		if (WindowIsDirty)
 		{
 			WindowResized();
@@ -33,7 +38,7 @@ let gl = null;
 	
 	}
 
-	let WindowResized = function() {
+	const WindowResized = function() {
 	
 	}
 
@@ -41,26 +46,51 @@ let gl = null;
 	let LastTime = null;
 	let WindowIsDirty = true;
 
-	let RenderLoop = function (NowTime) {
+	const RenderLoop = function (NowTime) {
 		DrawFrame(FrameIndex++, NowTime, NowTime - LastTime);
 		LastTime = NowTime;
 		window.requestAnimationFrame(RenderLoop);
 	}
 
-	let FirstFrame = function (NowTime) {
+	const FirstFrame = function (NowTime) {
 		DrawFrame(FrameIndex++, NowTime, 0.0);
 		LastTime = NowTime;
 		window.requestAnimationFrame(RenderLoop);
 	}
 
 	let Canvas = null;
-	let RescaleCanvas = function () {
+	const RescaleCanvas = function () {
 		ScreenWidth = document.body.clientWidth;
 		ScreenHeight = document.body.clientHeight;
 		Canvas.width = ScreenWidth;
 		Canvas.height = ScreenHeight;
 		WindowIsDirty = true;
 	}
+
+	const InstallExtension = function (ExtensionName) {
+		if (gl)
+		{
+			const ext = gl.getExtension(ExtensionName);
+			if (ext) {
+				console.info("Using WebGL extension: " + ExtensionName);
+				for (const Name in ext) {
+					let Rename = Name.replace(/(_{0,1}ANGLE|OES|OVR|EXT|WEBGL)$/, "");
+					gl[Rename] = (typeof(ext[Name]) === "function") ? ext[Name].bind(ext) : ext[Name];
+				}
+			}
+			else
+			{
+				alert("Missing required WebGL extension: " + ExtensionName);
+				gl = null;
+			}
+		}
+	}
+
+	const RequiredExtensions = [
+		"OES_vertex_array_object",
+		"ANGLE_instanced_arrays",
+		"OES_standard_derivatives",
+	];
 
 	addEventListener("load", function() {
 		let FullScreenMode = false;
@@ -92,11 +122,15 @@ let gl = null;
 			}
 
 			gl = Canvas.getContext("webgl");
-			InitialSetup();
-			if (typeof(UserSetupCallback) === "function") {
-				UserSetupCallback();
+			RequiredExtensions.forEach(InstallExtension);
+			if (gl)
+			{
+				InitialSetup();
+				if (typeof(UserSetupCallback) === "function") {
+					UserSetupCallback();
+				}
+				window.requestAnimationFrame(FirstFrame);
 			}
-			window.requestAnimationFrame(FirstFrame);
 		}
 	});
 })();
