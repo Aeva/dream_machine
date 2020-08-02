@@ -1,9 +1,15 @@
 ### Dependencies
-You will need python 3.6 or newer and clang installed on your system.  These should
-alos be added to the PATH environment variable.
+Python 3.8 or newer is required, and should be present in your system PATH
+environment variable.
+
+Generating and building OpenGL programs requires clang to be installed and in
+PATH as well.
 
 To run tests, you will also need the python modules mypy and pytest, which can be
 installed via pip.
+
+### Installation
+`python setup.py develop --user`
 
 ### Usage
 Modify `example.data` to specify your program, and then run `build.bat`.  This will

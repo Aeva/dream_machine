@@ -38,6 +38,7 @@ if __name__ == "__main__":
         raise ValidationError("No backend specified.")
 
     elif env.backend.api == BackendAPI.OpenGL:
+        print("test")
         solved = solve_for_opengl(env)
         assert(solved is not None)
         with open("generated.cpp", "w", encoding="utf-8") as outfile:

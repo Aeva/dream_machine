@@ -1,0 +1,1 @@
+python -m dream_machine example.data
