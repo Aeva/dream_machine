@@ -26,7 +26,7 @@ from .js_expressions import *
 splat_vs = ShaderSource("splat.vs", """
 attribute vec3 Position;
 void main(void) {
-  gl_Position = vec4(position, 1.0);
+  gl_Position = vec4(Position, 1.0);
 }
 """.strip())
 

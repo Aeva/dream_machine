@@ -7,13 +7,41 @@ const ShaderSources = {
 「shader_sources」
 };
 
+const CompileShader = function(Path, ShaderType) {
+	const Handle = gl.createShader(ShaderType);
+	gl.shaderSource(Handle, ShaderSources[Path]);
+	gl.compileShader(Handle);
+	if (!gl.getShaderParameter(Handle, gl.COMPILE_STATUS)) {
+		const ErrorMsg = gl.getShaderInfoLog(Handle);
+		console.info(ShaderSources[Path]);
+		console.info(ErrorMsg)
+		throw new Error("Shader Failed to Compile!?!");
+	}
+	return Handle;
+};
+
+const LinkShaders = function(Shaders)
+{
+	const Handle = gl.createProgram();
+	Shaders.forEach(Shader => gl.attachShader(Handle, Shader));
+	gl.linkProgram(Handle);
+	const InfoLog = gl.getProgramInfoLog(prog.id);
+	if (InfoLog) {
+		console.warn(InfoLog);
+	}
+	if (!gl.getProgramParameter(Handle, gl.LINK_STATUS)) {
+		throw new Error("Shader Failed to Link!?!");
+	}
+	return Handle;
+};
+
 const InitialSetup = function() {
 「initial_setup_hook」
-}
+};
 
 const Renderer = {
 「renderers」
-}
+};
 
 const DrawFrame = function(FrameIndex, CurrentTime, DeltaTime) {
 	if (WindowIsDirty) {
@@ -25,39 +53,39 @@ const DrawFrame = function(FrameIndex, CurrentTime, DeltaTime) {
 	gl.clear(gl.COLOR_BUFFER_BIT);
 
 「draw_frame_hook」
-}
+};
 
 const WindowResized = function() {
 「resize_hook」
-}
+};
 
 let FrameIndex = 0;
 let LastTime = null;
 let WindowIsDirty = true;
 
-const RenderLoop = function (NowTime) {
+const RenderLoop = function(NowTime) {
 	DrawFrame(FrameIndex++, NowTime, NowTime - LastTime);
 	LastTime = NowTime;
 	window.requestAnimationFrame(RenderLoop);
-}
+};
 
-const FirstFrame = function (NowTime) {
+const FirstFrame = function(NowTime) {
 	DrawFrame(FrameIndex++, NowTime, 0.0);
 	LastTime = NowTime;
 	window.requestAnimationFrame(RenderLoop);
-}
+};
 
 let Canvas = null;
 
-const RescaleCanvas = function () {
+const RescaleCanvas = function() {
 	ScreenWidth = document.body.clientWidth;
 	ScreenHeight = document.body.clientHeight;
 	Canvas.width = ScreenWidth;
 	Canvas.height = ScreenHeight;
 	WindowIsDirty = true;
-}
+};
 
-const InstallExtension = function (ExtensionName) {
+const InstallExtension = function(ExtensionName) {
 	if (gl) {
 		const ext = gl.getExtension(ExtensionName);
 		if (ext) {
@@ -72,10 +100,9 @@ const InstallExtension = function (ExtensionName) {
 			gl = null;
 		}
 	}
-}
+};
 
 const RequiredExtensions = [
-	"OES_vertex_array_object",
 	"ANGLE_instanced_arrays",
 	"OES_standard_derivatives",
 ];

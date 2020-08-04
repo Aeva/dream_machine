@@ -18,11 +18,12 @@ import os
 from base64 import b64encode
 from hashlib import md5
 from ..handy import *
-from ..expanders import SyntaxExpander
+from ..opengl.glsl_types import *
+from ..expanders import SyntaxExpander, external
 
 
 class ShaderSource(SyntaxExpander):
-    template = '"「name」" : btoa("「encoded」"),'
+    template = '"「name」" : atob("「encoded」"),'
 
     def __init__(self, name, source):
         SyntaxExpander.__init__(self)
