@@ -1,4 +1,4 @@
-
+﻿
 # Copyright 2020 Aeva Palecek
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,26 +14,17 @@
 # limitations under the License.
 
 
-from ..expanders import SyntaxExpander, external
+import os
+from base64 import b64encode
+from hashlib import md5
+from ..handy import *
+from ..expanders import SyntaxExpander
 
 
-class WebGLWindowClosure(SyntaxExpander):
-    template = """
-"use strict";
+class ShaderSource(SyntaxExpander):
+    template = '"「name」" : btoa("「encoded」"),'
 
-let UserVars = {
-「user_vars」
-}
-let CurrentRenderer = 0;
-let gl = null;
-
-(function() {
-「wrapped」
-})();
-    """.strip()
-    indent = ("user_vars", "wrapped")
-
-
-class WebGLWindow(SyntaxExpander):
-    template = external("webgl/main.js")
-    indent = ("shader_sources", "initial_setup_hook", "renderers", "draw_frame_hook", "resize_hook")
+    def __init__(self, name, source):
+        SyntaxExpander.__init__(self)
+        self.name = name
+        self.encoded = b64encode(source.encode()).decode().strip()

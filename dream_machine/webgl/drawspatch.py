@@ -36,11 +36,19 @@ class Capability(SyntaxExpander):
         self.capability = capability
 
 
-class DefaultVAO(SyntaxExpander):
+class DefaultVBO(SyntaxExpander):
     template = """
 {
-	let vao = gl.createVertexArray();
-	gl.bindVertexArray(vao);
+	const SplatData = new Float32Array(
+		 1.0,  1.0, 0.0,
+		-1.0,  1.0, 0.0,
+		-1.0, -1.0, 0.0,
+		-1.0, -1.0, 0.0,
+		 1.0, -1.0, 0.0,
+		 1.0,  1.0, 0.0);
+	let vbo = gl.createBuffer();
+	gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
+	gl.bufferData(gl.ARRAY_BUFFER, SplatData, gl.STATIC_DRAW);
 }
 """.strip()
 

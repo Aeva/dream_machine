@@ -1,5 +1,4 @@
-﻿"use strict";
-
+"use strict";
 
 let UserVars = {
 	MiscVar : 2048,
@@ -7,27 +6,37 @@ let UserVars = {
 let CurrentRenderer = 0;
 let gl = null;
 
-
 (function() {
-	
+	﻿
 
 	let ScreenWidth = null;
 	let ScreenHeight = null;
 
+	const ShaderSources = {
+		"splat.vs" : btoa("YXR0cmlidXRlIHZlYzMgUG9zaXRpb247CnZvaWQgbWFpbih2b2lkKSB7CiAgZ2xfUG9zaXRpb24gPSB2ZWM0KHBvc2l0aW9uLCAxLjApOwp9"),
+	};
+
 	const InitialSetup = function() {
 		{
-		let vao = gl.createVertexArray();
-		gl.bindVertexArray(vao);
-	}
+			const SplatData = new Float32Array(
+				 1.0,  1.0, 0.0,
+				-1.0,  1.0, 0.0,
+				-1.0, -1.0, 0.0,
+				-1.0, -1.0, 0.0,
+				 1.0, -1.0, 0.0,
+				 1.0,  1.0, 0.0);
+			let vbo = gl.createBuffer();
+			gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
+			gl.bufferData(gl.ARRAY_BUFFER, SplatData, gl.STATIC_DRAW);
+		}
 	}
 
 	const Renderer = {
-	
+
 	}
 
 	const DrawFrame = function(FrameIndex, CurrentTime, DeltaTime) {
-		if (WindowIsDirty)
-		{
+		if (WindowIsDirty) {
 			WindowResized();
 			WindowIsDirty = false;
 		}
@@ -35,11 +44,11 @@ let gl = null;
 		gl.clearColor(0.75, 0.0, 0.6, 1.0);
 		gl.clear(gl.COLOR_BUFFER_BIT);
 
-	
+
 	}
 
 	const WindowResized = function() {
-	
+
 	}
 
 	let FrameIndex = 0;
@@ -59,6 +68,7 @@ let gl = null;
 	}
 
 	let Canvas = null;
+
 	const RescaleCanvas = function () {
 		ScreenWidth = document.body.clientWidth;
 		ScreenHeight = document.body.clientHeight;
@@ -68,8 +78,7 @@ let gl = null;
 	}
 
 	const InstallExtension = function (ExtensionName) {
-		if (gl)
-		{
+		if (gl) {
 			const ext = gl.getExtension(ExtensionName);
 			if (ext) {
 				console.info("Using WebGL extension: " + ExtensionName);
@@ -78,8 +87,7 @@ let gl = null;
 					gl[Rename] = (typeof(ext[Name]) === "function") ? ext[Name].bind(ext) : ext[Name];
 				}
 			}
-			else
-			{
+			else {
 				alert("Missing required WebGL extension: " + ExtensionName);
 				gl = null;
 			}
@@ -87,35 +95,30 @@ let gl = null;
 	}
 
 	const RequiredExtensions = [
-		"OES_vertex_array_object",
 		"ANGLE_instanced_arrays",
 		"OES_standard_derivatives",
 	];
 
 	addEventListener("load", function() {
 		let FullScreenMode = false;
-		if (document.body.innerHTML.trim() === "")
-		{
+		if (document.body.innerHTML.trim() === "") {
 			FullScreenMode = true;
 			document.write("<canvas style=\"position:fixed;top:0px;left:0px;\">Your browser does not support WebGL.</canvas>");
 			document.close();
 		}
 		{
 			let CanvasSearch = document.getElementsByTagName("canvas");
-			if (CanvasSearch.length === 1)
-			{
+			if (CanvasSearch.length === 1) {
 				Canvas = CanvasSearch[0];
 			}
 		}
-		if (Canvas);
-		{
-			if (FullScreenMode)
-			{
+
+		if (Canvas) {
+			if (FullScreenMode) {
 				window.addEventListener("resize", RescaleCanvas);
 				RescaleCanvas();
 			}
-			else
-			{
+			else {
 				ScreenWidth = Canvas.width;
 				ScreenHeight = Canvas.height;
 				WindowIsDirty = true;
@@ -123,8 +126,8 @@ let gl = null;
 
 			gl = Canvas.getContext("webgl");
 			RequiredExtensions.forEach(InstallExtension);
-			if (gl)
-			{
+
+			if (gl) {
 				InitialSetup();
 				if (typeof(UserSetupCallback) === "function") {
 					UserSetupCallback();
@@ -133,4 +136,5 @@ let gl = null;
 			}
 		}
 	});
+
 })();

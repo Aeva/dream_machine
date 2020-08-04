@@ -17,9 +17,18 @@
 from ..handy import *
 from ..syntax.grammar import *
 from ..expanders import *
+from .shaders import *
 from .drawspatch import *
 from .window import *
 from .js_expressions import *
+
+
+splat_vs = ShaderSource("splat.vs", """
+attribute vec3 Position;
+void main(void) {
+  gl_Position = vec4(position, 1.0);
+}
+""".strip())
 
 
 def solve(env:Program) -> SyntaxExpander:
@@ -31,6 +40,7 @@ def solve(env:Program) -> SyntaxExpander:
     solved_structs:Dict[str,Any] = {}
 
     # expanders for shaders
+    shader_sources = [splat_vs]
     build_shaders:List[SyntaxExpander] = []
 
     # expanders for struct definitions
@@ -62,7 +72,7 @@ def solve(env:Program) -> SyntaxExpander:
     # expanders for generated code which is called after GL is initialized before rendering starts
     setup:List[SyntaxExpander] = \
     [
-        DefaultVAO(),
+        DefaultVBO(),
     ]
     setup += build_shaders
 
@@ -89,10 +99,13 @@ def solve(env:Program) -> SyntaxExpander:
     # emit the generated program
     program = WebGLWindow()
     program.globals = globals
-    program.user_vars = user_vars
     program.uploaders = uploaders
+    program.shader_sources = shader_sources
     program.initial_setup_hook = setup
     program.resize_hook = reallocate
     program.renderers = renderers
     program.draw_frame_hook = switch
-    return program
+    enclosed = WebGLWindowClosure()
+    enclosed.user_vars = user_vars
+    enclosed.wrapped = program
+    return enclosed
