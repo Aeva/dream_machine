@@ -19,7 +19,9 @@ from .syntax.parser import Parser
 from .syntax.grammar import validate, ValidationError
 from .syntax.constants import BackendAPI
 from .opengl.solver import solve as solve_for_opengl
+from .opengl.validate import validate as validate_for_opengl
 from .webgl.solver import solve as solve_for_webgl
+from .webgl.validate import validate as validate_for_webgl
 from .build import build
 
 
@@ -34,11 +36,12 @@ if __name__ == "__main__":
     env = validate(parser)
 
     solved = None
+
     if not env.backend:
         raise ValidationError("No backend specified.")
 
     elif env.backend.api == BackendAPI.OpenGL:
-        print("test")
+        validate_for_opengl(env)
         solved = solve_for_opengl(env)
         assert(solved is not None)
         with open("generated.cpp", "w", encoding="utf-8") as outfile:
@@ -46,6 +49,7 @@ if __name__ == "__main__":
         build("generated.cpp", "user_code.cpp", out_path="generated.exe", debug=True)
 
     elif env.backend.api == BackendAPI.WebGL:
+        validate_for_webgl(env)
         solved = solve_for_webgl(env)
         assert(solved is not None)
         with open("generated.js", "w", encoding="utf-8") as outfile:

@@ -476,11 +476,8 @@ class Pipeline(Syntax):
         if "cs" in self.shaders:
             if len(self.shaders.keys()) > 1:
                 self.error("Compute pipelines can't use non-compute shaders.")
-        else:
-            if "vs" not in self.shaders:
-                self.error("Raster pipelines must declare a vertex shader.")
-            if "fs" not in self.shaders:
-                self.error("Raster pipelines must declare a fragment shader.")
+
+        # Note: API backends must perform their own validation for raster pipeline configurations.
 
         depth_targets = [i for i in self.outputs if i.is_depth]
         if len(depth_targets) > 1:

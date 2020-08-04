@@ -28,18 +28,16 @@ def solve(env:Program) -> SyntaxExpander:
     """
 
     # structs
-    solved_structs:Dict[str,StructType] = {}
+    solved_structs:Dict[str,Any] = {}
 
     # expanders for shaders
-    shader_handles, build_shaders = '', []
+    build_shaders:List[SyntaxExpander] = []
 
     # expanders for struct definitions
     structs:List[SyntaxExpander] = []
-    if solved_structs:
-        structs += [GlslStruct(s) for s in solved_structs.values()]
 
     # expanders for various things in the global scope
-    globals:List[SyntaxExpander] = [shader_handles]
+    globals:List[SyntaxExpander] = []
 
     if env.samplers:
         pass
