@@ -23,4 +23,13 @@
 
 (backend WebGL)
 
+
 (uservar int MiscVar 2048)
+
+
+(pipeline SplatTest
+	(fs "shaders/test.fs.glsl"))
+
+
+(renderer Test
+	(draw SplatTest))

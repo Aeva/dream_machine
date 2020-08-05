@@ -1,4 +1,4 @@
-
+﻿
 # Copyright 2020 Aeva Palecek
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,26 +14,31 @@
 # limitations under the License.
 
 
-from ..expanders import SyntaxExpander, external
+from ..expanders import SyntaxExpander
 
 
-class WebGLWindowClosure(SyntaxExpander):
+class RendererCall(SyntaxExpander):
     template = """
-"use strict";
+"「name」" : function(FrameIndex, CurrentTime, DeltaTime) {
+「calls」
+},
+""".strip()
+    indent = ("calls",)
 
-let UserVars = {
-「user_vars」
+
+class RendererCase(SyntaxExpander):
+    template = """
+case 「index」:
+	Renderer["「name」"](FrameIndex, CurrentTime, DeltaTime);
+	break;
+""".strip()
+
+
+class RendererSwitch(SyntaxExpander):
+    template = """
+switch (CurrentRenderer) {
+「cases」
+default:
+	throw new Error("Invalid renderer index: " + CurrentRenderer);
 }
-let CurrentRenderer = 0;
-let gl = null;
-
-(function() {
-「wrapped」
-})();
-    """.strip()
-    indent = ("user_vars", "wrapped")
-
-
-class WebGLWindow(SyntaxExpander):
-    template = external("webgl/main.js")
-    indent = ("initial_setup_hook", "renderers", "draw_frame_hook", "resize_hook")
+""".strip()

@@ -18,14 +18,14 @@ from ..expanders import SyntaxExpander
 
 
 class ColorClear(SyntaxExpander):
-    template="gl.clearColor(「color」);\ngl.clear(GL_COLOR_BUFFER_BIT);"
+    template="gl.clearColor(「color」);\ngl.clear(gl.COLOR_BUFFER_BIT);"
     def __init__(self, red: float, green: float, blue: float, alpha: float=1.0):
         SyntaxExpander.__init__(self)
         self.color = ", ".join(map(str, [red, green, blue, alpha]))
 
 
 class DepthClear(SyntaxExpander):
-    template = "gl.clearDepth(「depth:int」);\ngl.clear(GL_DEPTH_BUFFER_BIT);"
+    template = "gl.clearDepth(「depth:int」);\ngl.clear(gl.DEPTH_BUFFER_BIT);"
 
 
 class Capability(SyntaxExpander):
@@ -39,18 +39,22 @@ class Capability(SyntaxExpander):
 class DefaultVBO(SyntaxExpander):
     template = """
 {
-	const SplatData = new Float32Array(
+	const SplatData = new Float32Array([
 		 1.0,  1.0, 0.0,
 		-1.0,  1.0, 0.0,
 		-1.0, -1.0, 0.0,
 		-1.0, -1.0, 0.0,
 		 1.0, -1.0, 0.0,
-		 1.0,  1.0, 0.0);
+		 1.0,  1.0, 0.0]);
 	let vbo = gl.createBuffer();
 	gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
 	gl.bufferData(gl.ARRAY_BUFFER, SplatData, gl.STATIC_DRAW);
 }
 """.strip()
+
+
+class Draw(SyntaxExpander):
+    template = "gl.drawArrays(gl.TRIANGLES, 0, 「vertices」);"
 
 
 class InstancedDraw(SyntaxExpander):

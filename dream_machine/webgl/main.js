@@ -3,17 +3,13 @@
 let ScreenWidth = null;
 let ScreenHeight = null;
 
-const ShaderSources = {
-「shader_sources」
-};
-
-const CompileShader = function(Path, ShaderType) {
+const CompileShader = function(Source, ShaderType) {
 	const Handle = gl.createShader(ShaderType);
-	gl.shaderSource(Handle, ShaderSources[Path]);
+	gl.shaderSource(Handle, Source);
 	gl.compileShader(Handle);
 	if (!gl.getShaderParameter(Handle, gl.COMPILE_STATUS)) {
 		const ErrorMsg = gl.getShaderInfoLog(Handle);
-		console.info(ShaderSources[Path]);
+		console.info(Source);
 		console.info(ErrorMsg)
 		throw new Error("Shader Failed to Compile!?!");
 	}
@@ -25,7 +21,7 @@ const LinkShaders = function(Shaders)
 	const Handle = gl.createProgram();
 	Shaders.forEach(Shader => gl.attachShader(Handle, Shader));
 	gl.linkProgram(Handle);
-	const InfoLog = gl.getProgramInfoLog(prog.id);
+	const InfoLog = gl.getProgramInfoLog(Handle);
 	if (InfoLog) {
 		console.warn(InfoLog);
 	}
@@ -49,9 +45,6 @@ const DrawFrame = function(FrameIndex, CurrentTime, DeltaTime) {
 		WindowIsDirty = false;
 	}
 	gl.viewport(0, 0, ScreenWidth, ScreenHeight);
-	gl.clearColor(0.75, 0.0, 0.6, 1.0);
-	gl.clear(gl.COLOR_BUFFER_BIT);
-
 「draw_frame_hook」
 };
 
