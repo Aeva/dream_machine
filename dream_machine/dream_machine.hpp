@@ -33,22 +33,6 @@ void HaltAndCatchFire()
 }
 
 
-void ReadFile(std::string& Source, std::string Path)
-{
-	std::ifstream File(Path);
-	if (!File.is_open())
-	{
-		std::cout << "Error: cannot open file \"" << Path << "\"\n";
-		HaltAndCatchFire();
-	}
-	std::string Line;
-	while (getline(File, Line))
-	{
-		Source += Line + "\n";
-	}
-}
-
-
 struct ImageData
 {
 	unsigned Width;
@@ -87,11 +71,8 @@ ImageData ReadPng(const char* Path)
 }
 
 
-GLuint CompileShader(std::string Path, GLenum ShaderType)
+GLuint CompileShader(std::string Source, GLenum ShaderType)
 {
-	std::cout << "compiling shader: " << Path << "\n";
-	std::string Source;
-	ReadFile(Source, Path);
 	GLuint Handle = glCreateShader(ShaderType);
 	const char* SourcePtr = Source.c_str();
 	glShaderSource(Handle, 1, &SourcePtr, nullptr);
@@ -103,16 +84,15 @@ GLuint CompileShader(std::string Path, GLenum ShaderType)
 		{
 			char* InfoLog = (char*)malloc(sizeof(char) * LogLength);
 			glGetShaderInfoLog(Handle, LogLength, nullptr, InfoLog);
-			std::cout \
-				<< "Shader info log for \"" << Path << "\":\n"
-				<< InfoLog << "\n\n";
+			std::cout << InfoLog << "\n\n";
 			free(InfoLog);
 		}
 		GLint Status;
 		glGetShaderiv(Handle, GL_COMPILE_STATUS, &Status);
 		if (Status == GL_FALSE)
 		{
-			std::cout << "Failed to compile shader \"" << Path << "\"!\n";
+			std::cout << "Failed to compile shader:\n";
+			std::cout << Source << "\n";
 			glDeleteShader(Handle);
 			HaltAndCatchFire();
 		}
@@ -160,6 +140,35 @@ GLuint LinkShaders(std::string Name, GLuint* Shaders, int ShaderCount)
 		glDetachShader(Handle, Shaders[i]);
 	}
 	return Handle;
+}
+
+
+std::string DecodeBase64(const char* Encoded)
+{
+	uint16_t Acc = 0;
+	size_t AccSize = 0;
+	std::string Decoded;
+	while (true)
+	{
+		int Value = 0;
+		const char Cursor = *Encoded;
+		if (Cursor == 0 || Cursor == '=') break;
+		else if (Cursor == '+') Value = 62;
+		else if (Cursor == '/') Value = 63;
+		else if (Cursor >= 'a') Value = ((int)Cursor) - 97 + 26;
+		else if (Cursor >= 'A') Value = ((int)Cursor) - 65;
+		else if (Cursor >= '0') Value = ((int)Cursor) - 48 + 52;
+		Acc = (Acc << 6) | Value;
+		AccSize += 6;
+		if (AccSize >= 8)
+		{
+			size_t Shift = AccSize - 8;
+			Decoded.push_back((char)((Acc >> Shift) & 0xFF));
+			AccSize -= 8;
+		}
+		Encoded++;
+	}
+	return Decoded;
 }
 
 

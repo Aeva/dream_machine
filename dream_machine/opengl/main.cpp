@@ -84,6 +84,9 @@ void WindowResized()
 
 int main()
 {
+	//std::string Fnord = DecodeBase64("SGFpbCBFcmlzISEh");
+	//std::cout << Fnord;
+	//HaltAndCatchFire();
 #if DEBUG_BUILD
 	glfwSetErrorCallback(GlfwErrorCallback);
 #endif // DEBUG_BUILD

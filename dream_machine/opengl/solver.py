@@ -90,10 +90,10 @@ def solve_shaders(env:Program, solved_structs:Dict[str,StructType]) -> Tuple[Sha
         return [CompileShader(*args) for args in enumerate(shaders)]
 
     def solve_shader_linking(shaders: List[ShaderStage], programs: List[ShaderProgram]):
-        handle_map = {shader:index for index, shader in enumerate(shaders)}
+        handle_map = {shader.encoded:index for index, shader in enumerate(shaders)}
         links = []
         for index, program in enumerate(programs):
-            shader_handles = [handle_map[shader] for shader in program.shaders]
+            shader_handles = [handle_map[shader.encoded] for shader in program.shaders]
             links.append(LinkShaders(program.name, index, shader_handles))
         return links
 
@@ -125,10 +125,9 @@ def solve_shaders(env:Program, solved_structs:Dict[str,StructType]) -> Tuple[Sha
         shaders += stages
 
     shaders = dedupe(shaders)
-    paths = ",\n".join([f'"{shader.save()}"' for shader in shaders])
     compiles: List[SyntaxExpander] = solve_shader_compilation(shaders)
     links: List[SyntaxExpander] = solve_shader_linking(shaders, programs)
-    return ShaderHandles(shader_count = len(shaders), program_count=len(programs), paths=paths), compiles + links
+    return ShaderHandles(shader_count = len(shaders), program_count=len(programs)), compiles + links
 
 
 def solve_renderers(env:Program) -> Tuple[List[SyntaxExpander], SyntaxExpander]:

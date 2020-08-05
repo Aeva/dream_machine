@@ -15,6 +15,7 @@
 
 
 import os
+from base64 import b64encode
 from hashlib import md5
 from ..handy import *
 from .glsl_types import *
@@ -25,17 +26,21 @@ class ShaderHandles(SyntaxExpander):
     template = """
 GLuint Shaders[「shader_count」] = { 0 };
 GLuint ShaderPrograms[「program_count」] = { 0 };
-std::string ShaderPaths[「shader_count」] = {\n「paths」\n};
 """.strip()
-    indent = ("paths",)
 
 
 class CompileShader(SyntaxExpander):
-    template = "Shaders[「index」] = CompileShader(ShaderPaths[「index」], 「stage」);"
+    template = """
+{
+	std::string ShaderSource = DecodeBase64(\"「encoded」\");
+	Shaders[「index」] = CompileShader(ShaderSource, 「stage」);
+}
+    """.strip()
+
     def __init__(self, index: int, shader):
         SyntaxExpander.__init__(self)
         self.index = index
-        self.path = shader.path
+        self.encoded = shader.encoded
         self.stage = shader.stage
 
 
@@ -69,19 +74,11 @@ class ShaderStage:
         self.stage = f"GL_{stage.upper()}_SHADER"
         class GlslTransform(SyntaxExpander):
             template = external(path)
-        self.src = str(GlslTransform(shader_expanders))
-
-    def save(self) -> str:
-        name = f"{os.path.split(self.path)[-1]}.{md5(str(self).encode()).hexdigest()}.glsl"
-        if not os.path.exists("generated_shaders"):
-            os.mkdir("generated_shaders")
-        path = os.path.join("generated_shaders", name)
-        with open(path, "w") as generated:
-            generated.write(self.src)
-        return path.encode("unicode_escape").decode("utf8")
+        source = str(GlslTransform(shader_expanders))
+        self.encoded = b64encode(source.encode()).decode().strip()
 
     def __str__(self):
-        return str((self.path, self.stage, self.src))
+        return str((self.stage, self.encoded))
 
     def __hash__(self):
         return hash(str(self))
