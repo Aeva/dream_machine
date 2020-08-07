@@ -14,12 +14,14 @@
 # limitations under the License.
 
 
+from __future__ import annotations
 import os
 from base64 import b64encode
 from hashlib import md5
 from ..handy import *
 from ..opengl.glsl_types import *
 from ..expanders import SyntaxExpander, external
+from ..syntax.abstract import Pipeline
 
 
 class ShaderHandles(SyntaxExpander):
@@ -44,19 +46,40 @@ class CompileShader(SyntaxExpander):
         self.stage = shader.stage
 
 
+class AssignTextureUnit(SyntaxExpander):
+    template = """
+const 「binding_name」 = gl.getUniformLocation(Handle, "「binding_name」");
+if (「binding_name」 !== null) {
+	gl.uniform1i(「binding_name」, 「texture_unit」);
+}
+""".strip()
+    def __init__(self, texture_unit:int, binding_name:str):
+        SyntaxExpander.__init__(self)
+        self.binding_name = binding_name
+        self.texture_unit = texture_unit
+
+
 class LinkShaders(SyntaxExpander):
     template = """
 {
 	let Stages = new Array(「shaders」);
-	ShaderPrograms[「index」] = LinkShaders(Stages);
+	let Handle = ShaderPrograms[「index:int」] = LinkShaders(Stages);
+「post_link」
 }
 """.strip()
-    def __init__(self, name: str, index: int, shaders:List[int]):
+    indent = ("post_link",)
+
+    def __init__(self, program:ShaderProgram, index: int, shaders:List[int]):
         SyntaxExpander.__init__(self)
-        self.name = name
-        self.index = str(index)
-        self.shader_count = str(len(shaders))
+        self.index = index
         self.shaders = ", ".join([f"Shaders[{shader}]" for shader in shaders])
+        if program.textures:
+            post:List[Union[str, SyntaxExpander]] = []
+            post += ["gl.useProgram(Handle);"]
+            post += [AssignTextureUnit(u, t) for (u, t) in enumerate(program.textures)]
+            self.post_link = post
+        else:
+            self.post_link = []
 
 
 class ChangeProgram(SyntaxExpander):
@@ -113,7 +136,8 @@ class ShaderProgram:
     shader per each shader stage type.  Additionally, the stages should form
     a valid pipeline.
     """
-    def __init__(self, name: str, shaders: List[ShaderStage]) -> None:
-        self.name = name
+    def __init__(self, pipeline:Pipeline, shaders: List[ShaderStage]) -> None:
+        self.name = pipeline.name
+        self.textures = [t.binding_name for t in pipeline.textures]
         self.shaders = dedupe(shaders)
         self.stages = tuple(sorted([shader.stage for shader in self.shaders]))

@@ -16,8 +16,7 @@ const CompileShader = function(Source, ShaderType) {
 	return Handle;
 };
 
-const LinkShaders = function(Shaders)
-{
+const LinkShaders = function(Shaders) {
 	const Handle = gl.createProgram();
 	Shaders.forEach(Shader => gl.attachShader(Handle, Shader));
 	gl.linkProgram(Handle);
@@ -28,6 +27,13 @@ const LinkShaders = function(Shaders)
 	if (!gl.getProgramParameter(Handle, gl.LINK_STATUS)) {
 		throw new Error("Shader Failed to Link!?!");
 	}
+	return Handle;
+};
+
+const PlaceHolderTexture = function() {
+	let Handle = gl.createTexture();
+	gl.bindTexture(gl.TEXTURE_2D, Handle);
+	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0, 0, 0, 255]));
 	return Handle;
 };
 

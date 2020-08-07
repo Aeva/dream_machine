@@ -19,7 +19,44 @@ from ..expanders import SyntaxExpander
 from ..handy import *
 from ..syntax.grammar import UserVar, COMMON_VARS
 from ..syntax.arithmetic import UnfoldedExpression
-from ..opengl.cpp_expressions import BINARY_REWRITE, BinaryExpander, CallExpander, ValueExpander
+
+
+BINARY_REWRITE = \
+{
+    "add" : "+",
+    "sub" : "-",
+    "mul" : "*",
+    "div" : "/",
+}
+
+
+class BinaryExpander(SyntaxExpander):
+    template = "(「lhs」 「op」 「rhs」)"
+
+    def __init__(self, cmd:str, args:list):
+        SyntaxExpander.__init__(self)
+        self.op = BINARY_REWRITE[cmd]
+        if len(args) == 2:
+            print("args:", args)
+            self.lhs = solve_expression(args[0])
+            self.rhs = solve_expression(args[1])
+        else:
+            assert(len(args)) > 2
+            self.lhs = BinaryExpander(cmd, args[:-1])
+            self.rhs = solve_expression(args[-1])
+
+
+class CallExpander(SyntaxExpander):
+    template = "「cmd」(「args」)"
+
+    def __init__(self, cmd:str, args:list):
+        SyntaxExpander.__init__(self)
+        self.cmd = cmd
+        self.args = ", ".join([str(solve_expression(a)) for a in args])
+
+
+class ValueExpander(SyntaxExpander):
+    template = "「wrapped」"
 
 
 def solve_expression(expr:Any) -> SyntaxExpander:
@@ -36,7 +73,7 @@ def solve_expression(expr:Any) -> SyntaxExpander:
 
 
 class ExternUserVar(SyntaxExpander):
-    template = "「name」 : 「value」,"
+    template = '"「name」" : 「value」,'
     def __init__(self, user_var:UserVar):
         SyntaxExpander.__init__(self)
         self.type = user_var.ctype

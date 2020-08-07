@@ -23,5 +23,8 @@ precision mediump float;
 
 void main()
 {
-	gl_FragColor = vec4(0.0, 0.5, 1.0, 1.0);
+	vec2 UV = gl_FragCoord.xy / 512.0;
+	vec4 FgColor = texture2D(FancyTexture, UV);
+	vec3 BgColor = vec3(0.0, 0.5, 1.0);
+	gl_FragColor = vec4(mix(BgColor.rgb, FgColor.rgb, FgColor.a), 1.0);
 }

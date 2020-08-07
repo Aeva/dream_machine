@@ -17,12 +17,13 @@
 from ..handy import *
 from ..syntax.grammar import *
 from ..expanders import *
+from .textures import *
 from .shaders import *
 from .drawspatch import *
 from .renderers import *
 from .window import *
 from .js_expressions import *
-from ..opengl.glsl_interfaces import GlslStruct
+from .glsl_interfaces import *
 from ..opengl.solver import solve_struct
 
 
@@ -50,19 +51,20 @@ def solve_shaders(env:Program, solved_structs:Dict[str,StructType]) -> Tuple[Sha
         links = []
         for index, program in enumerate(programs):
             shader_handles = [handle_map[shader.encoded] for shader in program.shaders]
-            links.append(LinkShaders(program.name, index, shader_handles))
+            links.append(LinkShaders(program, index, shader_handles))
         return links
 
     def solve_shader_fs(pipeline:Pipeline) -> ShaderStage:
         shader = pipeline.shaders["fs"]
         structs:List[SyntaxExpander] = [GlslStruct(solved_structs[use.struct]) for use in pipeline.structs]
-        return ShaderStage("fragment", shader.path, structs)
+        textures:List[SyntaxExpander] = [TextureInterface(t) for t in pipeline.textures]
+        return ShaderStage("fragment", shader.path, structs + textures)
 
     shaders:List[ShaderStage] = []
     programs:List[ShaderProgram] = []
     for pipeline in env.pipelines.values():
         stages:List[ShaderStage] = [splat_vs, solve_shader_fs(pipeline)]
-        programs.append(ShaderProgram(pipeline.name, stages))
+        programs.append(ShaderProgram(pipeline, stages))
         shaders += stages
 
     shaders = dedupe(shaders)
@@ -82,6 +84,8 @@ def solve_renderers(env:Program) -> Tuple[List[SyntaxExpander], SyntaxExpander]:
             ChangeProgram(pipeline.index),
         ]
 
+        setup += [BindTexture(t) for t in pipeline.textures]
+
         return Drawspatch(
             setup = setup,
             draw = InstancedDraw(vertices=6, instances=1))
@@ -93,7 +97,7 @@ def solve_renderers(env:Program) -> Tuple[List[SyntaxExpander], SyntaxExpander]:
         ]
         previous_draw:Optional[RendererDraw] = None
         for event in renderer.children:
-            event = CAST(RendererDraw, event)
+            event = cast(RendererDraw, event)
             calls.append(solve_draw(event, previous_draw))
             previous_draw = event
         return RendererCall(name=renderer.name, calls=calls)
@@ -124,7 +128,7 @@ def solve(env:Program) -> SyntaxExpander:
         pass
 
     if env.textures:
-        pass
+        globals.append(TextureHandles(len(env.textures)))
 
     if env.pipelines:
         pass
@@ -151,7 +155,7 @@ def solve(env:Program) -> SyntaxExpander:
         pass
 
     if env.textures:
-        pass
+        setup.append(SetupTextures(env))
 
     if env.pipelines:
         pass

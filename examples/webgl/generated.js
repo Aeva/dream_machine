@@ -1,7 +1,7 @@
 "use strict";
 
 let UserVars = {
-	MiscVar : 2048,
+	"MiscVar" : 2048,
 }
 let CurrentRenderer = 0;
 let gl = null;
@@ -9,6 +9,7 @@ let gl = null;
 (function() {
 	﻿let Shaders = new Array(2);
 	let ShaderPrograms = new Array(1);
+	let TextureHandles = new Array(1);
 
 	let ScreenWidth = null;
 	let ScreenHeight = null;
@@ -26,8 +27,7 @@ let gl = null;
 		return Handle;
 	};
 
-	const LinkShaders = function(Shaders)
-	{
+	const LinkShaders = function(Shaders) {
 		const Handle = gl.createProgram();
 		Shaders.forEach(Shader => gl.attachShader(Handle, Shader));
 		gl.linkProgram(Handle);
@@ -38,6 +38,13 @@ let gl = null;
 		if (!gl.getProgramParameter(Handle, gl.LINK_STATUS)) {
 			throw new Error("Shader Failed to Link!?!");
 		}
+		return Handle;
+	};
+
+	const PlaceHolderTexture = function() {
+		let Handle = gl.createTexture();
+		gl.bindTexture(gl.TEXTURE_2D, Handle);
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0, 0, 0, 255]));
 		return Handle;
 	};
 
@@ -59,12 +66,29 @@ let gl = null;
 			Shaders[0] = CompileShader(ShaderSource, gl.VERTEX_SHADER);
 		}
 		{
-			let ShaderSource = atob("Ci8qCglDb3B5cmlnaHQgMjAyMCBBZXZhIFBhbGVjZWsKCglMaWNlbnNlZCB1bmRlciB0aGUgQXBhY2hlIExpY2Vuc2UsIFZlcnNpb24gMi4wICh0aGUgIkxpY2Vuc2UiKTsKCXlvdSBtYXkgbm90IHVzZSB0aGlzIGZpbGUgZXhjZXB0IGluIGNvbXBsaWFuY2Ugd2l0aCB0aGUgTGljZW5zZS4KCVlvdSBtYXkgb2J0YWluIGEgY29weSBvZiB0aGUgTGljZW5zZSBhdAoKCQlodHRwOi8vd3d3LmFwYWNoZS5vcmcvbGljZW5zZXMvTElDRU5TRS0yLjAKCglVbmxlc3MgcmVxdWlyZWQgYnkgYXBwbGljYWJsZSBsYXcgb3IgYWdyZWVkIHRvIGluIHdyaXRpbmcsIHNvZnR3YXJlCglkaXN0cmlidXRlZCB1bmRlciB0aGUgTGljZW5zZSBpcyBkaXN0cmlidXRlZCBvbiBhbiAiQVMgSVMiIEJBU0lTLAoJV0lUSE9VVCBXQVJSQU5USUVTIE9SIENPTkRJVElPTlMgT0YgQU5ZIEtJTkQsIGVpdGhlciBleHByZXNzIG9yIGltcGxpZWQuCglTZWUgdGhlIExpY2Vuc2UgZm9yIHRoZSBzcGVjaWZpYyBsYW5ndWFnZSBnb3Zlcm5pbmcgcGVybWlzc2lvbnMgYW5kCglsaW1pdGF0aW9ucyB1bmRlciB0aGUgTGljZW5zZS4KKi8KCnByZWNpc2lvbiBtZWRpdW1wIGZsb2F0OwoKCgoKCnZvaWQgbWFpbigpCnsKCWdsX0ZyYWdDb2xvciA9IHZlYzQoMC4wLCAwLjUsIDEuMCwgMS4wKTsKfQo=");
+			let ShaderSource = atob("Ci8qCglDb3B5cmlnaHQgMjAyMCBBZXZhIFBhbGVjZWsKCglMaWNlbnNlZCB1bmRlciB0aGUgQXBhY2hlIExpY2Vuc2UsIFZlcnNpb24gMi4wICh0aGUgIkxpY2Vuc2UiKTsKCXlvdSBtYXkgbm90IHVzZSB0aGlzIGZpbGUgZXhjZXB0IGluIGNvbXBsaWFuY2Ugd2l0aCB0aGUgTGljZW5zZS4KCVlvdSBtYXkgb2J0YWluIGEgY29weSBvZiB0aGUgTGljZW5zZSBhdAoKCQlodHRwOi8vd3d3LmFwYWNoZS5vcmcvbGljZW5zZXMvTElDRU5TRS0yLjAKCglVbmxlc3MgcmVxdWlyZWQgYnkgYXBwbGljYWJsZSBsYXcgb3IgYWdyZWVkIHRvIGluIHdyaXRpbmcsIHNvZnR3YXJlCglkaXN0cmlidXRlZCB1bmRlciB0aGUgTGljZW5zZSBpcyBkaXN0cmlidXRlZCBvbiBhbiAiQVMgSVMiIEJBU0lTLAoJV0lUSE9VVCBXQVJSQU5USUVTIE9SIENPTkRJVElPTlMgT0YgQU5ZIEtJTkQsIGVpdGhlciBleHByZXNzIG9yIGltcGxpZWQuCglTZWUgdGhlIExpY2Vuc2UgZm9yIHRoZSBzcGVjaWZpYyBsYW5ndWFnZSBnb3Zlcm5pbmcgcGVybWlzc2lvbnMgYW5kCglsaW1pdGF0aW9ucyB1bmRlciB0aGUgTGljZW5zZS4KKi8KCnByZWNpc2lvbiBtZWRpdW1wIGZsb2F0OwoKCnVuaWZvcm0gc2FtcGxlcjJEIEZhbmN5VGV4dHVyZTsKCgp2b2lkIG1haW4oKQp7Cgl2ZWMyIFVWID0gZ2xfRnJhZ0Nvb3JkLnh5IC8gNTEyLjA7Cgl2ZWM0IEZnQ29sb3IgPSB0ZXh0dXJlMkQoRmFuY3lUZXh0dXJlLCBVVik7Cgl2ZWMzIEJnQ29sb3IgPSB2ZWMzKDAuMCwgMC41LCAxLjApOwoJZ2xfRnJhZ0NvbG9yID0gdmVjNChtaXgoQmdDb2xvci5yZ2IsIEZnQ29sb3IucmdiLCBGZ0NvbG9yLmEpLCAxLjApOwp9Cg==");
 			Shaders[1] = CompileShader(ShaderSource, gl.FRAGMENT_SHADER);
 		}
 		{
 			let Stages = new Array(Shaders[0], Shaders[1]);
-			ShaderPrograms[0] = LinkShaders(Stages);
+			let Handle = ShaderPrograms[0] = LinkShaders(Stages);
+			gl.useProgram(Handle);
+			const FancyTexture = gl.getUniformLocation(Handle, "FancyTexture");
+			if (FancyTexture !== null) {
+				gl.uniform1i(FancyTexture, 0);
+			}
+		}
+		{
+			let Handle = TextureHandles[0] = PlaceHolderTexture();
+			gl.bindTexture(gl.TEXTURE_2D, Handle, 0);
+			let Req = new Image();
+			Req.addEventListener("load", function() {
+				gl.deleteTexture(TextureHandles[0]);
+				let Handle = TextureHandles[0] = gl.createTexture();
+				gl.bindTexture(gl.TEXTURE_2D, Handle);
+				gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, Req);
+			});
+			Req.src = "fnord.png";
 		}
 	};
 
@@ -86,6 +110,12 @@ let gl = null;
 						gl.vertexAttribPointer(Index, 3, gl.FLOAT, false, 0, 0);
 					}
 				}
+				gl.activeTexture(gl.TEXTURE0 + 0);
+				gl.bindTexture(gl.TEXTURE_2D, TextureHandles[0]);
+				gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+				gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+				gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+				gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 				gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, 1);
 			}
 		},

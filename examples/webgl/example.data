@@ -27,8 +27,21 @@
 (uservar int MiscVar 2048)
 
 
+(sampler LinearSampler
+	(min GL_LINEAR)
+	(mag GL_LINEAR))
+
+
+(format ColorFormat GL_TEXTURE_2D GL_RGBA8 LinearSampler)
+
+
+(texture FancyTexture ColorFormat
+	(src "fnord.png"))
+
+
 (pipeline SplatTest
-	(fs "shaders/test.fs.glsl"))
+	(fs "shaders/test.fs.glsl")
+	(in FancyTexture))
 
 
 (renderer Test
