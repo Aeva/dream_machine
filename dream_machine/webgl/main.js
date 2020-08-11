@@ -67,12 +67,14 @@ let LastTime = null;
 let WindowIsDirty = true;
 
 const RenderLoop = function(NowTime) {
+	NowTime *= 0.001;
 	DrawFrame(FrameIndex++, NowTime, NowTime - LastTime);
 	LastTime = NowTime;
 	window.requestAnimationFrame(RenderLoop);
 };
 
 const FirstFrame = function(NowTime) {
+	NowTime *= 0.001	;
 	DrawFrame(FrameIndex++, NowTime, 0.0);
 	LastTime = NowTime;
 	window.requestAnimationFrame(RenderLoop);
