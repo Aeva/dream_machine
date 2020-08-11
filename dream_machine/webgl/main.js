@@ -30,6 +30,10 @@ const LinkShaders = function(Shaders) {
 	return Handle;
 };
 
+let Upload = {
+「uploaders」
+};
+
 const PlaceHolderTexture = function() {
 	let Handle = gl.createTexture();
 	gl.bindTexture(gl.TEXTURE_2D, Handle);

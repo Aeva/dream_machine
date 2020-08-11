@@ -73,13 +73,12 @@ class LinkShaders(SyntaxExpander):
         SyntaxExpander.__init__(self)
         self.index = index
         self.shaders = ", ".join([f"Shaders[{shader}]" for shader in shaders])
+        post_link:List[Union[str, SyntaxExpander]] = []
+        if program.textures or program.uniforms:
+            post_link += ["gl.useProgram(Handle);"]
         if program.textures:
-            post:List[Union[str, SyntaxExpander]] = []
-            post += ["gl.useProgram(Handle);"]
-            post += [AssignTextureUnit(u, t) for (u, t) in enumerate(program.textures)]
-            self.post_link = post
-        else:
-            self.post_link = []
+            post_link += [AssignTextureUnit(u, t) for (u, t) in enumerate(program.textures)]
+        self.post_link = post_link
 
 
 class ChangeProgram(SyntaxExpander):
@@ -139,5 +138,6 @@ class ShaderProgram:
     def __init__(self, pipeline:Pipeline, shaders: List[ShaderStage]) -> None:
         self.name = pipeline.name
         self.textures = [t.binding_name for t in pipeline.textures]
+        self.uniforms = pipeline.uniforms
         self.shaders = dedupe(shaders)
         self.stages = tuple(sorted([shader.stage for shader in self.shaders]))

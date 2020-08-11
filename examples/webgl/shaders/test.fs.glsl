@@ -23,7 +23,17 @@ precision mediump float;
 
 void main()
 {
-	vec2 UV = gl_FragCoord.xy / 512.0;
+	float Margin = abs(WindowSize.x - WindowSize.y) * 0.5;
+	vec2 Coords = gl_FragCoord.xy;
+	if (WindowSize.x > WindowSize.y)
+	{
+		Coords.x -= Margin;
+	}
+	else
+	{
+		Coords.y -= Margin;
+	}
+	vec2 UV = Coords * vec2(max(WindowSize.z, WindowSize.w));
 	vec4 FgColor = texture2D(FancyTexture, UV);
 	vec3 BgColor = vec3(0.0, 0.5, 1.0);
 	gl_FragColor = vec4(mix(BgColor.rgb, FgColor.rgb, FgColor.a), 1.0);

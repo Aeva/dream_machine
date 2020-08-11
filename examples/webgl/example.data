@@ -27,6 +27,15 @@
 (uservar int MiscVar 2048)
 
 
+(struct WindowParamsType
+	(WindowSize vec4)
+	(WindowScale vec4)
+	(ElapsedTime float))
+
+
+(buffer WindowParams WindowParamsType)
+
+
 (sampler LinearSampler
 	(min GL_LINEAR)
 	(mag GL_LINEAR))
@@ -41,8 +50,10 @@
 
 (pipeline SplatTest
 	(fs "shaders/test.fs.glsl")
+	(in WindowParams)
 	(in FancyTexture))
 
 
 (renderer Test
+	(update WindowParams)
 	(draw SplatTest))

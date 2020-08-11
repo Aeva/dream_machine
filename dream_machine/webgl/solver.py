@@ -22,8 +22,9 @@ from .shaders import *
 from .drawspatch import *
 from .renderers import *
 from .window import *
-from .js_expressions import *
 from .glsl_interfaces import *
+from .js_interfaces import *
+from .js_expressions import *
 from ..opengl.solver import solve_struct
 
 
@@ -33,6 +34,16 @@ void main(void) {
   gl_Position = vec4(Position, 1.0);
 }
 """.strip())
+
+
+class FakeUpload(SyntaxExpander):
+    template = """
+Upload["「struct_name」"]({
+	"WindowSize" : new Float32Array([ScreenWidth, ScreenHeight, 1.0/ScreenWidth, 1.0/ScreenHeight]),
+	"WindowScale" : new Float32Array([1.0, 1.0, 1.0, 1.0]),
+	"ElapsedTime" : new Float32Array([CurrentTime * 0.1]),
+});
+""".strip()
 
 
 def solve_shaders(env:Program, solved_structs:Dict[str,StructType]) -> Tuple[ShaderHandles, List[SyntaxExpander]]:
@@ -57,8 +68,9 @@ def solve_shaders(env:Program, solved_structs:Dict[str,StructType]) -> Tuple[Sha
     def solve_shader_fs(pipeline:Pipeline) -> ShaderStage:
         shader = pipeline.shaders["fs"]
         structs:List[SyntaxExpander] = [GlslStruct(solved_structs[use.struct]) for use in pipeline.structs]
+        uniforms:List[SyntaxExpander] = [UniformInterface(solved_structs[u.struct], u) for u in pipeline.uniforms]
         textures:List[SyntaxExpander] = [TextureInterface(t) for t in pipeline.textures]
-        return ShaderStage("fragment", shader.path, structs + textures)
+        return ShaderStage("fragment", shader.path, structs + uniforms + textures)
 
     shaders:List[ShaderStage] = []
     programs:List[ShaderProgram] = []
@@ -76,6 +88,11 @@ def solve_shaders(env:Program, solved_structs:Dict[str,StructType]) -> Tuple[Sha
 def solve_renderers(env:Program) -> Tuple[List[SyntaxExpander], SyntaxExpander]:
     """
     """
+
+    def solve_uploader(event:RendererUpdate) -> SyntaxExpander:
+        buffer = CAST(Buffer, event.buffer)
+        return FakeUpload(
+            struct_name = buffer.struct)
 
     def solve_draw(event:RendererDraw, previous:Optional[RendererDraw]) -> SyntaxExpander:
         pipeline = event.pipeline
@@ -97,9 +114,13 @@ def solve_renderers(env:Program) -> Tuple[List[SyntaxExpander], SyntaxExpander]:
         ]
         previous_draw:Optional[RendererDraw] = None
         for event in renderer.children:
-            event = cast(RendererDraw, event)
-            calls.append(solve_draw(event, previous_draw))
-            previous_draw = event
+            if type(event) is RendererUpdate:
+                event = cast(RendererUpdate, event)
+                calls.append(solve_uploader(event))
+            elif type(event) is RendererDraw:
+                event = cast(RendererDraw, event)
+                calls.append(solve_draw(event, previous_draw))
+                previous_draw = event
         return RendererCall(name=renderer.name, calls=calls)
 
     callbacks = list(map(solve_renderer, env.renderers))
@@ -139,7 +160,7 @@ def solve(env:Program) -> SyntaxExpander:
     # expanders for buffer uploaders
     uploaders:List[SyntaxExpander] = []
     if env.buffers:
-        pass
+        uploaders += [UploadUniformBlock(env, s) for s in solved_structs.values()]
 
     # user-defined variables
     user_vars:List[SyntaxExpander] = [ExternUserVar(v) for v in env.user_vars.values()]

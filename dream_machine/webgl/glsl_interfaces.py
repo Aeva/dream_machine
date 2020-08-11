@@ -19,6 +19,26 @@ from ..opengl.glsl_interfaces import GlslStruct
 from ..syntax.grammar import PipelineInput, PipelineOutput
 
 
+class UniformDeclaration(SyntaxExpander):
+    template = "uniform 「type」 「name」;"
+
+    def __init__(self, member_name:str, member_type:GlslType):
+        SyntaxExpander.__init__(self)
+        if type(member_type) in (ScalarType, VectorType, MatrixType):
+            self.name = member_name
+            self.type = member_type.name
+        else:
+            raise NotImplementedError("uniform array and or struct fields in shaders")
+
+
+class UniformInterface(SyntaxExpander):
+    template = "「wrapped」"
+    def __init__(self, struct: StructType, input: PipelineInput):
+        SyntaxExpander.__init__(self)
+        members = [m for m in struct.members.items()]
+        self.wrapped = [UniformDeclaration(*m) for m in members]
+
+
 class TextureInterface(SyntaxExpander):
     template = "uniform sampler「mode:str」 「name:str」;"
 

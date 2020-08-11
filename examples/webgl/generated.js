@@ -41,6 +41,15 @@ let gl = null;
 		return Handle;
 	};
 
+	let Upload = {
+		"WindowParamsType" : function (UploadData) {
+			gl.useProgram(ShaderPrograms[0]);
+			gl.uniform4fv(gl.getUniformLocation(ShaderPrograms[0], "WindowSize"), UploadData["WindowSize"]);
+			gl.uniform4fv(gl.getUniformLocation(ShaderPrograms[0], "WindowScale"), UploadData["WindowScale"]);
+			gl.uniform1fv(gl.getUniformLocation(ShaderPrograms[0], "ElapsedTime"), UploadData["ElapsedTime"]);
+		},
+	};
+
 	const PlaceHolderTexture = function() {
 		let Handle = gl.createTexture();
 		gl.bindTexture(gl.TEXTURE_2D, Handle);
@@ -66,7 +75,7 @@ let gl = null;
 			Shaders[0] = CompileShader(ShaderSource, gl.VERTEX_SHADER);
 		}
 		{
-			let ShaderSource = atob("Ci8qCglDb3B5cmlnaHQgMjAyMCBBZXZhIFBhbGVjZWsKCglMaWNlbnNlZCB1bmRlciB0aGUgQXBhY2hlIExpY2Vuc2UsIFZlcnNpb24gMi4wICh0aGUgIkxpY2Vuc2UiKTsKCXlvdSBtYXkgbm90IHVzZSB0aGlzIGZpbGUgZXhjZXB0IGluIGNvbXBsaWFuY2Ugd2l0aCB0aGUgTGljZW5zZS4KCVlvdSBtYXkgb2J0YWluIGEgY29weSBvZiB0aGUgTGljZW5zZSBhdAoKCQlodHRwOi8vd3d3LmFwYWNoZS5vcmcvbGljZW5zZXMvTElDRU5TRS0yLjAKCglVbmxlc3MgcmVxdWlyZWQgYnkgYXBwbGljYWJsZSBsYXcgb3IgYWdyZWVkIHRvIGluIHdyaXRpbmcsIHNvZnR3YXJlCglkaXN0cmlidXRlZCB1bmRlciB0aGUgTGljZW5zZSBpcyBkaXN0cmlidXRlZCBvbiBhbiAiQVMgSVMiIEJBU0lTLAoJV0lUSE9VVCBXQVJSQU5USUVTIE9SIENPTkRJVElPTlMgT0YgQU5ZIEtJTkQsIGVpdGhlciBleHByZXNzIG9yIGltcGxpZWQuCglTZWUgdGhlIExpY2Vuc2UgZm9yIHRoZSBzcGVjaWZpYyBsYW5ndWFnZSBnb3Zlcm5pbmcgcGVybWlzc2lvbnMgYW5kCglsaW1pdGF0aW9ucyB1bmRlciB0aGUgTGljZW5zZS4KKi8KCnByZWNpc2lvbiBtZWRpdW1wIGZsb2F0OwoKCnVuaWZvcm0gc2FtcGxlcjJEIEZhbmN5VGV4dHVyZTsKCgp2b2lkIG1haW4oKQp7Cgl2ZWMyIFVWID0gZ2xfRnJhZ0Nvb3JkLnh5IC8gNTEyLjA7Cgl2ZWM0IEZnQ29sb3IgPSB0ZXh0dXJlMkQoRmFuY3lUZXh0dXJlLCBVVik7Cgl2ZWMzIEJnQ29sb3IgPSB2ZWMzKDAuMCwgMC41LCAxLjApOwoJZ2xfRnJhZ0NvbG9yID0gdmVjNChtaXgoQmdDb2xvci5yZ2IsIEZnQ29sb3IucmdiLCBGZ0NvbG9yLmEpLCAxLjApOwp9Cg==");
+			let ShaderSource = atob("Ci8qCglDb3B5cmlnaHQgMjAyMCBBZXZhIFBhbGVjZWsKCglMaWNlbnNlZCB1bmRlciB0aGUgQXBhY2hlIExpY2Vuc2UsIFZlcnNpb24gMi4wICh0aGUgIkxpY2Vuc2UiKTsKCXlvdSBtYXkgbm90IHVzZSB0aGlzIGZpbGUgZXhjZXB0IGluIGNvbXBsaWFuY2Ugd2l0aCB0aGUgTGljZW5zZS4KCVlvdSBtYXkgb2J0YWluIGEgY29weSBvZiB0aGUgTGljZW5zZSBhdAoKCQlodHRwOi8vd3d3LmFwYWNoZS5vcmcvbGljZW5zZXMvTElDRU5TRS0yLjAKCglVbmxlc3MgcmVxdWlyZWQgYnkgYXBwbGljYWJsZSBsYXcgb3IgYWdyZWVkIHRvIGluIHdyaXRpbmcsIHNvZnR3YXJlCglkaXN0cmlidXRlZCB1bmRlciB0aGUgTGljZW5zZSBpcyBkaXN0cmlidXRlZCBvbiBhbiAiQVMgSVMiIEJBU0lTLAoJV0lUSE9VVCBXQVJSQU5USUVTIE9SIENPTkRJVElPTlMgT0YgQU5ZIEtJTkQsIGVpdGhlciBleHByZXNzIG9yIGltcGxpZWQuCglTZWUgdGhlIExpY2Vuc2UgZm9yIHRoZSBzcGVjaWZpYyBsYW5ndWFnZSBnb3Zlcm5pbmcgcGVybWlzc2lvbnMgYW5kCglsaW1pdGF0aW9ucyB1bmRlciB0aGUgTGljZW5zZS4KKi8KCnByZWNpc2lvbiBtZWRpdW1wIGZsb2F0OwoKCnVuaWZvcm0gdmVjNCBXaW5kb3dTaXplOwp1bmlmb3JtIHZlYzQgV2luZG93U2NhbGU7CnVuaWZvcm0gZmxvYXQgRWxhcHNlZFRpbWU7CnVuaWZvcm0gc2FtcGxlcjJEIEZhbmN5VGV4dHVyZTsKCgp2b2lkIG1haW4oKQp7CglmbG9hdCBNYXJnaW4gPSBhYnMoV2luZG93U2l6ZS54IC0gV2luZG93U2l6ZS55KSAqIDAuNTsKCXZlYzIgQ29vcmRzID0gZ2xfRnJhZ0Nvb3JkLnh5OwoJaWYgKFdpbmRvd1NpemUueCA+IFdpbmRvd1NpemUueSkKCXsKCQlDb29yZHMueCAtPSBNYXJnaW47Cgl9CgllbHNlCgl7CgkJQ29vcmRzLnkgLT0gTWFyZ2luOwoJfQoJdmVjMiBVViA9IENvb3JkcyAqIHZlYzIobWF4KFdpbmRvd1NpemUueiwgV2luZG93U2l6ZS53KSk7Cgl2ZWM0IEZnQ29sb3IgPSB0ZXh0dXJlMkQoRmFuY3lUZXh0dXJlLCBVVik7Cgl2ZWMzIEJnQ29sb3IgPSB2ZWMzKDAuMCwgMC41LCAxLjApOwoJZ2xfRnJhZ0NvbG9yID0gdmVjNChtaXgoQmdDb2xvci5yZ2IsIEZnQ29sb3IucmdiLCBGZ0NvbG9yLmEpLCAxLjApOwoJLyoKCXZlYzIgVVYgPSBnbF9GcmFnQ29vcmQueHkgKiBXaW5kb3dTaXplLnp3OwoJVVYueCArPSBzaW4oVVYueSArIEVsYXBzZWRUaW1lKTsKCVVWLnkgKz0gY29zKFVWLnggKyBFbGFwc2VkVGltZSk7CglnbF9GcmFnQ29sb3IgPSB0ZXh0dXJlMkQoRmFuY3lUZXh0dXJlLCBVVik7CgkqLwp9Cg==");
 			Shaders[1] = CompileShader(ShaderSource, gl.FRAGMENT_SHADER);
 		}
 		{
@@ -98,6 +107,11 @@ let gl = null;
 			gl.clear(gl.COLOR_BUFFER_BIT);
 			gl.clearDepth(0);
 			gl.clear(gl.DEPTH_BUFFER_BIT);
+			Upload["WindowParamsType"]({
+				"WindowSize" : new Float32Array([ScreenWidth, ScreenHeight, 1.0/ScreenWidth, 1.0/ScreenHeight]),
+				"WindowScale" : new Float32Array([1.0, 1.0, 1.0, 1.0]),
+				"ElapsedTime" : new Float32Array([CurrentTime * 0.1]),
+			});
 			{
 				{
 					let Handle = ShaderPrograms[0];
