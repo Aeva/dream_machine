@@ -35,6 +35,7 @@ class PngTextureSetup(SyntaxExpander):
 		gl.deleteTexture(TextureHandles[「handle:int」]);
 		let Handle = TextureHandles[「handle:int」] = gl.createTexture();
 		gl.bindTexture(gl.TEXTURE_2D, Handle);
+		gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
 		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, Req);
 	});
 	Req.src = "「src:TextureSrc」";
