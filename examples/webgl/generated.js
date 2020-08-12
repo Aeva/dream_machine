@@ -42,7 +42,7 @@ let gl = null;
 	};
 
 	let Upload = {
-		"WindowParamsType" : function (UploadData) {
+		"WindowParams" : function (UploadData) {
 			gl.useProgram(ShaderPrograms[0]);
 			gl.uniform4fv(gl.getUniformLocation(ShaderPrograms[0], "WindowSize"), UploadData["WindowSize"]);
 			gl.uniform4fv(gl.getUniformLocation(ShaderPrograms[0], "WindowScale"), UploadData["WindowScale"]);
@@ -108,7 +108,7 @@ let gl = null;
 			gl.clear(gl.COLOR_BUFFER_BIT);
 			gl.clearDepth(0);
 			gl.clear(gl.DEPTH_BUFFER_BIT);
-			Upload["WindowParamsType"]({
+			Upload["WindowParams"]({
 				"WindowSize" : new Float32Array([ScreenWidth, ScreenHeight, 1.0/ScreenWidth, 1.0/ScreenHeight]),
 				"WindowScale" : new Float32Array([1.0, 1.0, 1.0, 1.0]),
 				"ElapsedTime" : new Float32Array([CurrentTime * 0.1]),

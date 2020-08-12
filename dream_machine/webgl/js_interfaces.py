@@ -15,7 +15,7 @@
 
 
 from ..opengl.glsl_types import *
-from ..syntax.abstract import Program, PipelineInput, Struct
+from ..syntax.abstract import Program, PipelineInput, Buffer, Struct
 
 
 upload_variants = {
@@ -62,21 +62,20 @@ class UploadUniformBlock(SyntaxExpander):
 """.strip()
     indent = ("wrapped",)
 
-    def __init__(self, env:Program, uniform_block:StructType):
+    def __init__(self, env:Program, buffer:Buffer, struct:StructType):
         SyntaxExpander.__init__(self)
-
-        self.name = uniform_block.name
+        self.name = buffer.name
 
         programs = []
         for pipeline in env.pipelines.values():
             for input in pipeline.uniforms:
-                if input.struct == uniform_block.name:
+                if input.buffer == buffer:
                     programs.append(pipeline.index)
 
         wrapped:List[Union[str, SyntaxExpander]] = []
         for program in programs:
             wrapped.append(f"gl.useProgram(ShaderPrograms[{program}]);")
-            for member in uniform_block.members.items():
+            for member in struct.members.items():
                 wrapped.append(UploadUniform(program, *member))
 
         self.wrapped = wrapped

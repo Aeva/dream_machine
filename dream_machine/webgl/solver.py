@@ -38,12 +38,15 @@ void main(void) {
 
 class FakeUpload(SyntaxExpander):
     template = """
-Upload["「struct_name」"]({
+Upload["「buffer_name」"]({
 	"WindowSize" : new Float32Array([ScreenWidth, ScreenHeight, 1.0/ScreenWidth, 1.0/ScreenHeight]),
 	"WindowScale" : new Float32Array([1.0, 1.0, 1.0, 1.0]),
 	"ElapsedTime" : new Float32Array([CurrentTime * 0.1]),
 });
 """.strip()
+    def __init__(self, buffer:Buffer):
+        SyntaxExpander.__init__(self)
+        self.buffer_name = buffer.name
 
 
 def solve_shaders(env:Program, solved_structs:Dict[str,StructType]) -> Tuple[ShaderHandles, List[SyntaxExpander]]:
@@ -91,8 +94,7 @@ def solve_renderers(env:Program) -> Tuple[List[SyntaxExpander], SyntaxExpander]:
 
     def solve_uploader(event:RendererUpdate) -> SyntaxExpander:
         buffer = CAST(Buffer, event.buffer)
-        return FakeUpload(
-            struct_name = buffer.struct)
+        return FakeUpload(buffer)
 
     def solve_draw(event:RendererDraw, previous:Optional[RendererDraw]) -> SyntaxExpander:
         pipeline = event.pipeline
@@ -160,7 +162,9 @@ def solve(env:Program) -> SyntaxExpander:
     # expanders for buffer uploaders
     uploaders:List[SyntaxExpander] = []
     if env.buffers:
-        uploaders += [UploadUniformBlock(env, s) for s in solved_structs.values()]
+        for buffer in env.buffers.values():
+            struct = solved_structs[buffer.struct]
+            uploaders.append(UploadUniformBlock(env, buffer, struct))
 
     # user-defined variables
     user_vars:List[SyntaxExpander] = [ExternUserVar(v) for v in env.user_vars.values()]
