@@ -202,7 +202,7 @@ let gl = null;
 
 	const RequiredExtensions = [
 		"ANGLE_instanced_arrays",
-		"OES_standard_derivatives",
+		"OES_standard_derivatives"
 	];
 
 	addEventListener("load", function() {

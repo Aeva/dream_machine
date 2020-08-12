@@ -36,4 +36,4 @@ let gl = null;
 
 class WebGLWindow(SyntaxExpander):
     template = external("webgl/main.js")
-    indent = ("initial_setup_hook", "resize_hook", "draw_frame_hook", "renderers", "uploaders")
+    indent = ("initial_setup_hook", "resize_hook", "draw_frame_hook", "renderers", "uploaders", "extensions")

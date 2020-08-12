@@ -21,6 +21,21 @@ from ..handy import CAST
 from ..syntax.grammar import Texture, TextureDimension, PipelineInput, Program
 
 
+webgl_formats = \
+{
+    "GL_RGB8" : "gl.RGB",
+    "GL_RGBA8" : "gl.RGBA",
+    "GL_R32F" : "gl.FLOAT",
+    "GL_RGB32F" : "gl.RGB32F",
+    "GL_RGBA32F" : "gl.RGBA32F",
+    "GL_R16F" : "gl.HALF_FLOAT",
+    "GL_RGB16F" : "gl.RGB16F",
+    "GL_RGBA16F" : "gl.RGBA16F",
+    "GL_DEPTH_COMPONENT" : "gl.DEPTH_COMPONENT",
+    "GL_DEPTH_STENCIL" : "gl.DEPTH_STENCIL",
+}
+
+
 class TextureHandles(SyntaxExpander):
     template = "let TextureHandles = new Array(「count:int」);"
 
@@ -36,7 +51,7 @@ class PngTextureSetup(SyntaxExpander):
 		let Handle = TextureHandles[「handle:int」] = gl.createTexture();
 		gl.bindTexture(gl.TEXTURE_2D, Handle);
 		gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
-		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, Req);
+		gl.texImage2D(gl.TEXTURE_2D, 0, 「format」, 「format」, gl.UNSIGNED_BYTE, Req);
 	});
 	Req.src = "「src:TextureSrc」";
 }
@@ -46,7 +61,7 @@ class PngTextureSetup(SyntaxExpander):
         SyntaxExpander.__init__(self)
         self.name = texture.name
         self.handle = texture.handle
-        self.format = texture.format.format
+        self.format = webgl_formats[texture.format.format]
         self.src = texture.src
 
 
@@ -64,7 +79,7 @@ class Texture2DSetup(SyntaxExpander):
         assert(texture.format.target == "GL_TEXTURE_2D")
         self.name = texture.name
         self.handle = texture.handle
-        self.format = texture.format.format
+        self.format = webgl_formats[texture.format.format]
         self.width = solve_expression(texture.width)
         self.height = solve_expression(texture.height)
 
@@ -83,7 +98,7 @@ class Texture3DSetup(SyntaxExpander):
         assert(texture.format.target == "GL_TEXTURE_3D")
         self.name = texture.name
         self.handle = texture.handle
-        self.format = texture.format.format
+        self.format = webgl_formats[texture.format.format]
         self.width = solve_expression(texture.width)
         self.height = solve_expression(texture.height)
         self.depth = solve_expression(texture.depth)

@@ -130,6 +130,51 @@ def solve_renderers(env:Program) -> Tuple[List[SyntaxExpander], SyntaxExpander]:
     return callbacks, switch
 
 
+def solve_extensions(env:Program) -> List[str]:
+    required = \
+    [
+        "ANGLE_instanced_arrays",
+        "OES_standard_derivatives",
+    ]
+    optional = []
+
+    linear_filters = ("GL_LINEAR", "GL_LINEAR_MIPMAP_NEAREST", "GL_NEAREST_MIPMAP_LINEAR", "GL_LINEAR_MIPMAP_LINEAR")
+
+    format_extensions = \
+    {
+        "GL_DEPTH_COMPONENT" : "WEBGL_depth_texture",
+        "GL_DEPTH_STENCIL" : "WEBGL_depth_texture",
+        "GL_R32F" : "OES_texture_float",
+        "GL_RGB32F": "OES_texture_float",
+        "GL_RGBA32F": "OES_texture_float",
+        "GL_R16F" : "OES_texture_half_float",
+        "GL_RGB16F": "OES_texture_half_float",
+        "GL_RGBA16F": "OES_texture_half_float",
+    }
+
+    # the spec says these are "implied"
+    dependencies = \
+    {
+        "OES_texture_float" : ["WEBGL_color_buffer_float"],
+        "OES_texture_half_float" : ["EXT_color_buffer_half_float"],
+    }
+
+    for format in env.formats.values():
+        ext = format_extensions.get(format.format)
+        if ext is None:
+            continue
+        optional.append(ext)
+        if ext in ("OES_texture_float", "OES_texture_half_float"):
+            for filter in format.sampler.filters.values():
+                if filter.value in linear_filters:
+                    optional.append(f"{ext}_linear")
+                    break
+        if ext in dependencies:
+            optional += dependencies[ext]
+
+    return required + dedupe(optional)
+
+
 def solve(env:Program) -> SyntaxExpander:
     """
     Solve the webpage!
@@ -196,6 +241,10 @@ def solve(env:Program) -> SyntaxExpander:
     # expanders defining the available renderers
     renderers, switch = solve_renderers(env)
 
+    # required WebGL Extensions
+    extensions = solve_extensions(env)
+    extensions = ",\n".join([f'"{name}"' for name in extensions])
+
     # emit the generated program
     program = WebGLWindow()
     program.globals = globals
@@ -204,6 +253,7 @@ def solve(env:Program) -> SyntaxExpander:
     program.resize_hook = reallocate
     program.renderers = renderers
     program.draw_frame_hook = switch
+    program.extensions = extensions
     enclosed = WebGLWindowClosure()
     enclosed.user_vars = user_vars
     enclosed.wrapped = program

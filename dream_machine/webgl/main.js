@@ -108,8 +108,7 @@ const InstallExtension = function(ExtensionName) {
 };
 
 const RequiredExtensions = [
-	"ANGLE_instanced_arrays",
-	"OES_standard_derivatives",
+「extensions」
 ];
 
 addEventListener("load", function() {
