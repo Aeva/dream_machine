@@ -48,12 +48,24 @@
 	(src "fnord.png"))
 
 
-(pipeline SplatTest
-	(fs "shaders/test.fs.glsl")
+(texture SomeTarget ColorFormat
+	(width ScreenWidth)
+	(height ScreenHeight))
+
+
+(pipeline TextureSplat
+	(fs "shaders/texture_splat.fs.glsl")
 	(in WindowParams)
-	(in FancyTexture))
+	(in FancyTexture)
+	(out SomeTarget))
+
+(pipeline Resolve
+	(fs "shaders/resolve.fs.glsl")
+	(in WindowParams)
+	(in SomeTarget))
 
 
-(renderer Test
+(renderer Fnord
 	(update WindowParams)
-	(draw SplatTest))
+	(draw TextureSplat)
+	(draw Resolve))

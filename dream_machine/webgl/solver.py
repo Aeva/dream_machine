@@ -18,6 +18,7 @@ from ..handy import *
 from ..syntax.grammar import *
 from ..expanders import *
 from .textures import *
+from .render_targets import *
 from .shaders import *
 from .drawspatch import *
 from .renderers import *
@@ -103,6 +104,11 @@ def solve_renderers(env:Program) -> Tuple[List[SyntaxExpander], SyntaxExpander]:
             ChangeProgram(pipeline.index),
         ]
 
+        if pipeline.uses_backbuffer:
+            setup.append(BindBackBuffer())
+        else:
+            setup.append(BindFrameBuffer(pipeline))
+
         setup += [BindTexture(t) for t in pipeline.textures]
 
         return Drawspatch(
@@ -172,6 +178,11 @@ def solve_extensions(env:Program) -> List[str]:
         if ext in dependencies:
             optional += dependencies[ext]
 
+    for pipeline in env.pipelines.values():
+        if len(pipeline.color_targets) > 1:
+            optional.append("WEBGL_draw_buffers")
+            break
+
     return required + dedupe(optional)
 
 
@@ -192,17 +203,11 @@ def solve(env:Program) -> SyntaxExpander:
     # expanders for various things in the global scope
     globals:List[SyntaxExpander] = [shader_handles]
 
-    if env.samplers:
-        pass
-
     if env.textures:
         globals.append(TextureHandles(len(env.textures)))
 
     if env.pipelines:
-        pass
-
-    if env.buffers:
-        pass
+        globals.append(FrameBufferHandles(len(env.pipelines)))
 
     # expanders for buffer uploaders
     uploaders:List[SyntaxExpander] = []
@@ -221,22 +226,16 @@ def solve(env:Program) -> SyntaxExpander:
     ]
     setup += build_shaders
 
-    if env.samplers:
-        pass
-
     if env.textures:
         setup.append(SetupTextures(env))
 
     if env.pipelines:
-        pass
-
-    if env.buffers:
-        pass
+        setup.append(SetupFrameBuffers(env))
 
     # expanders for the window resized event
     reallocate:List[SyntaxExpander] = []
     if env.pipelines:
-        pass
+        reallocate.append(ResizeFrameBuffers(env))
 
     # expanders defining the available renderers
     renderers, switch = solve_renderers(env)
