@@ -199,6 +199,24 @@ class Syntax:
                 child = children[-1] if len(children) else None
                 setattr(self, match.one, child)
 
+    def append_child(self, new_child:Syntax):
+        """
+        Add a new child to this node and match dicts/lists.
+        """
+        for match in self.child_types:
+            if type(new_child) == match:
+                assert(match.many is not None)
+                group = getattr(self, match.many)
+                if match.primary:
+                    cast(dict, group)
+                    key = getattr(new_child, match.primary)
+                    assert(key not in group)
+                    group[key] = new_child
+                else:
+                    cast(list, group)
+                    group.append(new_child)
+                self.children.append(new_child)
+
     def subset(self, subset_name:str) -> Union[List[Syntax], Dict[str,Syntax], Syntax]:
         subset = getattr(self, subset_name)
         if is_mapping(subset):
@@ -512,6 +530,15 @@ class Pipeline(Syntax):
             return targets[0]
         else:
             return None
+
+    @property
+    def rw_targets(self) -> Tuple[PipelineOutput, ...]:
+        """
+        Returns a tuple of pipeline outputs which share a texture with one of this pipeline's inputs.
+        """
+        input_textures = (i.texture for i in self.textures if i.texture)
+        input_handles = [t.handle for t in input_textures]
+        return tuple([o for o in self.outputs if o.handle in input_handles])
 
     @property
     def uses_backbuffer(self) -> bool:

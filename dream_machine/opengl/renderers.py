@@ -44,3 +44,7 @@ default:
 	HaltAndCatchFire();
 }
 """.strip()
+
+
+class RendererAdvance(SyntaxExpander):
+    template = "CurrentRenderer = 「index:int」;"

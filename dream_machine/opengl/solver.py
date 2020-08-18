@@ -14,6 +14,7 @@
 # limitations under the License.
 
 
+from copy import copy
 from ..handy import *
 from ..syntax.grammar import *
 from ..expanders import *
@@ -29,6 +30,9 @@ from .glsl_types import *
 from .glsl_interfaces import *
 from .cpp_interfaces import *
 from .cpp_expressions import *
+
+
+RenderTargetRewrites = Dict[str, List[Tuple[Texture, Texture]]]
 
 
 class FakeUpload(SyntaxExpander):
@@ -130,7 +134,7 @@ def solve_shaders(env:Program, solved_structs:Dict[str,StructType]) -> Tuple[Sha
     return ShaderHandles(shader_count = len(shaders), program_count=len(programs)), compiles + links
 
 
-def solve_renderers(env:Program) -> Tuple[List[SyntaxExpander], SyntaxExpander]:
+def solve_renderers(env:Program, rtv_rewrites:RenderTargetRewrites) -> Tuple[List[SyntaxExpander], SyntaxExpander]:
     """
     """
 
@@ -179,6 +183,14 @@ def solve_renderers(env:Program) -> Tuple[List[SyntaxExpander], SyntaxExpander]:
                 event = cast(RendererDraw, event)
                 calls.append(solve_draw(event, previous_draw))
                 previous_draw = event
+                if rewrites := rtv_rewrites.get(event.pipeline_name):
+                    for source, target in rewrites:
+                        calls.append(SwitchTextureHandles(source, target))
+                        calls.append(RebuildFrameBuffer(event.pipeline))
+
+        if renderer.next:
+            index = [r.name for r in env.renderers].index(renderer.next)
+            calls.append(RendererAdvance(index))
         return RendererCall(name=renderer.name, calls=calls)
 
     callbacks = list(map(solve_renderer, env.renderers))
@@ -186,10 +198,32 @@ def solve_renderers(env:Program) -> Tuple[List[SyntaxExpander], SyntaxExpander]:
     return callbacks, switch
 
 
+def shadow_name(group:dict, name:str, shadow:str):
+    new_name = f"{name}{shadow}"
+    attempts = 1
+    while new_name in group:
+        new_name = f"{name}{shadow}{attempts}"
+        attempts += 1
+    return new_name
+
+
 def solve(env:Program) -> SyntaxExpander:
     """
     Solve the program!
     """
+
+    # reflow
+    rtv_rewrites:RenderTargetRewrites = {}
+    for pipeline in env.pipelines.values():
+        if rw_targets := pipeline.rw_targets:
+            rtv_rewrites[pipeline.name] = []
+            for output in rw_targets:
+                source = output.texture
+                target = copy(source)
+                target.name = shadow_name(pipeline.textures, source.name, "Target")
+                env.append_child(target)
+                output.resource_name = target.name
+                rtv_rewrites[pipeline.name].append((source, target))
 
     # structs
     solved_structs:Dict[str,StructType] = {k:solve_struct(v, env) for (k,v) in env.structs.items()}
@@ -250,7 +284,7 @@ def solve(env:Program) -> SyntaxExpander:
         reallocate.append(ResizeFrameBuffers(env))
 
     # expanders defining the available renderers
-    renderers, switch = solve_renderers(env)
+    renderers, switch = solve_renderers(env, rtv_rewrites)
 
     # emit the generated program
     program = OpenGLWindow()
