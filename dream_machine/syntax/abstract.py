@@ -866,6 +866,13 @@ class Renderer(Syntax):
         Syntax.__init__(self, *args, **kargs)
         renderer, self.name = map(str, cast(TokenList, self.tokens)[:2])
 
+    @property
+    def next(self) -> Optional[str]:
+        if self.next_renderer:
+            return self.next_renderer.name
+        else:
+            return None
+
     def __repr__(self):
         return f'<Renderer {self.name}>'
 
@@ -920,6 +927,24 @@ class RendererDraw(Syntax):
 
     def __repr__(self):
         return f'<RendererDraw {self.pipeline_name}>'
+
+
+class RendererNext(Syntax):
+    """
+    A command to switch to a different renderer after the current one finishes.
+    """
+    one = "next_renderer"
+
+    def __init__(self, *args, **kargs):
+        Syntax.__init__(self, *args, **kargs)
+        fnord, self.name = map(str, cast(TokenList, self.tokens)[:2])
+
+    def validate(self):
+        Syntax.validate(self)
+
+        # verify that such a renderer exists
+        if len([r for r in self.env.renderers if r.name == self.name]) == 0:
+            self.error(f'Unknown renderer: "{self.name}"')
 
 
 class Backend(Syntax):

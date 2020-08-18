@@ -96,6 +96,8 @@ RENDERER_UPDATE_RULE = ListRule(RendererUpdate, Exactly("update"), WordRule("han
 
 RENDERER_DRAW_RULE = ListRule(RendererDraw, Exactly("draw"), WordRule("draw name"))
 
+RENDERER_NEXT_RULE = ListRule(RendererNext, Exactly("next"), WordRule("renderer name"))
+
 RENDERER_RULE = \
     ListRule(Renderer, Exactly("renderer"), WordRule("renderer name"),
              SPLAT = MatchSplat(r'RENDERER_[A-Z]+?_RULE'))
