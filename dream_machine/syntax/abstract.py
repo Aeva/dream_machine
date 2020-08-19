@@ -775,6 +775,7 @@ class Texture(Syntax):
     many = "textures"
     primary = "name"
     src:TextureSrc
+    clear:TextureClearColor
     dimensions:Dict[str,TextureDimension]
 
     def __init__(self, *args, **kargs):
@@ -859,6 +860,17 @@ class TextureSrc(Syntax):
 
     def __repr__(self):
         return self.path
+
+
+class TextureClearColor(Syntax):
+    """
+    Optional clear color.
+    """
+    one = "clear"
+
+    def __init__(self, *args, **kargs):
+        Syntax.__init__(self, *args, **kargs)
+        self.channels = [t.value for t in cast(TokenList, self.tokens[1:5])]
 
 
 class TextureDimension(Syntax):

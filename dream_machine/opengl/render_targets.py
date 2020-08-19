@@ -122,7 +122,10 @@ class ResizeFrameBuffers(SyntaxExpander):
         texture_names = sorted({out.texture.name for p in pipelines for out in p.outputs})
 
         for name in texture_names:
-            self.wrapped.append(ResizeTexture(env.textures[name]))
+            texture = env.textures[name]
+            self.wrapped.append(ResizeTexture(texture))
+            if texture.clear:
+                self.wrapped.append(ClearTexture(texture))
 
         for pipeline in pipelines:
             self.wrapped.append(RebuildFrameBuffer(pipeline))

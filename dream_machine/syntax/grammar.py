@@ -81,6 +81,8 @@ BUFFER_RULE = ListRule(Buffer, Exactly("buffer"), WordRule("buffer name"), WordR
 
 TEXTURE_SRC_RULE = ListRule(TextureSrc, Exactly("src"), StringRule("image path"))
 
+TEXTURE_CLEAR_RULE = ListRule(TextureClearColor, Exactly("clear"), NumberRule("red"), NumberRule("green"), NumberRule("blue"), NumberRule("alpha"))
+
 TEXTURE_WIDTH_RULE = ListRule(TextureDimension, Exactly("width"), ArithmeticRule("value"))
 
 TEXTURE_HEIGHT_RULE = ListRule(TextureDimension, Exactly("height"), ArithmeticRule("value"))

@@ -32,11 +32,11 @@ namespace UserVars
 }
 
 
-GLuint Shaders[5] = { 0 };
-GLuint ShaderPrograms[3] = { 0 };
+GLuint Shaders[3] = { 0 };
+GLuint ShaderPrograms[2] = { 0 };
 GLuint SamplerHandles[1] = { 0 };
 GLuint TextureHandles[2] = { 0 };
-GLuint FrameBufferHandles[3] = { 0 };
+GLuint FrameBufferHandles[2] = { 0 };
 GLuint BufferHandles[1] = { 0 };
 
 
@@ -88,36 +88,24 @@ void InitialSetup()
 		glBindVertexArray(vao);
 	}
 	{
-		std::string ShaderSource = DecodeBase64("I3ZlcnNpb24gNDIwCgovKgoJQ29weXJpZ2h0IDIwMjAgQWV2YSBQYWxlY2VrCgoJTGljZW5zZWQgdW5kZXIgdGhlIEFwYWNoZSBMaWNlbnNlLCBWZXJzaW9uIDIuMCAodGhlICJMaWNlbnNlIik7Cgl5b3UgbWF5IG5vdCB1c2UgdGhpcyBmaWxlIGV4Y2VwdCBpbiBjb21wbGlhbmNlIHdpdGggdGhlIExpY2Vuc2UuCglZb3UgbWF5IG9idGFpbiBhIGNvcHkgb2YgdGhlIExpY2Vuc2UgYXQKCgkJaHR0cDovL3d3dy5hcGFjaGUub3JnL2xpY2Vuc2VzL0xJQ0VOU0UtMi4wCgoJVW5sZXNzIHJlcXVpcmVkIGJ5IGFwcGxpY2FibGUgbGF3IG9yIGFncmVlZCB0byBpbiB3cml0aW5nLCBzb2Z0d2FyZQoJZGlzdHJpYnV0ZWQgdW5kZXIgdGhlIExpY2Vuc2UgaXMgZGlzdHJpYnV0ZWQgb24gYW4gIkFTIElTIiBCQVNJUywKCVdJVEhPVVQgV0FSUkFOVElFUyBPUiBDT05ESVRJT05TIE9GIEFOWSBLSU5ELCBlaXRoZXIgZXhwcmVzcyBvciBpbXBsaWVkLgoJU2VlIHRoZSBMaWNlbnNlIGZvciB0aGUgc3BlY2lmaWMgbGFuZ3VhZ2UgZ292ZXJuaW5nIHBlcm1pc3Npb25zIGFuZAoJbGltaXRhdGlvbnMgdW5kZXIgdGhlIExpY2Vuc2UuCiovCgoKCgp2b2lkIG1haW4oKQp7CglnbF9Qb3NpdGlvbiA9IHZlYzQoLTEuMCArIGZsb2F0KChnbF9WZXJ0ZXhJRCAmIDEpIDw8IDIpLCAtMS4wICsgZmxvYXQoKGdsX1ZlcnRleElEICYgMikgPDwgMSksIDAsIDEpOwp9Cg==");
+		std::string ShaderSource = DecodeBase64("I3ZlcnNpb24gNDIwCgovKgoJQ29weXJpZ2h0IDIwMjAgQWV2YSBQYWxlY2VrCgoJTGljZW5zZWQgdW5kZXIgdGhlIEFwYWNoZSBMaWNlbnNlLCBWZXJzaW9uIDIuMCAodGhlICJMaWNlbnNlIik7Cgl5b3UgbWF5IG5vdCB1c2UgdGhpcyBmaWxlIGV4Y2VwdCBpbiBjb21wbGlhbmNlIHdpdGggdGhlIExpY2Vuc2UuCglZb3UgbWF5IG9idGFpbiBhIGNvcHkgb2YgdGhlIExpY2Vuc2UgYXQKCgkJaHR0cDovL3d3dy5hcGFjaGUub3JnL2xpY2Vuc2VzL0xJQ0VOU0UtMi4wCgoJVW5sZXNzIHJlcXVpcmVkIGJ5IGFwcGxpY2FibGUgbGF3IG9yIGFncmVlZCB0byBpbiB3cml0aW5nLCBzb2Z0d2FyZQoJZGlzdHJpYnV0ZWQgdW5kZXIgdGhlIExpY2Vuc2UgaXMgZGlzdHJpYnV0ZWQgb24gYW4gIkFTIElTIiBCQVNJUywKCVdJVEhPVVQgV0FSUkFOVElFUyBPUiBDT05ESVRJT05TIE9GIEFOWSBLSU5ELCBlaXRoZXIgZXhwcmVzcyBvciBpbXBsaWVkLgoJU2VlIHRoZSBMaWNlbnNlIGZvciB0aGUgc3BlY2lmaWMgbGFuZ3VhZ2UgZ292ZXJuaW5nIHBlcm1pc3Npb25zIGFuZAoJbGltaXRhdGlvbnMgdW5kZXIgdGhlIExpY2Vuc2UuCiovCgpsYXlvdXQoc3RkMTQwLCBiaW5kaW5nID0gMCkKdW5pZm9ybSBXaW5kb3dQYXJhbXMKewoJdmVjNCBXaW5kb3dTaXplOwoJdmVjNCBXaW5kb3dTY2FsZTsKCWZsb2F0IEVsYXBzZWRUaW1lOwp9OwpsYXlvdXQoYmluZGluZyA9IDApCnVuaWZvcm0gc2FtcGxlcjJEIEFjY3VtdWxhdG9yOwoKCnZvaWQgbWFpbigpCnsKCWdsX1Bvc2l0aW9uID0gdmVjNCgtMS4wICsgZmxvYXQoKGdsX1ZlcnRleElEICYgMSkgPDwgMiksIC0xLjAgKyBmbG9hdCgoZ2xfVmVydGV4SUQgJiAyKSA8PCAxKSwgMCwgMSk7Cn0K");
 		Shaders[0] = CompileShader(ShaderSource, GL_VERTEX_SHADER);
 	}
 	{
-		std::string ShaderSource = DecodeBase64("I3ZlcnNpb24gNDIwCgovKgoJQ29weXJpZ2h0IDIwMjAgQWV2YSBQYWxlY2VrCgoJTGljZW5zZWQgdW5kZXIgdGhlIEFwYWNoZSBMaWNlbnNlLCBWZXJzaW9uIDIuMCAodGhlICJMaWNlbnNlIik7Cgl5b3UgbWF5IG5vdCB1c2UgdGhpcyBmaWxlIGV4Y2VwdCBpbiBjb21wbGlhbmNlIHdpdGggdGhlIExpY2Vuc2UuCglZb3UgbWF5IG9idGFpbiBhIGNvcHkgb2YgdGhlIExpY2Vuc2UgYXQKCgkJaHR0cDovL3d3dy5hcGFjaGUub3JnL2xpY2Vuc2VzL0xJQ0VOU0UtMi4wCgoJVW5sZXNzIHJlcXVpcmVkIGJ5IGFwcGxpY2FibGUgbGF3IG9yIGFncmVlZCB0byBpbiB3cml0aW5nLCBzb2Z0d2FyZQoJZGlzdHJpYnV0ZWQgdW5kZXIgdGhlIExpY2Vuc2UgaXMgZGlzdHJpYnV0ZWQgb24gYW4gIkFTIElTIiBCQVNJUywKCVdJVEhPVVQgV0FSUkFOVElFUyBPUiBDT05ESVRJT05TIE9GIEFOWSBLSU5ELCBlaXRoZXIgZXhwcmVzcyBvciBpbXBsaWVkLgoJU2VlIHRoZSBMaWNlbnNlIGZvciB0aGUgc3BlY2lmaWMgbGFuZ3VhZ2UgZ292ZXJuaW5nIHBlcm1pc3Npb25zIGFuZAoJbGltaXRhdGlvbnMgdW5kZXIgdGhlIExpY2Vuc2UuCiovCgpsYXlvdXQobG9jYXRpb24gPSAwKQogb3V0IHZlYzQgQWNjdW11bGF0b3I7CgoKdm9pZCBtYWluKCkKewoJQWNjdW11bGF0b3IgPSB2ZWM0KDAuMCwgMC4wLCAwLjAsIDAuMCk7Cn0K");
+		std::string ShaderSource = DecodeBase64("I3ZlcnNpb24gNDIwCgovKgoJQ29weXJpZ2h0IDIwMjAgQWV2YSBQYWxlY2VrCgoJTGljZW5zZWQgdW5kZXIgdGhlIEFwYWNoZSBMaWNlbnNlLCBWZXJzaW9uIDIuMCAodGhlICJMaWNlbnNlIik7Cgl5b3UgbWF5IG5vdCB1c2UgdGhpcyBmaWxlIGV4Y2VwdCBpbiBjb21wbGlhbmNlIHdpdGggdGhlIExpY2Vuc2UuCglZb3UgbWF5IG9idGFpbiBhIGNvcHkgb2YgdGhlIExpY2Vuc2UgYXQKCgkJaHR0cDovL3d3dy5hcGFjaGUub3JnL2xpY2Vuc2VzL0xJQ0VOU0UtMi4wCgoJVW5sZXNzIHJlcXVpcmVkIGJ5IGFwcGxpY2FibGUgbGF3IG9yIGFncmVlZCB0byBpbiB3cml0aW5nLCBzb2Z0d2FyZQoJZGlzdHJpYnV0ZWQgdW5kZXIgdGhlIExpY2Vuc2UgaXMgZGlzdHJpYnV0ZWQgb24gYW4gIkFTIElTIiBCQVNJUywKCVdJVEhPVVQgV0FSUkFOVElFUyBPUiBDT05ESVRJT05TIE9GIEFOWSBLSU5ELCBlaXRoZXIgZXhwcmVzcyBvciBpbXBsaWVkLgoJU2VlIHRoZSBMaWNlbnNlIGZvciB0aGUgc3BlY2lmaWMgbGFuZ3VhZ2UgZ292ZXJuaW5nIHBlcm1pc3Npb25zIGFuZAoJbGltaXRhdGlvbnMgdW5kZXIgdGhlIExpY2Vuc2UuCiovCgpsYXlvdXQoc3RkMTQwLCBiaW5kaW5nID0gMCkKdW5pZm9ybSBXaW5kb3dQYXJhbXMKewoJdmVjNCBXaW5kb3dTaXplOwoJdmVjNCBXaW5kb3dTY2FsZTsKCWZsb2F0IEVsYXBzZWRUaW1lOwp9OwpsYXlvdXQoYmluZGluZyA9IDApCnVuaWZvcm0gc2FtcGxlcjJEIEFjY3VtdWxhdG9yOwpsYXlvdXQobG9jYXRpb24gPSAwKQogb3V0IHZlYzQgQWNjdW11bGF0b3JUYXJnZXQ7CgoKdm9pZCBtYWluKCkKewoJdmVjMiBVViA9IGdsX0ZyYWdDb29yZC54eSAqIFdpbmRvd1NpemUuenc7Cgl2ZWM0IEFjY3VtdWxhdGVkID0gdGV4dHVyZShBY2N1bXVsYXRvciwgVVYpOwoJQWNjdW11bGF0b3JUYXJnZXQgPSBBY2N1bXVsYXRlZCArPSAwLjAwMTsKfQo=");
 		Shaders[1] = CompileShader(ShaderSource, GL_FRAGMENT_SHADER);
 	}
 	{
-		std::string ShaderSource = DecodeBase64("I3ZlcnNpb24gNDIwCgovKgoJQ29weXJpZ2h0IDIwMjAgQWV2YSBQYWxlY2VrCgoJTGljZW5zZWQgdW5kZXIgdGhlIEFwYWNoZSBMaWNlbnNlLCBWZXJzaW9uIDIuMCAodGhlICJMaWNlbnNlIik7Cgl5b3UgbWF5IG5vdCB1c2UgdGhpcyBmaWxlIGV4Y2VwdCBpbiBjb21wbGlhbmNlIHdpdGggdGhlIExpY2Vuc2UuCglZb3UgbWF5IG9idGFpbiBhIGNvcHkgb2YgdGhlIExpY2Vuc2UgYXQKCgkJaHR0cDovL3d3dy5hcGFjaGUub3JnL2xpY2Vuc2VzL0xJQ0VOU0UtMi4wCgoJVW5sZXNzIHJlcXVpcmVkIGJ5IGFwcGxpY2FibGUgbGF3IG9yIGFncmVlZCB0byBpbiB3cml0aW5nLCBzb2Z0d2FyZQoJZGlzdHJpYnV0ZWQgdW5kZXIgdGhlIExpY2Vuc2UgaXMgZGlzdHJpYnV0ZWQgb24gYW4gIkFTIElTIiBCQVNJUywKCVdJVEhPVVQgV0FSUkFOVElFUyBPUiBDT05ESVRJT05TIE9GIEFOWSBLSU5ELCBlaXRoZXIgZXhwcmVzcyBvciBpbXBsaWVkLgoJU2VlIHRoZSBMaWNlbnNlIGZvciB0aGUgc3BlY2lmaWMgbGFuZ3VhZ2UgZ292ZXJuaW5nIHBlcm1pc3Npb25zIGFuZAoJbGltaXRhdGlvbnMgdW5kZXIgdGhlIExpY2Vuc2UuCiovCgpsYXlvdXQoc3RkMTQwLCBiaW5kaW5nID0gMCkKdW5pZm9ybSBXaW5kb3dQYXJhbXMKewoJdmVjNCBXaW5kb3dTaXplOwoJdmVjNCBXaW5kb3dTY2FsZTsKCWZsb2F0IEVsYXBzZWRUaW1lOwp9OwpsYXlvdXQoYmluZGluZyA9IDApCnVuaWZvcm0gc2FtcGxlcjJEIEFjY3VtdWxhdG9yOwoKCnZvaWQgbWFpbigpCnsKCWdsX1Bvc2l0aW9uID0gdmVjNCgtMS4wICsgZmxvYXQoKGdsX1ZlcnRleElEICYgMSkgPDwgMiksIC0xLjAgKyBmbG9hdCgoZ2xfVmVydGV4SUQgJiAyKSA8PCAxKSwgMCwgMSk7Cn0K");
-		Shaders[2] = CompileShader(ShaderSource, GL_VERTEX_SHADER);
-	}
-	{
-		std::string ShaderSource = DecodeBase64("I3ZlcnNpb24gNDIwCgovKgoJQ29weXJpZ2h0IDIwMjAgQWV2YSBQYWxlY2VrCgoJTGljZW5zZWQgdW5kZXIgdGhlIEFwYWNoZSBMaWNlbnNlLCBWZXJzaW9uIDIuMCAodGhlICJMaWNlbnNlIik7Cgl5b3UgbWF5IG5vdCB1c2UgdGhpcyBmaWxlIGV4Y2VwdCBpbiBjb21wbGlhbmNlIHdpdGggdGhlIExpY2Vuc2UuCglZb3UgbWF5IG9idGFpbiBhIGNvcHkgb2YgdGhlIExpY2Vuc2UgYXQKCgkJaHR0cDovL3d3dy5hcGFjaGUub3JnL2xpY2Vuc2VzL0xJQ0VOU0UtMi4wCgoJVW5sZXNzIHJlcXVpcmVkIGJ5IGFwcGxpY2FibGUgbGF3IG9yIGFncmVlZCB0byBpbiB3cml0aW5nLCBzb2Z0d2FyZQoJZGlzdHJpYnV0ZWQgdW5kZXIgdGhlIExpY2Vuc2UgaXMgZGlzdHJpYnV0ZWQgb24gYW4gIkFTIElTIiBCQVNJUywKCVdJVEhPVVQgV0FSUkFOVElFUyBPUiBDT05ESVRJT05TIE9GIEFOWSBLSU5ELCBlaXRoZXIgZXhwcmVzcyBvciBpbXBsaWVkLgoJU2VlIHRoZSBMaWNlbnNlIGZvciB0aGUgc3BlY2lmaWMgbGFuZ3VhZ2UgZ292ZXJuaW5nIHBlcm1pc3Npb25zIGFuZAoJbGltaXRhdGlvbnMgdW5kZXIgdGhlIExpY2Vuc2UuCiovCgpsYXlvdXQoc3RkMTQwLCBiaW5kaW5nID0gMCkKdW5pZm9ybSBXaW5kb3dQYXJhbXMKewoJdmVjNCBXaW5kb3dTaXplOwoJdmVjNCBXaW5kb3dTY2FsZTsKCWZsb2F0IEVsYXBzZWRUaW1lOwp9OwpsYXlvdXQoYmluZGluZyA9IDApCnVuaWZvcm0gc2FtcGxlcjJEIEFjY3VtdWxhdG9yOwpsYXlvdXQobG9jYXRpb24gPSAwKQogb3V0IHZlYzQgQWNjdW11bGF0b3JUYXJnZXQ7CgoKdm9pZCBtYWluKCkKewoJdmVjMiBVViA9IGdsX0ZyYWdDb29yZC54eSAqIFdpbmRvd1NpemUuenc7Cgl2ZWM0IEFjY3VtdWxhdGVkID0gdGV4dHVyZShBY2N1bXVsYXRvciwgVVYpOwoJQWNjdW11bGF0b3JUYXJnZXQgPSBBY2N1bXVsYXRlZCArPSAwLjAwMTsKfQo=");
-		Shaders[3] = CompileShader(ShaderSource, GL_FRAGMENT_SHADER);
-	}
-	{
 		std::string ShaderSource = DecodeBase64("I3ZlcnNpb24gNDIwCgovKgoJQ29weXJpZ2h0IDIwMjAgQWV2YSBQYWxlY2VrCgoJTGljZW5zZWQgdW5kZXIgdGhlIEFwYWNoZSBMaWNlbnNlLCBWZXJzaW9uIDIuMCAodGhlICJMaWNlbnNlIik7Cgl5b3UgbWF5IG5vdCB1c2UgdGhpcyBmaWxlIGV4Y2VwdCBpbiBjb21wbGlhbmNlIHdpdGggdGhlIExpY2Vuc2UuCglZb3UgbWF5IG9idGFpbiBhIGNvcHkgb2YgdGhlIExpY2Vuc2UgYXQKCgkJaHR0cDovL3d3dy5hcGFjaGUub3JnL2xpY2Vuc2VzL0xJQ0VOU0UtMi4wCgoJVW5sZXNzIHJlcXVpcmVkIGJ5IGFwcGxpY2FibGUgbGF3IG9yIGFncmVlZCB0byBpbiB3cml0aW5nLCBzb2Z0d2FyZQoJZGlzdHJpYnV0ZWQgdW5kZXIgdGhlIExpY2Vuc2UgaXMgZGlzdHJpYnV0ZWQgb24gYW4gIkFTIElTIiBCQVNJUywKCVdJVEhPVVQgV0FSUkFOVElFUyBPUiBDT05ESVRJT05TIE9GIEFOWSBLSU5ELCBlaXRoZXIgZXhwcmVzcyBvciBpbXBsaWVkLgoJU2VlIHRoZSBMaWNlbnNlIGZvciB0aGUgc3BlY2lmaWMgbGFuZ3VhZ2UgZ292ZXJuaW5nIHBlcm1pc3Npb25zIGFuZAoJbGltaXRhdGlvbnMgdW5kZXIgdGhlIExpY2Vuc2UuCiovCgpsYXlvdXQoc3RkMTQwLCBiaW5kaW5nID0gMCkKdW5pZm9ybSBXaW5kb3dQYXJhbXMKewoJdmVjNCBXaW5kb3dTaXplOwoJdmVjNCBXaW5kb3dTY2FsZTsKCWZsb2F0IEVsYXBzZWRUaW1lOwp9OwpsYXlvdXQoYmluZGluZyA9IDApCnVuaWZvcm0gc2FtcGxlcjJEIEFjY3VtdWxhdG9yOwpsYXlvdXQobG9jYXRpb24gPSAwKQogb3V0IHZlYzQgT3V0Q29sb3I7CgoKdm9pZCBtYWluKCkKewoJdmVjMiBVViA9IGdsX0ZyYWdDb29yZC54eSAqIFdpbmRvd1NpemUuenc7Cgl2ZWM0IEFjY3VtdWxhdGVkID0gdGV4dHVyZShBY2N1bXVsYXRvciwgVVYpOwoJT3V0Q29sb3IgPSBBY2N1bXVsYXRlZDsKfQo=");
-		Shaders[4] = CompileShader(ShaderSource, GL_FRAGMENT_SHADER);
+		Shaders[2] = CompileShader(ShaderSource, GL_FRAGMENT_SHADER);
 	}
 	{
 		GLuint Stages[2] = { Shaders[0], Shaders[1] };
-		ShaderPrograms[0] = LinkShaders("Setup", &Stages[0], 2);
+		ShaderPrograms[0] = LinkShaders("Accumulate", &Stages[0], 2);
 	}
 	{
-		GLuint Stages[2] = { Shaders[2], Shaders[3] };
-		ShaderPrograms[1] = LinkShaders("Accumulate", &Stages[0], 2);
-	}
-	{
-		GLuint Stages[2] = { Shaders[2], Shaders[4] };
-		ShaderPrograms[2] = LinkShaders("Resolve", &Stages[0], 2);
+		GLuint Stages[2] = { Shaders[0], Shaders[2] };
+		ShaderPrograms[1] = LinkShaders("Resolve", &Stages[0], 2);
 	}
 	{
 		glCreateSamplers(1, &SamplerHandles[0]);
@@ -129,33 +117,34 @@ void InitialSetup()
 		}
 	}
 	{
-		{
-			// texture "Accumulator"
-			glCreateTextures(GL_TEXTURE_2D, 1, &TextureHandles[0]);
-			glTextureStorage2D(TextureHandles[0], 1, GL_RGBA32F, (GLsizei)ScreenWidth, (GLsizei)ScreenHeight);
-			glObjectLabel(GL_TEXTURE, TextureHandles[0], -1, "Accumulator");
-		}
-		{
-			// texture "AccumulatorTarget"
-			glCreateTextures(GL_TEXTURE_2D, 1, &TextureHandles[1]);
-			glTextureStorage2D(TextureHandles[1], 1, GL_RGBA32F, (GLsizei)ScreenWidth, (GLsizei)ScreenHeight);
-			glObjectLabel(GL_TEXTURE, TextureHandles[1], -1, "AccumulatorTarget");
-		}
+		// texture "Accumulator"
+		glCreateTextures(GL_TEXTURE_2D, 1, &TextureHandles[0]);
+		glTextureStorage2D(TextureHandles[0], 1, GL_RGBA32F, (GLsizei)ScreenWidth, (GLsizei)ScreenHeight);
+		glObjectLabel(GL_TEXTURE, TextureHandles[0], -1, "Accumulator");
+	}
+	{
+		const float ClearColor[] = {0.0, 0.0, 0.0, 0.0};
+		glClearTexImage(TextureHandles[0], 0, GL_RGBA32F, GL_FLOAT, &ClearColor[0]);
+	}
+	{
+		// texture "AccumulatorTarget"
+		glCreateTextures(GL_TEXTURE_2D, 1, &TextureHandles[1]);
+		glTextureStorage2D(TextureHandles[1], 1, GL_RGBA32F, (GLsizei)ScreenWidth, (GLsizei)ScreenHeight);
+		glObjectLabel(GL_TEXTURE, TextureHandles[1], -1, "AccumulatorTarget");
+	}
+	{
+		const float ClearColor[] = {0.0, 0.0, 0.0, 0.0};
+		glClearTexImage(TextureHandles[1], 0, GL_RGBA32F, GL_FLOAT, &ClearColor[0]);
 	}
 	{
 		{
 			glCreateFramebuffers(1, &FrameBufferHandles[0]);
-			glNamedFramebufferTexture(FrameBufferHandles[0], GL_COLOR_ATTACHMENT0, TextureHandles[0], 0);
-			glObjectLabel(GL_FRAMEBUFFER, FrameBufferHandles[0], -1, "Setup");
+			glNamedFramebufferTexture(FrameBufferHandles[0], GL_COLOR_ATTACHMENT0, TextureHandles[1], 0);
+			glObjectLabel(GL_FRAMEBUFFER, FrameBufferHandles[0], -1, "Accumulate");
 		}
 		{
 			glCreateFramebuffers(1, &FrameBufferHandles[1]);
-			glNamedFramebufferTexture(FrameBufferHandles[1], GL_COLOR_ATTACHMENT0, TextureHandles[1], 0);
-			glObjectLabel(GL_FRAMEBUFFER, FrameBufferHandles[1], -1, "Accumulate");
-		}
-		{
-			glCreateFramebuffers(1, &FrameBufferHandles[2]);
-			glObjectLabel(GL_FRAMEBUFFER, FrameBufferHandles[2], -1, "Resolve");
+			glObjectLabel(GL_FRAMEBUFFER, FrameBufferHandles[1], -1, "Resolve");
 		}
 	}
 	{
@@ -171,21 +160,6 @@ void InitialSetup()
 
 namespace Renderer
 {
-	void Setup(int FrameIndex, double CurrentTime, double DeltaTime)
-	{
-		glClearColor(0, 0, 0, 1.0);
-		glClear(GL_COLOR_BUFFER_BIT);
-		glClearDepth(0);
-		glClear(GL_DEPTH_BUFFER_BIT);
-		{
-			glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Setup");
-			glUseProgram(ShaderPrograms[0]);
-			glBindFramebuffer(GL_FRAMEBUFFER, FrameBufferHandles[0]);
-			glDrawArraysInstanced(GL_TRIANGLES, 0, 3, 1);
-			glPopDebugGroup();
-		}
-		CurrentRenderer = 1;
-	}
 	void Accumulate(int FrameIndex, double CurrentTime, double DeltaTime)
 	{
 		glClearColor(0, 0, 0, 1.0);
@@ -212,8 +186,8 @@ namespace Renderer
 		}
 		{
 			glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Accumulate");
-			glUseProgram(ShaderPrograms[1]);
-			glBindFramebuffer(GL_FRAMEBUFFER, FrameBufferHandles[1]);
+			glUseProgram(ShaderPrograms[0]);
+			glBindFramebuffer(GL_FRAMEBUFFER, FrameBufferHandles[0]);
 			glBindBufferBase(GL_UNIFORM_BUFFER, 0, BufferHandles[0]);
 			glBindTextureUnit(0, TextureHandles[0]);
 			glBindSampler(0, SamplerHandles[0]);
@@ -227,14 +201,14 @@ namespace Renderer
 		}
 		{
 			// recreate framebuffer "Accumulate"
-			glDeleteFramebuffers(1, &FrameBufferHandles[1]);
-			glCreateFramebuffers(1, &FrameBufferHandles[1]);
-			glNamedFramebufferTexture(FrameBufferHandles[1], GL_COLOR_ATTACHMENT0, TextureHandles[1], 0);
-			glObjectLabel(GL_FRAMEBUFFER, FrameBufferHandles[1], -1, "Accumulate");
+			glDeleteFramebuffers(1, &FrameBufferHandles[0]);
+			glCreateFramebuffers(1, &FrameBufferHandles[0]);
+			glNamedFramebufferTexture(FrameBufferHandles[0], GL_COLOR_ATTACHMENT0, TextureHandles[1], 0);
+			glObjectLabel(GL_FRAMEBUFFER, FrameBufferHandles[0], -1, "Accumulate");
 		}
 		{
 			glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Resolve");
-			glUseProgram(ShaderPrograms[2]);
+			glUseProgram(ShaderPrograms[1]);
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 			glBindBufferBase(GL_UNIFORM_BUFFER, 0, BufferHandles[0]);
 			glBindTextureUnit(0, TextureHandles[0]);
@@ -251,9 +225,6 @@ void DrawFrame(int FrameIndex, double CurrentTime, double DeltaTime)
 	switch (CurrentRenderer)
 	{
 	case 0:
-		Renderer::Setup(FrameIndex, CurrentTime, DeltaTime);
-		break;
-	case 1:
 		Renderer::Accumulate(FrameIndex, CurrentTime, DeltaTime);
 		break;
 	default:
@@ -265,13 +236,6 @@ void DrawFrame(int FrameIndex, double CurrentTime, double DeltaTime)
 void WindowResized()
 {
 	{
-		// resize texture "Accumulator"
-		glDeleteTextures(1, &TextureHandles[0]);
-		glCreateTextures(GL_TEXTURE_2D, 1, &TextureHandles[0]);
-		glTextureStorage2D(TextureHandles[0], 1, GL_RGBA32F, (GLsizei)ScreenWidth, (GLsizei)ScreenHeight);
-		glObjectLabel(GL_TEXTURE, TextureHandles[0], -1, "Accumulator");
-	}
-	{
 		// resize texture "AccumulatorTarget"
 		glDeleteTextures(1, &TextureHandles[1]);
 		glCreateTextures(GL_TEXTURE_2D, 1, &TextureHandles[1]);
@@ -279,18 +243,15 @@ void WindowResized()
 		glObjectLabel(GL_TEXTURE, TextureHandles[1], -1, "AccumulatorTarget");
 	}
 	{
-		// recreate framebuffer "Setup"
-		glDeleteFramebuffers(1, &FrameBufferHandles[0]);
-		glCreateFramebuffers(1, &FrameBufferHandles[0]);
-		glNamedFramebufferTexture(FrameBufferHandles[0], GL_COLOR_ATTACHMENT0, TextureHandles[0], 0);
-		glObjectLabel(GL_FRAMEBUFFER, FrameBufferHandles[0], -1, "Setup");
+		const float ClearColor[] = {0.0, 0.0, 0.0, 0.0};
+		glClearTexImage(TextureHandles[1], 0, GL_RGBA32F, GL_FLOAT, &ClearColor[0]);
 	}
 	{
 		// recreate framebuffer "Accumulate"
-		glDeleteFramebuffers(1, &FrameBufferHandles[1]);
-		glCreateFramebuffers(1, &FrameBufferHandles[1]);
-		glNamedFramebufferTexture(FrameBufferHandles[1], GL_COLOR_ATTACHMENT0, TextureHandles[1], 0);
-		glObjectLabel(GL_FRAMEBUFFER, FrameBufferHandles[1], -1, "Accumulate");
+		glDeleteFramebuffers(1, &FrameBufferHandles[0]);
+		glCreateFramebuffers(1, &FrameBufferHandles[0]);
+		glNamedFramebufferTexture(FrameBufferHandles[0], GL_COLOR_ATTACHMENT0, TextureHandles[1], 0);
+		glObjectLabel(GL_FRAMEBUFFER, FrameBufferHandles[0], -1, "Accumulate");
 	}
 }
 

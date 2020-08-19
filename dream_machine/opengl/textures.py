@@ -25,6 +25,21 @@ class TextureHandles(SyntaxExpander):
     template = "GLuint TextureHandles[「count:int」] = { 0 };"
 
 
+class ClearTexture(SyntaxExpander):
+    template = """
+{
+	const float ClearColor[] = {「red」, 「green」, 「blue」, 「alpha」};
+	glClearTexImage(TextureHandles[「handle:int」], 0, 「format:str」, GL_FLOAT, &ClearColor[0]);
+}
+""".strip();
+
+    def __init__(self, texture:Texture):
+        SyntaxExpander.__init__(self)
+        self.handle = texture.handle
+        self.format = texture.format.format
+        self.red, self.green, self.blue, self.alpha = texture.clear.channels
+
+
 class PngTextureSetup(SyntaxExpander):
     template = """
 {
@@ -128,12 +143,7 @@ class BindTexture(SyntaxExpander):
 
 
 class SetupTextures(SyntaxExpander):
-    template = """
-{
-「wrapped」
-}
-""".strip()
-    indent = ("wrapped",)
+    template = "「wrapped」"
 
     def __init__(self, env:Program):
         SyntaxExpander.__init__(self)
@@ -143,6 +153,8 @@ class SetupTextures(SyntaxExpander):
                 self.wrapped.append(PngTextureSetup(texture))
             elif texture.format.target == "GL_TEXTURE_2D":
                 self.wrapped.append(Texture2DSetup(texture))
+                if texture.clear:
+                    self.wrapped.append(ClearTexture(texture))
             elif texture.format.target == "GL_TEXTURE_3D":
                 self.wrapped.append(Texture3DSetup(texture))
 

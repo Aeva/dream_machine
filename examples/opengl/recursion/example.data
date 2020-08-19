@@ -42,14 +42,9 @@
 
 
 (texture Accumulator ColorFormat
+	(clear 0.0 0.0 0.0 0.0)
 	(width ScreenWidth)
 	(height ScreenHeight))
-
-
-(pipeline Setup
-	(vs "shaders/splat.vs.glsl")
-	(fs "shaders/setup.fs.glsl")
-	(out Accumulator))
 
 
 (pipeline Accumulate
@@ -65,11 +60,6 @@
 	(fs "shaders/copy.fs.glsl")
 	(in WindowParams)
 	(in Accumulator))
-
-
-(renderer Setup
-	(draw Setup)
-	(next Accumulate))
 
 
 (renderer Accumulate
