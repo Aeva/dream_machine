@@ -32,9 +32,6 @@ from .cpp_interfaces import *
 from .cpp_expressions import *
 
 
-RenderTargetRewrites = Dict[str, List[Tuple[Texture, Texture]]]
-
-
 class FakeUpload(SyntaxExpander):
     template = """
 {
@@ -281,7 +278,7 @@ def solve(env:Program) -> SyntaxExpander:
     # expanders for the window resized event
     reallocate:List[SyntaxExpander] = []
     if env.pipelines:
-        reallocate.append(ResizeFrameBuffers(env))
+        reallocate.append(ResizeFrameBuffers(env, rtv_rewrites))
 
     # expanders defining the available renderers
     renderers, switch = solve_renderers(env, rtv_rewrites)

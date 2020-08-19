@@ -18,6 +18,9 @@ from .textures import *
 from ..syntax.grammar import Pipeline, PipelineOutput
 
 
+RenderTargetRewrites = Dict[str, List[Tuple[Texture, Texture]]]
+
+
 class FrameBufferHandles(SyntaxExpander):
     template = "GLuint FrameBufferHandles[「count」] = { 0 };"
 
@@ -114,12 +117,13 @@ class ResizeFrameBuffers(SyntaxExpander):
 「wrapped」
 """.strip()
 
-    def __init__(self, env:Program):
+    def __init__(self, env:Program, rtv_rewrites:RenderTargetRewrites):
         SyntaxExpander.__init__(self)
         self.wrapped:List[SyntaxExpander] = []
 
         pipelines = [p for p in env.pipelines.values() if not p.uses_backbuffer]
         texture_names = sorted({out.texture.name for p in pipelines for out in p.outputs})
+        texture_names += [t.name for r in rtv_rewrites.values() for p in r for t in p if t.name not in texture_names]
 
         for name in texture_names:
             texture = env.textures[name]

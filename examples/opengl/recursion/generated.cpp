@@ -247,6 +247,17 @@ void WindowResized()
 		glClearTexImage(TextureHandles[1], 0, GL_RGBA32F, GL_FLOAT, &ClearColor[0]);
 	}
 	{
+		// resize texture "Accumulator"
+		glDeleteTextures(1, &TextureHandles[0]);
+		glCreateTextures(GL_TEXTURE_2D, 1, &TextureHandles[0]);
+		glTextureStorage2D(TextureHandles[0], 1, GL_RGBA32F, (GLsizei)ScreenWidth, (GLsizei)ScreenHeight);
+		glObjectLabel(GL_TEXTURE, TextureHandles[0], -1, "Accumulator");
+	}
+	{
+		const float ClearColor[] = {0.0, 0.0, 0.0, 0.0};
+		glClearTexImage(TextureHandles[0], 0, GL_RGBA32F, GL_FLOAT, &ClearColor[0]);
+	}
+	{
 		// recreate framebuffer "Accumulate"
 		glDeleteFramebuffers(1, &FrameBufferHandles[0]);
 		glCreateFramebuffers(1, &FrameBufferHandles[0]);
