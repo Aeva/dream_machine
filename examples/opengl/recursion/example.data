@@ -42,7 +42,7 @@
 
 
 (texture Accumulator ColorFormat
-	(clear 0.0 0.0 0.0 0.0)
+	(clear 0.0 0.0 0.0 1.0)
 	(width ScreenWidth)
 	(height ScreenHeight))
 

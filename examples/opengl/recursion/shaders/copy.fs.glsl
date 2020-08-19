@@ -23,5 +23,5 @@ void main()
 {
 	vec2 UV = gl_FragCoord.xy * WindowSize.zw;
 	vec4 Accumulated = texture(Accumulator, UV);
-	OutColor = Accumulated;
+	OutColor = vec4(Accumulated.xyz, 1.0);
 }
