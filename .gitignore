@@ -1,9 +1,9 @@
 __pycache__
 .mypy_cache
 /*.egg-info
-/examples/*/*.out
-/examples/*/*.exe
-/examples/*/*.pdb
-/examples/*/*.dll
-/examples/*/*.ilk
+/examples/**/*.out
+/examples/**/*.exe
+/examples/**/*.pdb
+/examples/**/*.dll
+/examples/**/*.ilk
 .vs
