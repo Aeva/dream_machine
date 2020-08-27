@@ -1,8 +1,5 @@
 ﻿#include "dream_machine.hpp"
 
-#define SDL_MAIN_HANDLED
-#include <SDL.h>
-
 
 namespace Glsl
 {
@@ -35,8 +32,8 @@ SDL_GLContext GLContext;
 
 
 extern int CurrentRenderer = 0;
-// extern void UserSetupCallback(GLFWwindow* Window);
-// extern void UserFrameCallback(GLFWwindow* Window);
+extern void UserSetupCallback(SDL_Window* Window);
+extern void UserFrameCallback();
 
 
 namespace UserVars
@@ -119,23 +116,16 @@ namespace Upload
 }
 
 
-void GlfwWindowSizeCallback(GLFWwindow* Window, int Width, int Height)
+void UpdateWindowSize()
 {
+	int Width;
+	int Height;
+	SDL_GetWindowSize(Window, &Width, &Height);
 	if (ScreenWidth != Width || ScreenHeight != Height)
 	{
+		std::cout << Height << "\n";
 		ScreenWidth = Width;
 		ScreenHeight = Height;
-		WindowIsDirty = true;
-	}
-}
-
-
-void GlfwWindowContentScaleCallback(GLFWwindow* Window, float ScaleX, float ScaleY)
-{
-	if (ScreenScaleX != ScaleX || ScreenScaleY != ScaleY)
-	{
-		ScreenScaleX = ScaleX;
-		ScreenScaleY = ScaleY;
 		WindowIsDirty = true;
 	}
 }
@@ -436,6 +426,8 @@ int main()
 		return 1;
 	}
 
+	SDL_GL_LoadLibrary(nullptr);
+	SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
@@ -443,7 +435,7 @@ int main()
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);
 #endif // DEBUG_BUILD
 
-	Window = SDL_CreateWindow(WindowTitle, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, ScreenWidth, ScreenHeight, SDL_WINDOW_OPENGL);
+	Window = SDL_CreateWindow(WindowTitle, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, ScreenWidth, ScreenHeight, SDL_WINDOW_RESIZABLE | SDL_WINDOW_OPENGL);
 	if(!Window)
 	{
 		std::cout << "Fatal Error: SDL failed to create a window: " << SDL_GetError() << std::endl;
@@ -460,7 +452,7 @@ int main()
 		return 1;
 	}
 
-	if (!gladLoadGLLoader((GLADloadproc) SDL_GL_GetProcAddress))
+	if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress))
 	{
 		std::cout << "Failed to initialize GLAD!\n";
 		SDL_GL_DeleteContext(GLContext);
@@ -497,10 +489,11 @@ int main()
 #endif
 
 	InitialSetup();
-	// UserSetupCallback(Window);
+	UserSetupCallback(Window);
 
 	while (!SDL_QuitRequested())
 	{
+		UpdateWindowSize();
 		if (WindowIsDirty)
 		{
 			WindowResized();
@@ -508,14 +501,15 @@ int main()
 		}
 		glViewport(0, 0, ScreenWidth, ScreenHeight);
 		static int FrameIndex = 0;
-		static double DeltaTime = 0.0;
-		static double StartTime = SDL_GetTicks();
+		static unsigned int DeltaTime = 0.0;
+		static unsigned int StartTime = SDL_GetTicks();
 		{
-			DrawFrame(FrameIndex++, StartTime, DeltaTime);
+			DrawFrame(FrameIndex++, (double)StartTime / 1000.0, (double)DeltaTime / 1000.0);
 			SDL_GL_SwapWindow(Window);
-			//UserFrameCallback(Window);
+			SDL_PumpEvents();
+			UserFrameCallback();
 		}
-		double EndTime = SDL_GetTicks();
+		unsigned int EndTime = SDL_GetTicks();
 		DeltaTime = EndTime - StartTime;
 		StartTime = EndTime;
 	}
