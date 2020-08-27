@@ -15,10 +15,80 @@
 
 
 from typing import *
+from enum import IntEnum
 from ..expanders import SyntaxExpander
 from .cpp_expressions import solve_expression
 from ..handy import CAST
-from ..syntax.grammar import Texture, TextureDimension, PipelineInput, Program
+from ..syntax.grammar import Texture, Format, TextureDimension, PipelineInput, Program
+
+
+class InternalFormats(IntEnum):
+    """
+    The values here are used to map to TextureFormats in dream_machine/syntax/constants.py.
+    """
+
+    GL_RGBA32F = 2
+    GL_RGBA32UI = 3
+    GL_RGBA32I = 4
+
+    GL_RGB32F = 6
+    GL_RGB32UI = 7
+    GL_RGB32I = 8
+
+    GL_RGBA16F = 10
+    GL_RGBA16 = 11
+    GL_RGBA16UI = 12
+    GL_RGBA16I = 14
+
+    GL_RG32F =  16
+    GL_RG32UI = 17
+    GL_RG32I = 18
+
+    GL_RGB10_A2 = 24
+    GL_RGB10_A2UI = 25
+
+    GL_R11F_G11F_B10F = 26
+
+    GL_RGBA8 = 28
+    GL_RGBA8UI = 30
+    GL_RGBA8_SNORM = 31
+    GL_RGBA8I = 32
+
+    GL_RG16F = 34
+    GL_RG16 = 35
+    GL_RG16UI = 36
+    GL_RG16_SNORM = 37
+    GL_RG16I = 38
+
+    GL_DEPTH_COMPONENT32F = 40
+    GL_R32F = 41
+    GL_R32UI = 42
+    GL_R32I = 43
+
+    GL_R8 = 49
+    GL_R8UI = 50
+    GL_R8_SNORM = 51
+    GL_R8I = 52
+
+    GL_R16F = 54
+    GL_DEPTH_COMPONENT16 = 55
+    GL_R16 = 56
+    GL_R16UI = 57
+    GL_R16_SNORM = 58
+    GL_R16I = 59
+
+    GL_RG8 = 61
+    GL_RG8UI = 62
+    GL_RG8_SNORM = 63
+    GL_RG8I = 64
+
+
+def GLFormat(format:Format):
+    generic:TextureFormat = format.format
+    try:
+        return InternalFormats(generic).name
+    except ValueError:
+        format.error(f'Texture format not supported by the OpenGL backend: "{generic.name}"')
 
 
 class TextureHandles(SyntaxExpander):
@@ -36,7 +106,7 @@ class ClearTexture(SyntaxExpander):
     def __init__(self, texture:Texture):
         SyntaxExpander.__init__(self)
         self.handle = texture.handle
-        self.format = texture.format.format
+        self.format = GLFormat(texture.format)
         self.red, self.green, self.blue, self.alpha = texture.clear.channels
 
 
@@ -56,7 +126,7 @@ class PngTextureSetup(SyntaxExpander):
         SyntaxExpander.__init__(self)
         self.name = texture.name
         self.handle = texture.handle
-        self.format = texture.format.format
+        self.format = GLFormat(texture.format)
         self.src = texture.src
 
 
@@ -75,7 +145,7 @@ class Texture2DSetup(SyntaxExpander):
         assert(texture.format.target == "GL_TEXTURE_2D")
         self.name = texture.name
         self.handle = texture.handle
-        self.format = texture.format.format
+        self.format = GLFormat(texture.format)
         self.width = solve_expression(texture.width)
         self.height = solve_expression(texture.height)
 
@@ -95,7 +165,7 @@ class Texture3DSetup(SyntaxExpander):
         assert(texture.format.target == "GL_TEXTURE_3D")
         self.name = texture.name
         self.handle = texture.handle
-        self.format = texture.format.format
+        self.format = GLFormat(texture.format)
         self.width = solve_expression(texture.width)
         self.height = solve_expression(texture.height)
         self.depth = solve_expression(texture.depth)

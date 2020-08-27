@@ -204,32 +204,30 @@ void InitialSetup()
 		}
 	}
 	{
-		{
-			// texture "FancyTexture"
-			ImageData Image = ReadPng("woman_taking_in_cheese_from_fire_escape.png");
-			glCreateTextures(GL_TEXTURE_2D, 1, &TextureHandles[0]);
-			glTextureStorage2D(TextureHandles[0], 1, GL_RGBA8, Image.Width, Image.Height);
-			glObjectLabel(GL_TEXTURE, TextureHandles[0], -1, "FancyTexture");
-			glTextureSubImage2D(TextureHandles[0], 0, 0, 0, Image.Width, Image.Height, GL_RGBA, GL_UNSIGNED_BYTE, Image.Data.data());
-		}
-		{
-			// texture "RedColorTarget"
-			glCreateTextures(GL_TEXTURE_2D, 1, &TextureHandles[1]);
-			glTextureStorage2D(TextureHandles[1], 1, GL_RGBA8, (GLsizei)ScreenWidth, (GLsizei)ScreenHeight);
-			glObjectLabel(GL_TEXTURE, TextureHandles[1], -1, "RedColorTarget");
-		}
-		{
-			// texture "BlueColorTarget"
-			glCreateTextures(GL_TEXTURE_2D, 1, &TextureHandles[2]);
-			glTextureStorage2D(TextureHandles[2], 1, GL_RGBA8, (GLsizei)ScreenWidth, (GLsizei)ScreenHeight);
-			glObjectLabel(GL_TEXTURE, TextureHandles[2], -1, "BlueColorTarget");
-		}
-		{
-			// texture "SomeDepthTarget"
-			glCreateTextures(GL_TEXTURE_2D, 1, &TextureHandles[3]);
-			glTextureStorage2D(TextureHandles[3], 1, GL_RGBA8, (GLsizei)ScreenWidth, (GLsizei)ScreenHeight);
-			glObjectLabel(GL_TEXTURE, TextureHandles[3], -1, "SomeDepthTarget");
-		}
+		// texture "FancyTexture"
+		ImageData Image = ReadPng("woman_taking_in_cheese_from_fire_escape.png");
+		glCreateTextures(GL_TEXTURE_2D, 1, &TextureHandles[0]);
+		glTextureStorage2D(TextureHandles[0], 1, GL_RGBA8, Image.Width, Image.Height);
+		glObjectLabel(GL_TEXTURE, TextureHandles[0], -1, "FancyTexture");
+		glTextureSubImage2D(TextureHandles[0], 0, 0, 0, Image.Width, Image.Height, GL_RGBA, GL_UNSIGNED_BYTE, Image.Data.data());
+	}
+	{
+		// texture "RedColorTarget"
+		glCreateTextures(GL_TEXTURE_2D, 1, &TextureHandles[1]);
+		glTextureStorage2D(TextureHandles[1], 1, GL_RGBA8, (GLsizei)ScreenWidth, (GLsizei)ScreenHeight);
+		glObjectLabel(GL_TEXTURE, TextureHandles[1], -1, "RedColorTarget");
+	}
+	{
+		// texture "BlueColorTarget"
+		glCreateTextures(GL_TEXTURE_2D, 1, &TextureHandles[2]);
+		glTextureStorage2D(TextureHandles[2], 1, GL_RGBA8, (GLsizei)ScreenWidth, (GLsizei)ScreenHeight);
+		glObjectLabel(GL_TEXTURE, TextureHandles[2], -1, "BlueColorTarget");
+	}
+	{
+		// texture "SomeDepthTarget"
+		glCreateTextures(GL_TEXTURE_2D, 1, &TextureHandles[3]);
+		glTextureStorage2D(TextureHandles[3], 1, GL_RGBA8, (GLsizei)ScreenWidth, (GLsizei)ScreenHeight);
+		glObjectLabel(GL_TEXTURE, TextureHandles[3], -1, "SomeDepthTarget");
 	}
 	{
 		{

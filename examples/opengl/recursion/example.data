@@ -38,7 +38,7 @@
 (buffer WindowParams WindowParamsType)
 
 
-(format ColorFormat GL_TEXTURE_2D GL_RGBA32F PointSampler)
+(format ColorFormat GL_TEXTURE_2D RGBA_32_FLOAT PointSampler)
 
 
 (texture Accumulator ColorFormat

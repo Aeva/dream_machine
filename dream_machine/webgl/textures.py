@@ -15,25 +15,33 @@
 
 
 from typing import *
+from enum import IntEnum
 from ..expanders import SyntaxExpander
 from .js_expressions import solve_expression
 from ..handy import CAST
-from ..syntax.grammar import Texture, TextureDimension, PipelineInput, Program
+from ..syntax.grammar import Texture, Format, TextureDimension, PipelineInput, Program
 
 
-webgl_formats = \
-{
-    "GL_RGB8" : "gl.RGB",
-    "GL_RGBA8" : "gl.RGBA",
-    "GL_R32F" : "gl.FLOAT",
-    "GL_RGB32F" : "gl.RGB32F",
-    "GL_RGBA32F" : "gl.RGBA32F",
-    "GL_R16F" : "gl.HALF_FLOAT",
-    "GL_RGB16F" : "gl.RGB16F",
-    "GL_RGBA16F" : "gl.RGBA16F",
-    "GL_DEPTH_COMPONENT" : "gl.DEPTH_COMPONENT",
-    "GL_DEPTH_STENCIL" : "gl.DEPTH_STENCIL",
-}
+class InternalFormats(IntEnum):
+    """
+    The values here are used to map to TextureFormats in dream_machine/syntax/constants.py.
+    """
+
+    RGBA32F = 2
+    RGB32F = 6
+    RGBA16F = 10
+    RGBA = 28
+    FLOAT = 41
+    HALF_FLOAT = 54
+    DEPTH_COMPONENT = 55
+
+
+def WebGLFormat(format:Format):
+    generic:TextureFormat = format.format
+    try:
+        return "gl." + InternalFormats(generic).name
+    except ValueError:
+        format.error(f'Texture format not supported by the WebGL backend: "{generic.name}"')
 
 
 class TextureHandles(SyntaxExpander):
@@ -61,7 +69,7 @@ class PngTextureSetup(SyntaxExpander):
         SyntaxExpander.__init__(self)
         self.name = texture.name
         self.handle = texture.handle
-        self.format = webgl_formats[texture.format.format]
+        self.format = WebGLFormat(texture.format)
         self.src = texture.src
 
 
@@ -79,7 +87,7 @@ class Texture2DSetup(SyntaxExpander):
         assert(texture.format.target == "GL_TEXTURE_2D")
         self.name = texture.name
         self.handle = texture.handle
-        self.format = webgl_formats[texture.format.format]
+        self.format = WebGLFormat(texture.format)
         self.width = solve_expression(texture.width)
         self.height = solve_expression(texture.height)
 
@@ -98,7 +106,7 @@ class Texture3DSetup(SyntaxExpander):
         assert(texture.format.target == "GL_TEXTURE_3D")
         self.name = texture.name
         self.handle = texture.handle
-        self.format = webgl_formats[texture.format.format]
+        self.format = WebGLFormat(texture.format)
         self.width = solve_expression(texture.width)
         self.height = solve_expression(texture.height)
         self.depth = solve_expression(texture.depth)

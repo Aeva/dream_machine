@@ -41,7 +41,7 @@
 	(mag GL_LINEAR))
 
 
-(format ColorFormat GL_TEXTURE_2D GL_RGBA8 LinearSampler)
+(format ColorFormat GL_TEXTURE_2D RGBA_8_UNORM LinearSampler)
 
 
 (texture FancyTexture ColorFormat

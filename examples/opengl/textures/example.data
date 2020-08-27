@@ -56,10 +56,10 @@
 (buffer WindowParams WindowParamsType)
 
 
-(format ColorFormat GL_TEXTURE_2D GL_RGBA8 LinearSampler)
+(format ColorFormat GL_TEXTURE_2D RGBA_8_UNORM LinearSampler)
 
 
-(format DepthFormat GL_TEXTURE_2D GL_DEPTH_COMPONENT32F PointSampler)
+(format DepthFormat GL_TEXTURE_2D D_32_FLOAT PointSampler)
 
 
 (texture FancyTexture ColorFormat

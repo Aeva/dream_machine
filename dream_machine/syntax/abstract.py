@@ -47,84 +47,6 @@ SCALAR_CTYPE_NAMES = \
 )
 
 
-DEPTH_TEXTURE_FORMATS = \
-(
-    "GL_DEPTH_COMPONENT",
-    "GL_DEPTH_COMPONENT16",
-    "GL_DEPTH_COMPONENT24",
-    "GL_DEPTH_COMPONENT32F",
-)
-
-
-COLOR_TEXTURE_FORMATS = \
-(
-    "GL_R8",
-    "GL_R8_SNORM",
-    "GL_R16",
-    "GL_R16_SNORM",
-    "GL_RG8",
-    "GL_RG8_SNORM",
-    "GL_RG16",
-    "GL_RG16_SNORM",
-    "GL_R3_G3_B2",
-    "GL_RGB4",
-    "GL_RGB5",
-    "GL_RGB8",
-    "GL_RGB8_SNORM",
-    "GL_RGB10",
-    "GL_RGB12",
-    "GL_RGB16_SNORM",
-    "GL_RGBA2",
-    "GL_RGBA4",
-    "GL_RGB5_A1",
-    "GL_RGBA8",
-    "GL_RGBA8_SNORM",
-    "GL_RGB10_A2",
-    "GL_RGB10_A2UI",
-    "GL_RGBA12",
-    "GL_RGBA16",
-    "GL_SRGB8",
-    "GL_SRGB8_ALPHA8",
-    "GL_R16F",
-    "GL_RG16F",
-    "GL_RGB16F",
-    "GL_RGBA16F",
-    "GL_R32F",
-    "GL_RG32F",
-    "GL_RGB32F",
-    "GL_RGBA32F",
-    "GL_R11F_G11F_B10F",
-    "GL_RGB9_E5",
-    "GL_R8I",
-    "GL_R8UI",
-    "GL_R16I",
-    "GL_R16UI",
-    "GL_R32I",
-    "GL_R32UI",
-    "GL_RG8I",
-    "GL_RG8UI",
-    "GL_RG16I",
-    "GL_RG16UI",
-    "GL_RG32I",
-    "GL_RG32UI",
-    "GL_RGB8I",
-    "GL_RGB8UI",
-    "GL_RGB16I",
-    "GL_RGB16UI",
-    "GL_RGB32I",
-    "GL_RGB32UI",
-    "GL_RGBA8I",
-    "GL_RGBA8UI",
-    "GL_RGBA16I",
-    "GL_RGBA16UI",
-    "GL_RGBA32I",
-    "GL_RGBA32UI",
-)
-
-
-ALL_TEXTURE_FORMATS = DEPTH_TEXTURE_FORMATS + COLOR_TEXTURE_FORMATS
-
-
 class Syntax:
     """
     Base class for abstract syntax objects, to be filled out by grammar Rule
@@ -436,18 +358,23 @@ class Format(Syntax):
 
     def __init__(self, *args, **kargs):
         Syntax.__init__(self, *args, **kargs)
-        format, self.name, self.target, self.format, self._sampler = map(str, cast(TokenList, self.tokens))
+        ignore, self.name, self.target, self.format_str, self._sampler = map(str, cast(TokenList, self.tokens))
 
     @property
     def sampler(self) -> Sampler:
         return CAST(Sampler, self.env.samplers.get(self._sampler))
 
+    @property
+    def format(self) -> TextureFormats:
+        try:
+            return TextureFormats[self.format_str]
+        except:
+            self.error(f'Unknown texture format: "{self.format_str}"')
+
     def validate(self):
         Syntax.validate(self)
         if self.target != "GL_TEXTURE_2D":
             self.error(f'Unsupported texture target: "{self.target}"')
-        if self.format not in ALL_TEXTURE_FORMATS:
-            self.error(f'Unsupported texture format: "{self.format}"')
         if self.sampler is None:
             self.error(f'Unknown sampler: "{self._sampler}"')
         if self.name in self.env.structs:
@@ -837,8 +764,8 @@ class Texture(Syntax):
         if self.src and (has_width or has_height or has_depth):
             self.error("Textures which define a source image can't also specify their dimensions.")
 
-        if self.src and self.format.format != "GL_RGBA8":
-            self.error("Loading textures from images is currently only supported for GL_RGBA8 textures.")
+        if self.src and self.format.format != TextureFormats.RGBA_8_UNORM:
+            self.error("Loading textures from images is currently only supported for RGBA_8_UNORM textures.")
 
     def __repr__(self):
         return f'<Texture {self.name} {self.format}>'
