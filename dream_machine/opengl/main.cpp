@@ -1,5 +1,8 @@
 ﻿#include "dream_machine.hpp"
 
+#define SDL_MAIN_HANDLED
+#include <SDL.h>
+
 
 namespace Glsl
 {
@@ -13,12 +16,13 @@ int ScreenHeight = 「window_height」;
 float ScreenScaleX = 1.0;
 float ScreenScaleY = 1.0;
 bool WindowIsDirty = true;
-GLFWwindow* Window;
+SDL_Window* Window;
+SDL_GLContext GLContext;
 
 
 extern int CurrentRenderer = 0;
-extern void UserSetupCallback(GLFWwindow* Window);
-extern void UserFrameCallback(GLFWwindow* Window);
+// extern void UserSetupCallback(GLFWwindow* Window);
+// extern void UserFrameCallback(GLFWwindow* Window);
 
 
 namespace UserVars
@@ -87,51 +91,44 @@ int main()
 	//std::string Fnord = DecodeBase64("SGFpbCBFcmlzISEh");
 	//std::cout << Fnord;
 	//HaltAndCatchFire();
-#if DEBUG_BUILD
-	glfwSetErrorCallback(GlfwErrorCallback);
-#endif // DEBUG_BUILD
-	if (!glfwInit())
+
+	SDL_SetMainReady();
+	if(SDL_Init(SDL_INIT_VIDEO) != 0)
 	{
-		std::cout << "Fatal Error: GLFW failed to initialize!\n";
+		std::cout << "Fatal Error: SDL failed to initialize: " << SDL_GetError() << std::endl;
 		return 1;
 	}
 
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 「hint_version_major」);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 「hint_version_minor」);
-	glfwWindowHint(GLFW_OPENGL_PROFILE, 「hint_profile」);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 「hint_version_major」);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 「hint_version_minor」);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 #if DEBUG_BUILD
-	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);
 #endif // DEBUG_BUILD
-	glfwWindowHint(GLFW_ALPHA_BITS, GLFW_DONT_CARE);
-	glfwWindowHint(GLFW_DEPTH_BITS, GLFW_DONT_CARE);
-	glfwWindowHint(GLFW_STENCIL_BITS, GLFW_DONT_CARE);
-#if RENDER_TO_IMAGES
-	glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
-#else
-	glfwWindowHint(GLFW_SCALE_TO_MONITOR, GL_TRUE);
-#endif // RENDER_TO_IMAGES
 
-	Window = glfwCreateWindow(ScreenWidth, ScreenHeight, WindowTitle, NULL, NULL);
-	if (!Window)
+	Window = SDL_CreateWindow(WindowTitle, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, ScreenWidth, ScreenHeight, SDL_WINDOW_OPENGL);
+	if(!Window)
 	{
-		std::cout << "Fatal Error: glfw failed to create a window!\n";
-		glfwTerminate();
+		std::cout << "Fatal Error: SDL failed to create a window: " << SDL_GetError() << std::endl;
+		SDL_Quit();
 		return 1;
 	}
 
-	glfwMakeContextCurrent(Window);
-
-	glfwGetWindowSize(Window, &ScreenWidth, &ScreenHeight);
-	glfwSetWindowSizeCallback(Window, GlfwWindowSizeCallback);
-
-	glfwGetWindowContentScale(Window, &ScreenScaleX, &ScreenScaleY);
-	glfwSetWindowContentScaleCallback(Window, GlfwWindowContentScaleCallback);
-
-	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+	GLContext = SDL_GL_CreateContext(Window);
+	if(!GLContext)
 	{
-		std::cout << "Failed to initialize OpenGL context!\n";
-		glfwDestroyWindow(Window);
-		glfwTerminate();
+		std::cout << "Fatal Error: SDL failed to create an OpenGL context: " << SDL_GetError() << std::endl;
+		SDL_DestroyWindow(Window);
+		SDL_Quit();
+		return 1;
+	}
+
+	if (!gladLoadGLLoader((GLADloadproc) SDL_GL_GetProcAddress))
+	{
+		std::cout << "Failed to initialize GLAD!\n";
+		SDL_GL_DeleteContext(GLContext);
+		SDL_DestroyWindow(Window);
+		SDL_Quit();
 		return 1;
 	}
 	else
@@ -163,9 +160,9 @@ int main()
 #endif
 
 	InitialSetup();
-	UserSetupCallback(Window);
+	// UserSetupCallback(Window);
 
-	while (!glfwWindowShouldClose(Window))
+	while (!SDL_QuitRequested())
 	{
 		if (WindowIsDirty)
 		{
@@ -175,19 +172,19 @@ int main()
 		glViewport(0, 0, ScreenWidth, ScreenHeight);
 		static int FrameIndex = 0;
 		static double DeltaTime = 0.0;
-		static double StartTime = glfwGetTime();
+		static double StartTime = SDL_GetTicks();
 		{
 			DrawFrame(FrameIndex++, StartTime, DeltaTime);
-			glfwSwapBuffers(Window);
-			glfwPollEvents();
-			UserFrameCallback(Window);
+			SDL_GL_SwapWindow(Window);
+			//UserFrameCallback(Window);
 		}
-		double EndTime = glfwGetTime();
+		double EndTime = SDL_GetTicks();
 		DeltaTime = EndTime - StartTime;
 		StartTime = EndTime;
 	}
 
-	glfwDestroyWindow(Window);
-	glfwTerminate();
+	SDL_GL_DeleteContext(GLContext);
+	SDL_DestroyWindow(Window);
+	SDL_Quit();
 	return 0;
 }
