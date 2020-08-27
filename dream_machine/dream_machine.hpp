@@ -23,7 +23,8 @@
 #include <cstdint>
 #include <stdlib.h>
 #include "glad/glad.h"
-#include "GLFW/glfw3.h"
+#define SDL_MAIN_HANDLED
+#include <SDL.h>
 #include "lodepng.h"
 
 
@@ -173,13 +174,6 @@ std::string DecodeBase64(const char* Encoded)
 
 
 #if DEBUG_BUILD
-void GlfwErrorCallback(int Error, const char* Description)
-{
-	std::cout << "GLFW Error: " << Description << '\n';
-	HaltAndCatchFire();
-}
-
-
 void DebugCallback(
 	GLenum Source,
 	GLenum Type,

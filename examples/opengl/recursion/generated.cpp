@@ -18,12 +18,13 @@ int ScreenHeight = 512;
 float ScreenScaleX = 1.0;
 float ScreenScaleY = 1.0;
 bool WindowIsDirty = true;
-GLFWwindow* Window;
+SDL_Window* Window;
+SDL_GLContext GLContext;
 
 
 extern int CurrentRenderer = 0;
-extern void UserSetupCallback(GLFWwindow* Window);
-extern void UserFrameCallback(GLFWwindow* Window);
+extern void UserSetupCallback(SDL_Window* Window);
+extern void UserFrameCallback();
 
 
 namespace UserVars
@@ -58,23 +59,16 @@ namespace Upload
 }
 
 
-void GlfwWindowSizeCallback(GLFWwindow* Window, int Width, int Height)
+void UpdateWindowSize()
 {
+	int Width;
+	int Height;
+	SDL_GetWindowSize(Window, &Width, &Height);
 	if (ScreenWidth != Width || ScreenHeight != Height)
 	{
+		std::cout << Height << "\n";
 		ScreenWidth = Width;
 		ScreenHeight = Height;
-		WindowIsDirty = true;
-	}
-}
-
-
-void GlfwWindowContentScaleCallback(GLFWwindow* Window, float ScaleX, float ScaleY)
-{
-	if (ScreenScaleX != ScaleX || ScreenScaleY != ScaleY)
-	{
-		ScreenScaleX = ScaleX;
-		ScreenScaleY = ScaleY;
 		WindowIsDirty = true;
 	}
 }
@@ -272,51 +266,46 @@ int main()
 	//std::string Fnord = DecodeBase64("SGFpbCBFcmlzISEh");
 	//std::cout << Fnord;
 	//HaltAndCatchFire();
-#if DEBUG_BUILD
-	glfwSetErrorCallback(GlfwErrorCallback);
-#endif // DEBUG_BUILD
-	if (!glfwInit())
+
+	SDL_SetMainReady();
+	if(SDL_Init(SDL_INIT_VIDEO) != 0)
 	{
-		std::cout << "Fatal Error: GLFW failed to initialize!\n";
+		std::cout << "Fatal Error: SDL failed to initialize: " << SDL_GetError() << std::endl;
 		return 1;
 	}
 
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
-	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	SDL_GL_LoadLibrary(nullptr);
+	SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 #if DEBUG_BUILD
-	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);
 #endif // DEBUG_BUILD
-	glfwWindowHint(GLFW_ALPHA_BITS, GLFW_DONT_CARE);
-	glfwWindowHint(GLFW_DEPTH_BITS, GLFW_DONT_CARE);
-	glfwWindowHint(GLFW_STENCIL_BITS, GLFW_DONT_CARE);
-#if RENDER_TO_IMAGES
-	glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
-#else
-	glfwWindowHint(GLFW_SCALE_TO_MONITOR, GL_TRUE);
-#endif // RENDER_TO_IMAGES
 
-	Window = glfwCreateWindow(ScreenWidth, ScreenHeight, WindowTitle, NULL, NULL);
-	if (!Window)
+	Window = SDL_CreateWindow(WindowTitle, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, ScreenWidth, ScreenHeight, SDL_WINDOW_RESIZABLE | SDL_WINDOW_OPENGL);
+	if(!Window)
 	{
-		std::cout << "Fatal Error: glfw failed to create a window!\n";
-		glfwTerminate();
+		std::cout << "Fatal Error: SDL failed to create a window: " << SDL_GetError() << std::endl;
+		SDL_Quit();
 		return 1;
 	}
 
-	glfwMakeContextCurrent(Window);
-
-	glfwGetWindowSize(Window, &ScreenWidth, &ScreenHeight);
-	glfwSetWindowSizeCallback(Window, GlfwWindowSizeCallback);
-
-	glfwGetWindowContentScale(Window, &ScreenScaleX, &ScreenScaleY);
-	glfwSetWindowContentScaleCallback(Window, GlfwWindowContentScaleCallback);
-
-	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+	GLContext = SDL_GL_CreateContext(Window);
+	if(!GLContext)
 	{
-		std::cout << "Failed to initialize OpenGL context!\n";
-		glfwDestroyWindow(Window);
-		glfwTerminate();
+		std::cout << "Fatal Error: SDL failed to create an OpenGL context: " << SDL_GetError() << std::endl;
+		SDL_DestroyWindow(Window);
+		SDL_Quit();
+		return 1;
+	}
+
+	if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress))
+	{
+		std::cout << "Failed to initialize GLAD!\n";
+		SDL_GL_DeleteContext(GLContext);
+		SDL_DestroyWindow(Window);
+		SDL_Quit();
 		return 1;
 	}
 	else
@@ -350,8 +339,9 @@ int main()
 	InitialSetup();
 	UserSetupCallback(Window);
 
-	while (!glfwWindowShouldClose(Window))
+	while (!SDL_QuitRequested())
 	{
+		UpdateWindowSize();
 		if (WindowIsDirty)
 		{
 			WindowResized();
@@ -359,20 +349,21 @@ int main()
 		}
 		glViewport(0, 0, ScreenWidth, ScreenHeight);
 		static int FrameIndex = 0;
-		static double DeltaTime = 0.0;
-		static double StartTime = glfwGetTime();
+		static unsigned int DeltaTime = 0.0;
+		static unsigned int StartTime = SDL_GetTicks();
 		{
-			DrawFrame(FrameIndex++, StartTime, DeltaTime);
-			glfwSwapBuffers(Window);
-			glfwPollEvents();
-			UserFrameCallback(Window);
+			DrawFrame(FrameIndex++, (double)StartTime / 1000.0, (double)DeltaTime / 1000.0);
+			SDL_GL_SwapWindow(Window);
+			SDL_PumpEvents();
+			UserFrameCallback();
 		}
-		double EndTime = glfwGetTime();
+		unsigned int EndTime = SDL_GetTicks();
 		DeltaTime = EndTime - StartTime;
 		StartTime = EndTime;
 	}
 
-	glfwDestroyWindow(Window);
-	glfwTerminate();
+	SDL_GL_DeleteContext(GLContext);
+	SDL_DestroyWindow(Window);
+	SDL_Quit();
 	return 0;
 }

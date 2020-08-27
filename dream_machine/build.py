@@ -39,11 +39,11 @@ def build(*source_paths, out_path=None, copy_dlls=True, debug=False):
     defines = ["GLFW_DLL", "WIN32_LEAN_AND_MEAN", "DEBUG_BUILD"]
     includes = glob(os.path.join(dependencies_dir, "**", "include"))
     includes += [os.path.dirname(__file__)]
-    libs = glob(os.path.join(dependencies_dir, "**", "lib"))
+    libs = [os.path.join(dependencies_dir, "SDL2-2.0.12", "lib", "x64")]
     sources = list(source_paths)
     sources += glob(os.path.join(dependencies_dir, "**", "src", "*.cpp"))
     sources += glob(os.path.join(dependencies_dir, "**", "src", "*.c"))
-    dlls = ["glfw3.dll"]
+    dlls = ["SDL2.dll"]
 
     args = [cc]
     if debug:
@@ -51,7 +51,7 @@ def build(*source_paths, out_path=None, copy_dlls=True, debug=False):
     args += [f"-D{p}" for p in defines]
     args += [f"-I{p}" for p in includes]
     args += [f"-L{p}" for p in libs]
-    args += ["-lglfw3dll", "-lopengl32"]
+    args += ["-lSDL2", "-lSDL2main", "-lopengl32"]
     args += sources
     if out_path:
         args += [f"-o{out_path}"]

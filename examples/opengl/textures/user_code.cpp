@@ -1,22 +1,25 @@
 
-#include <iostream>
-#include <GLFW/glfw3.h>
+#define SDL_MAIN_HANDLED
+#include <SDL.h>
+
 
 extern int CurrentRenderer;
 
 
-extern void UserSetupCallback(GLFWwindow* Window)
+extern void UserSetupCallback(SDL_Window* Window)
 {
 }
 
 
-extern void UserFrameCallback(GLFWwindow* Window)
+extern void UserFrameCallback()
 {
-	if (glfwGetKey(Window, GLFW_KEY_1) == GLFW_PRESS)
+	const Uint8* KeyboardState = SDL_GetKeyboardState(nullptr);
+
+	if (KeyboardState[SDL_SCANCODE_1])
 	{
 		CurrentRenderer = 0;
 	}
-	else if (glfwGetKey(Window, GLFW_KEY_2) == GLFW_PRESS)
+	else if (KeyboardState[SDL_SCANCODE_2])
 	{
 		CurrentRenderer = 1;
 	}

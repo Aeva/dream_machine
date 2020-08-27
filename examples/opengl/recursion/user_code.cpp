@@ -1,15 +1,15 @@
 
-#include <iostream>
-#include <GLFW/glfw3.h>
+#define SDL_MAIN_HANDLED
+#include <SDL.h>
 
 extern int CurrentRenderer;
 
 
-extern void UserSetupCallback(GLFWwindow* Window)
+extern void UserSetupCallback(SDL_Window* Window)
 {
 }
 
 
-extern void UserFrameCallback(GLFWwindow* Window)
+extern void UserFrameCallback()
 {
 }
