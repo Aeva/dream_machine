@@ -49,25 +49,25 @@ void UpdateWindowSize()
 
 void InitialSetup()
 {
-	「initial_setup_hook」
+「initial_setup_hook」
 }
 
 
 namespace Renderer
 {
-	「renderers」
+「renderers」
 }
 
 
 void DrawFrame(int FrameIndex, double CurrentTime, double DeltaTime)
 {
-	「draw_frame_hook」
+「draw_frame_hook」
 }
 
 
 void WindowResized()
 {
-	「resize_hook」
+「resize_hook」
 }
 
 

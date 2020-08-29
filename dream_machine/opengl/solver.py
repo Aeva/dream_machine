@@ -131,7 +131,7 @@ def solve_shaders(env:Program, solved_structs:Dict[str,StructType]) -> Tuple[Sha
     return ShaderHandles(shader_count = len(shaders), program_count=len(programs)), compiles + links
 
 
-def solve_renderers(env:Program, rtv_rewrites:RenderTargetRewrites) -> Tuple[List[SyntaxExpander], SyntaxExpander]:
+def solve_renderers(env:Program, rtv_rewrites:RenderTargetRewrites) -> Tuple[List[SyntaxExpander], Union[SyntaxExpander, str]]:
     """
     """
 
@@ -190,9 +190,12 @@ def solve_renderers(env:Program, rtv_rewrites:RenderTargetRewrites) -> Tuple[Lis
             calls.append(RendererAdvance(index))
         return RendererCall(name=renderer.name, calls=calls)
 
-    callbacks = list(map(solve_renderer, env.renderers))
-    switch = RendererSwitch([RendererCase(index=i, name=r.name) for i, r in enumerate(env.renderers)])
-    return callbacks, switch
+    if env.renderers:
+        callbacks = list(map(solve_renderer, env.renderers))
+        switch = RendererSwitch([RendererCase(index=i, name=r.name) for i, r in enumerate(env.renderers)])
+        return callbacks, switch
+    else:
+        return [], ""
 
 
 def shadow_name(group:dict, name:str, shadow:str):
@@ -234,7 +237,9 @@ def solve(env:Program) -> SyntaxExpander:
         structs += [GlslStruct(s) for s in solved_structs.values()]
 
     # expanders for various things in the global scope
-    globals:List[SyntaxExpander] = ["SDL_GLContext GLContext;", shader_handles]
+    globals:List[SyntaxExpander] = ["SDL_GLContext GLContext;"]
+    if build_shaders:
+        globals.append(shader_handles)
 
     if env.samplers:
         globals.append(SamplerHandles(len(env.samplers)))
