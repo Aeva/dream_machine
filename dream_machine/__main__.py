@@ -35,18 +35,19 @@ if __name__ == "__main__":
     parser.open(src_path)
     env = validate(parser)
 
-    solved = None
-
     if not env.backend:
         raise ValidationError("No backend specified.")
 
     elif env.backend.api == BackendAPI.OpenGL:
         validate_for_opengl(env)
-        solved = solve_for_opengl(env)
-        assert(solved is not None)
+        program, header, dependencies = solve_for_opengl(env)
+        assert(program is not None)
         with open("generated.cpp", "w", encoding="utf-8") as outfile:
-            outfile.write(str(solved))
-        build("generated.cpp", "user_code.cpp", out_path="generated.exe", debug=True)
+            outfile.write(str(program))
+        with open("generated.h", "w", encoding="utf-8") as outfile:
+            outfile.write(str(header))
+        user_sources = ["generated.cpp", "user_code.cpp"]
+        build(user_sources, dependencies, out_path="generated.exe", debug=True)
 
     elif env.backend.api == BackendAPI.WebGL:
         validate_for_webgl(env)

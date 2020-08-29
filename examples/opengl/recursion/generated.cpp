@@ -1,4 +1,6 @@
-﻿#include "dream_machine.hpp"
+#include <string>
+#include <iostream>
+#include "generated.h"
 
 
 namespace Glsl
@@ -19,7 +21,6 @@ float ScreenScaleX = 1.0;
 float ScreenScaleY = 1.0;
 bool WindowIsDirty = true;
 SDL_Window* Window;
-SDL_GLContext GLContext;
 
 
 extern int CurrentRenderer = 0;
@@ -27,12 +28,7 @@ extern void UserSetupCallback(SDL_Window* Window);
 extern void UserFrameCallback();
 
 
-namespace UserVars
-{
-	
-}
-
-
+SDL_GLContext GLContext;
 GLuint Shaders[3] = { 0 };
 GLuint ShaderPrograms[2] = { 0 };
 GLuint SamplerHandles[1] = { 0 };
@@ -76,7 +72,7 @@ void UpdateWindowSize()
 
 void InitialSetup()
 {
-	{
+		{
 		GLuint vao;
 		glGenVertexArrays(1, &vao);
 		glBindVertexArray(vao);
@@ -154,7 +150,7 @@ void InitialSetup()
 
 namespace Renderer
 {
-	void Accumulate(int FrameIndex, double CurrentTime, double DeltaTime)
+		void Accumulate(int FrameIndex, double CurrentTime, double DeltaTime)
 	{
 		glClearColor(0, 0, 0, 1.0);
 		glClear(GL_COLOR_BUFFER_BIT);
@@ -216,7 +212,7 @@ namespace Renderer
 
 void DrawFrame(int FrameIndex, double CurrentTime, double DeltaTime)
 {
-	switch (CurrentRenderer)
+		switch (CurrentRenderer)
 	{
 	case 0:
 		Renderer::Accumulate(FrameIndex, CurrentTime, DeltaTime);
@@ -229,7 +225,7 @@ void DrawFrame(int FrameIndex, double CurrentTime, double DeltaTime)
 
 void WindowResized()
 {
-	{
+		{
 		// resize texture "AccumulatorTarget"
 		glDeleteTextures(1, &TextureHandles[1]);
 		glCreateTextures(GL_TEXTURE_2D, 1, &TextureHandles[1]);
@@ -263,12 +259,8 @@ void WindowResized()
 
 int main()
 {
-	//std::string Fnord = DecodeBase64("SGFpbCBFcmlzISEh");
-	//std::cout << Fnord;
-	//HaltAndCatchFire();
-
 	SDL_SetMainReady();
-	if(SDL_Init(SDL_INIT_VIDEO) != 0)
+	if (SDL_Init(SDL_INIT_VIDEO) != 0)
 	{
 		std::cout << "Fatal Error: SDL failed to initialize: " << SDL_GetError() << std::endl;
 		return 1;
@@ -284,7 +276,7 @@ int main()
 #endif // DEBUG_BUILD
 
 	Window = SDL_CreateWindow(WindowTitle, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, ScreenWidth, ScreenHeight, SDL_WINDOW_RESIZABLE | SDL_WINDOW_OPENGL);
-	if(!Window)
+	if (!Window)
 	{
 		std::cout << "Fatal Error: SDL failed to create a window: " << SDL_GetError() << std::endl;
 		SDL_Quit();
@@ -302,7 +294,7 @@ int main()
 
 	if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress))
 	{
-		std::cout << "Failed to initialize GLAD!\n";
+		std::cout << "Failed to initialize GLAD!" << std::endl;
 		SDL_GL_DeleteContext(GLContext);
 		SDL_DestroyWindow(Window);
 		SDL_Quit();
@@ -310,7 +302,7 @@ int main()
 	}
 	else
 	{
-		std::cout << "Found OpenGL version " << GLVersion.major << "." << GLVersion.minor << "\n";
+		std::cout << "Found OpenGL version " << GLVersion.major << "." << GLVersion.minor << std::endl << std::endl;
 	}
 
 #if DEBUG_BUILD
@@ -327,12 +319,12 @@ int main()
 		}
 		else
 		{
-			std::cout << "Debug context not available!\n";
+			std::cout << "Debug context not available!" << std::endl;
 		}
 	}
 	else
 	{
-		std::cout << "Debug output extension not available!\n";
+		std::cout << "Debug output extension not available!" << std::endl;
 	}
 #endif
 
@@ -346,8 +338,8 @@ int main()
 		{
 			WindowResized();
 			WindowIsDirty = false;
+			glViewport(0, 0, ScreenWidth, ScreenHeight);
 		}
-		glViewport(0, 0, ScreenWidth, ScreenHeight);
 		static int FrameIndex = 0;
 		static unsigned int DeltaTime = 0.0;
 		static unsigned int StartTime = SDL_GetTicks();
@@ -362,7 +354,7 @@ int main()
 		StartTime = EndTime;
 	}
 
-	SDL_GL_DeleteContext(GLContext);
+	
 	SDL_DestroyWindow(Window);
 	SDL_Quit();
 	return 0;

@@ -33,16 +33,18 @@ def find_exe(name):
     raise RuntimeError(f"Can't find {name}.  Is it in your PATH env var?")
 
 
-def build(*source_paths, out_path=None, copy_dlls=True, debug=False):
+def build(user_sources, extra_sources, out_path=None, copy_dlls=True, debug=False):
     cc = find_exe("clang++")
     dependencies_dir = os.path.join(os.path.dirname(__file__), "dependencies")
     defines = ["GLFW_DLL", "WIN32_LEAN_AND_MEAN", "DEBUG_BUILD"]
     includes = glob(os.path.join(dependencies_dir, "**", "include"))
     includes += [os.path.dirname(__file__)]
     libs = [os.path.join(dependencies_dir, "SDL2-2.0.12", "lib", "x64")]
-    sources = list(source_paths)
+    sources = list(user_sources)
     sources += glob(os.path.join(dependencies_dir, "**", "src", "*.cpp"))
     sources += glob(os.path.join(dependencies_dir, "**", "src", "*.c"))
+    for named in extra_sources:
+        sources.append(os.path.join(os.path.dirname(__file__), f"{named}.cpp"))
     dlls = ["SDL2.dll"]
 
     args = [cc]

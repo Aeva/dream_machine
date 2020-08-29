@@ -25,7 +25,7 @@ from .render_targets import *
 from .shaders import *
 from .drawspatch import *
 from .renderers import *
-from .window import *
+from .program import *
 from .glsl_types import *
 from .glsl_interfaces import *
 from .cpp_interfaces import *
@@ -234,7 +234,7 @@ def solve(env:Program) -> SyntaxExpander:
         structs += [GlslStruct(s) for s in solved_structs.values()]
 
     # expanders for various things in the global scope
-    globals:List[SyntaxExpander] = [shader_handles]
+    globals:List[SyntaxExpander] = ["SDL_GLContext GLContext;", shader_handles]
 
     if env.samplers:
         globals.append(SamplerHandles(len(env.samplers)))
@@ -284,19 +284,23 @@ def solve(env:Program) -> SyntaxExpander:
     renderers, switch = solve_renderers(env, rtv_rewrites)
 
     # emit the generated program
-    program = OpenGLWindow()
+    program = GeneratedMain()
     program.window_title = "Hello World!"
     program.window_width = 512
     program.window_height = 512
-    program.hint_version_major = 4
-    program.hint_version_minor = 2
-    program.hint_profile = "GLFW_OPENGL_CORE_PROFILE"
-    program.structs = structs
+    program.after_sdl_init = InitGL(4, 2)
     program.globals = globals
-    program.user_vars = user_vars
-    program.uploaders = uploaders
+    program.struct_definitions = structs
+    program.user_var_definitions = user_vars
+    program.uploader_definitions = uploaders
     program.initial_setup_hook = setup
     program.resize_hook = reallocate
     program.renderers = renderers
     program.draw_frame_hook = switch
-    return program
+
+    dependencies:List[str] = ["opengl_util"]
+    if len([t for t in env.textures.values() if t.src]):
+        dependencies.append("images")
+    header = GeneratedHeader(dependencies)
+
+    return program, header, dependencies
