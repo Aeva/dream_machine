@@ -129,7 +129,7 @@ void UpdateWindowSize()
 
 void InitialSetup()
 {
-		{
+	{
 		GLuint vao;
 		glGenVertexArrays(1, &vao);
 		glBindVertexArray(vao);
@@ -254,7 +254,7 @@ void InitialSetup()
 
 namespace Renderer
 {
-		void TextureTest(int FrameIndex, double CurrentTime, double DeltaTime)
+	void TextureTest(int FrameIndex, double CurrentTime, double DeltaTime)
 	{
 		glClearColor(0, 0, 0, 1.0);
 		glClear(GL_COLOR_BUFFER_BIT);
@@ -353,7 +353,7 @@ namespace Renderer
 
 void DrawFrame(int FrameIndex, double CurrentTime, double DeltaTime)
 {
-		switch (CurrentRenderer)
+	switch (CurrentRenderer)
 	{
 	case 0:
 		Renderer::TextureTest(FrameIndex, CurrentTime, DeltaTime);
@@ -369,7 +369,7 @@ void DrawFrame(int FrameIndex, double CurrentTime, double DeltaTime)
 
 void WindowResized()
 {
-		{
+	{
 		// resize texture "BlueColorTarget"
 		glDeleteTextures(1, &TextureHandles[2]);
 		glCreateTextures(GL_TEXTURE_2D, 1, &TextureHandles[2]);

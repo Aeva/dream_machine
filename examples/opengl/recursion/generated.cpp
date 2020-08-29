@@ -72,7 +72,7 @@ void UpdateWindowSize()
 
 void InitialSetup()
 {
-		{
+	{
 		GLuint vao;
 		glGenVertexArrays(1, &vao);
 		glBindVertexArray(vao);
@@ -150,7 +150,7 @@ void InitialSetup()
 
 namespace Renderer
 {
-		void Accumulate(int FrameIndex, double CurrentTime, double DeltaTime)
+	void Accumulate(int FrameIndex, double CurrentTime, double DeltaTime)
 	{
 		glClearColor(0, 0, 0, 1.0);
 		glClear(GL_COLOR_BUFFER_BIT);
@@ -212,7 +212,7 @@ namespace Renderer
 
 void DrawFrame(int FrameIndex, double CurrentTime, double DeltaTime)
 {
-		switch (CurrentRenderer)
+	switch (CurrentRenderer)
 	{
 	case 0:
 		Renderer::Accumulate(FrameIndex, CurrentTime, DeltaTime);
@@ -225,7 +225,7 @@ void DrawFrame(int FrameIndex, double CurrentTime, double DeltaTime)
 
 void WindowResized()
 {
-		{
+	{
 		// resize texture "AccumulatorTarget"
 		glDeleteTextures(1, &TextureHandles[1]);
 		glCreateTextures(GL_TEXTURE_2D, 1, &TextureHandles[1]);
