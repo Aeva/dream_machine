@@ -47,7 +47,7 @@ if __name__ == "__main__":
         with open("generated.h", "w", encoding="utf-8") as outfile:
             outfile.write(str(header))
         user_sources = ["generated.cpp", "user_code.cpp"]
-        build(user_sources, dependencies, out_path="generated.exe", debug=True)
+        build(user_sources, dependencies, "OpenGL", out_path="generated.exe", debug=True)
 
     elif env.backend.api == BackendAPI.WebGL:
         validate_for_webgl(env)

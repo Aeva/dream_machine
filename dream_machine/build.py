@@ -33,7 +33,34 @@ def find_exe(name):
     raise RuntimeError(f"Can't find {name}.  Is it in your PATH env var?")
 
 
-def build(user_sources, extra_sources, out_path=None, copy_dlls=True, debug=False):
+def find_glad() -> bool:
+    if os.path.isdir("glad"):
+        exists = True
+        for file in "glad.c", "glad.h", "khrplatform.h":
+            if not os.path.isfile(os.path.join("glad", file)):
+                exists = False
+                break
+        return exists
+    else:
+        return False
+
+
+def download_glad(extensions, debug):
+    params = {
+        "out-path" : "glad",
+        "profile" : "core",
+        "api" : "gl=4.2",
+        "generator" : "c-debug" if debug else "c",
+        "spec" : "gl",
+        "extensions" : f"{','.join(extensions)}",
+    }
+    glad = ["python", "-m glad", "--local-files", "--no-loader"] + [f" --{n}={v}" for (n,v) in params.items()]
+    subprocess.call(" ".join(glad), shell=True)
+    if not find_glad():
+        raise FileNotFoundError("Can't find glad.")
+
+
+def build(user_sources, extra_sources, backend, out_path=None, copy_dlls=True, debug=False):
     cc = find_exe("clang++")
     dependencies_dir = os.path.join(os.path.dirname(__file__), "dependencies")
     defines = ["GLFW_DLL", "WIN32_LEAN_AND_MEAN", "DEBUG_BUILD"]
@@ -46,6 +73,27 @@ def build(user_sources, extra_sources, out_path=None, copy_dlls=True, debug=Fals
     for named in extra_sources:
         sources.append(os.path.join(os.path.dirname(__file__), f"{named}.cpp"))
     dlls = ["SDL2.dll"]
+
+    if backend == "OpenGL":
+        extensions = \
+        sorted([
+            "GL_ARB_buffer_storage",
+            "GL_ARB_clear_texture",
+            "GL_ARB_clip_control",
+            "GL_ARB_compute_shader",
+            "GL_ARB_debug_output",
+            "GL_ARB_direct_state_access",
+            "GL_ARB_gpu_shader5",
+            "GL_ARB_program_interface_query",
+            "GL_ARB_shader_image_load_store",
+            "GL_ARB_shader_storage_buffer_object",
+            "GL_KHR_debug",
+            "GL_NV_mesh_shader",
+        ])
+        if not find_glad():
+            download_glad(extensions, debug)
+        includes.append("glad")
+        sources.append(os.path.join("glad", "glad.c"))
 
     args = [cc]
     if debug:

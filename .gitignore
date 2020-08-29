@@ -1,6 +1,7 @@
 __pycache__
 .mypy_cache
 /*.egg-info
+/examples/**/glad
 /examples/**/*.out
 /examples/**/*.exe
 /examples/**/*.pdb

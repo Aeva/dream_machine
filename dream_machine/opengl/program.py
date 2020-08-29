@@ -101,7 +101,7 @@ class GeneratedHeader(SyntaxExpander):
     def __init__(self, dependencies, *args, **kargs):
         SyntaxExpander.__init__(self, *args, **kargs)
         self.structs_namespace = "Glsl"
-        self.include_before_sdl = '#include "glad/glad.h"'
+        self.include_before_sdl = '#include "glad.h"'
         self.include_after_sdl = []
         for header in dependencies:
             self.include_after_sdl.append(f'#include "{header}.h"')

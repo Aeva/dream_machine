@@ -8,6 +8,9 @@ PATH as well.
 To run tests, you will also need the python modules mypy and pytest, which can be
 installed via pip.
 
+The OpenGL backend additionally requires glad to be installed separately.  Glad
+is available in pip.
+
 ### Installation
 `python setup.py develop --user`
 
