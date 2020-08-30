@@ -12,7 +12,13 @@ The OpenGL backend additionally requires glad to be installed separately.  Glad
 is available in pip.
 
 ### Installation
-`python setup.py develop --user`
+```
+git clone git@github.com:Aeva/dream_machine.git
+cd dream_machine
+git submodule init
+git submodule update
+python setup.py develop --user
+```
 
 ### Usage
 Modify `example.data` to specify your program, and then run `build.bat`.  This will
