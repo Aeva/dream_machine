@@ -1,0 +1,3 @@
+[submodule "dream_machine/dependencies"]
+	path = dream_machine/dependencies
+	url = https://github.com/Aeva/dream_machine_dependencies.git
