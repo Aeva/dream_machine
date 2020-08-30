@@ -15,6 +15,7 @@
 
 
 import os
+import re
 import sys
 import shutil
 import subprocess
@@ -43,6 +44,13 @@ def find_glad() -> bool:
         return exists
     else:
         return False
+
+
+def extract_extensions_from_glad():
+    with open(os.path.join("glad", "glad.c"), "r") as glad:
+        match = re.search(r'--extensions="(?P<extensions>[A-Za-z0-9_, ]+)"', glad.read())
+        if match:
+            return sorted([e.strip() for e in match["extensions"].split(',')])
 
 
 def download_glad(extensions, debug):
@@ -92,6 +100,11 @@ def build(user_sources, extra_sources, backend, out_path=None, copy_dlls=True, d
         ])
         if not find_glad():
             download_glad(extensions, debug)
+        else:
+            found = extract_extensions_from_glad()
+            if set(found) != set(extensions):
+                download_glad(extensions, debug)
+
         includes.append("glad")
         sources.append(os.path.join("glad", "glad.c"))
 
