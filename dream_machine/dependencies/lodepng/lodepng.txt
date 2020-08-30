@@ -1,5 +1,0 @@
-The source files for LoadPNG were obtained from here:
-https://lodev.org/lodepng/
-
-The license of LoadPNG at time of download can be found here:
-https://github.com/lvandeve/lodepng/commit/62adbc64baaec7afa217ea05a6b00d1fbfae2fed
