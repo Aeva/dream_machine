@@ -43,13 +43,13 @@
 
 
 (sampler LinearSampler
-	(min GL_LINEAR)
-	(mag GL_LINEAR))
+	(min LINEAR)
+	(mag LINEAR))
 
 
 (sampler PointSampler
-	(min GL_NEAREST)
-	(mag GL_NEAREST))
+	(min POINT)
+	(mag POINT))
 
 
 (buffer WindowParams WindowParamsType)

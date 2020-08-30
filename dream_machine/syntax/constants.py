@@ -23,17 +23,21 @@ class BackendAPI(Enum):
     WebGL = auto()
 
 
-class TextureType(IntEnum):
+class SamplerFilterType(Enum):
+    POINT = auto()
+    LINEAR = auto()
+
+
+class TextureType(Enum):
     """
     For OpenGL, this would represent the "target" param to glCreateTextures etc.
     For D3D12, this would roughly correspond to D3D12_RESOURCE_DIMENSION.
-    The numbering of these enums is arbitrary.
     """
-    TEXTURE_1D = 1
-    TEXTURE_2D = 2
-    TEXTURE_3D = 3
-    BUFFER = 4
-    TEXTURE_CUBE_MAP = 6
+    TEXTURE_1D = auto()
+    TEXTURE_2D = auto()
+    TEXTURE_3D = auto()
+    BUFFER = auto()
+    TEXTURE_CUBE_MAP = auto()
 
 
 class TextureFormats(IntEnum):

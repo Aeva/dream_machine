@@ -31,8 +31,8 @@
 
 
 (sampler PointSampler
-	(min GL_NEAREST)
-	(mag GL_NEAREST))
+	(min POINT)
+	(mag POINT))
 
 
 (buffer WindowParams WindowParamsType)

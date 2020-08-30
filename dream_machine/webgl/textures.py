@@ -21,6 +21,13 @@ from .js_expressions import solve_expression
 from ..handy import CAST
 from ..syntax.grammar import Texture, Format, TextureDimension, PipelineInput, Program
 from ..syntax.constants import TextureType, TextureFormats
+from ..syntax.constants import SamplerFilterType
+
+
+SAMPLER_FILTER_MODES = {
+    SamplerFilterType.POINT : "NEAREST",
+    SamplerFilterType.LINEAR : "LINEAR",
+}
 
 
 class InternalFormats(IntEnum):
@@ -147,8 +154,8 @@ class BindTexture(SyntaxExpander):
     template = """
 gl.activeTexture(gl.TEXTURE0 + 「texture_unit:int」);
 gl.bindTexture(「target」, TextureHandles[「handle:int」]);
-gl.texParameteri(「target」, gl.TEXTURE_MIN_FILTER, 「min_filter:str」);
-gl.texParameteri(「target」, gl.TEXTURE_MAG_FILTER, 「mag_filter:str」);
+gl.texParameteri(「target」, gl.TEXTURE_MIN_FILTER, gl.「min_filter:str」);
+gl.texParameteri(「target」, gl.TEXTURE_MAG_FILTER, gl.「mag_filter:str」);
 gl.texParameteri(「target」, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
 gl.texParameteri(「target」, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 """.strip()
@@ -159,8 +166,8 @@ gl.texParameteri(「target」, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
         self.texture_unit = binding.texture_index
         self.handle = CAST(Texture, binding.texture).handle
         sampler = binding.format.sampler
-        self.min_filter = "gl." + sampler.filters["min"].value[3:]
-        self.mag_filter = "gl." + sampler.filters["mag"].value[3:]
+        self.min_filter = SAMPLER_FILTER_MODES[sampler.filters["min"].value]
+        self.mag_filter = SAMPLER_FILTER_MODES[sampler.filters["mag"].value]
 
 
 class SetupTextures(SyntaxExpander):

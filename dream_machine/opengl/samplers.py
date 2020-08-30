@@ -18,6 +18,13 @@ from typing import *
 from ..expanders import SyntaxExpander
 from ..handy import CAST
 from ..syntax.grammar import Texture, Sampler, PipelineInput, Program
+from ..syntax.constants import SamplerFilterType
+
+
+SAMPLER_FILTER_MODES = {
+    SamplerFilterType.POINT : "GL_NEAREST",
+    SamplerFilterType.LINEAR : "GL_LINEAR",
+}
 
 
 class SamplerHandles(SyntaxExpander):
@@ -61,8 +68,8 @@ class SamplerSetup(SyntaxExpander):
         SyntaxExpander.__init__(self)
         self.name = sampler.name
         self.handle = sampler.handle
-        self.min_filter = sampler.filters["min"].value
-        self.mag_filter = sampler.filters["mag"].value
+        self.min_filter = SAMPLER_FILTER_MODES[sampler.filters["min"].value]
+        self.mag_filter = SAMPLER_FILTER_MODES[sampler.filters["mag"].value]
 
 
 class SetupSamplers(SyntaxExpander):

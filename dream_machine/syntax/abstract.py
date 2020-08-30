@@ -333,13 +333,14 @@ class SamplerFilter(Syntax):
 
     def __init__(self, *args, **kargs):
         Syntax.__init__(self, *args, **kargs)
-        self.name, self.value = map(str, cast(TokenList, self.tokens))
+        self.name, self.value_str = map(str, cast(TokenList, self.tokens))
 
-    def validate(self):
-        Syntax.validate(self)
-        supported = ["GL_NEAREST", "GL_LINEAR"]
-        if self.value not in supported:
-            self.error(f'Unsupported sampler filter value: "{self.value}"')
+    @property
+    def value(self) -> SamplerFilterType:
+        try:
+            return SamplerFilterType[self.value_str]
+        except:
+            self.error(f'Unsupported sampler filter value: "{self.value_str}"')
 
     def __repr__(self):
         return f'<SamplerFilter {self.name} {self.value}>'

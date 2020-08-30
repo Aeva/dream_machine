@@ -37,8 +37,8 @@
 
 
 (sampler LinearSampler
-	(min GL_LINEAR)
-	(mag GL_LINEAR))
+	(min LINEAR)
+	(mag LINEAR))
 
 
 (format ColorFormat TEXTURE_2D RGBA_8_UNORM LinearSampler)
