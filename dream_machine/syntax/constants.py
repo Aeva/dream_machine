@@ -23,6 +23,19 @@ class BackendAPI(Enum):
     WebGL = auto()
 
 
+class TextureType(IntEnum):
+    """
+    For OpenGL, this would represent the "target" param to glCreateTextures etc.
+    For D3D12, this would roughly correspond to D3D12_RESOURCE_DIMENSION.
+    The numbering of these enums is arbitrary.
+    """
+    TEXTURE_1D = 1
+    TEXTURE_2D = 2
+    TEXTURE_3D = 3
+    BUFFER = 4
+    TEXTURE_CUBE_MAP = 6
+
+
 class TextureFormats(IntEnum):
     """
     The enum values should correspond to the equivalent values in D3D12's DXGI_FORMAT.

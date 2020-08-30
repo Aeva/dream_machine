@@ -16,6 +16,7 @@
 
 from .glsl_types import *
 from ..syntax.grammar import PipelineInput, PipelineOutput
+from ..syntax.constants import TextureType
 
 
 class GlslMember(SyntaxExpander):
@@ -58,30 +59,19 @@ class TextureInterface(SyntaxExpander):
         self.mode = self.sampler_type(input.format.target)
         self.name = input.binding_name
 
-    def sampler_type(self, target:str) -> str:
-        if target == "GL_TEXTURE_1D":
+    def sampler_type(self, target:TextureType) -> str:
+        if target == TextureType.TEXTURE_1D:
             return "1D"
-        elif target == "GL_TEXTURE_2D":
+        elif target == TextureType.TEXTURE_2D:
             return "2D"
-        elif target == "GL_TEXTURE_3D":
+        elif target == TextureType.TEXTURE_3D:
             return "3D"
-        elif target == "GL_TEXTURE_RECTANGLE":
-            return "2DRect"
-        elif target == "GL_TEXTURE_1D_ARRAY":
-            return "1DArray"
-        elif target == "GL_TEXTURE_2D_ARRAY":
-            return "2DArray"
-        elif target == "GL_TEXTURE_CUBE_MAP":
+        elif target == TextureType.TEXTURE_CUBE_MAP:
             return "Cube"
-        elif target == "GL_TEXTURE_CUBE_MAP_ARRAY":
-            return "CubeArray"
-        elif target == "GL_TEXTURE_BUFFER":
+        elif target == TextureType.BUFFER:
             return "Buffer"
-        elif target == "GL_TEXTURE_2D_MULTISAMPLE":
-            return "2DMS"
         else:
-            assert(target == "GL_TEXTURE_2D_MULTISAMPLE_ARRAY")
-            return "2DMSArray"
+            raise NotImplementedError(target.name)
 
 
 class TargetInterface(SyntaxExpander):

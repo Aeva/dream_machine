@@ -17,6 +17,7 @@
 from ..opengl.glsl_types import *
 from ..opengl.glsl_interfaces import GlslStruct
 from ..syntax.grammar import PipelineInput, PipelineOutput
+from ..syntax.constants import TextureType
 
 
 class UniformDeclaration(SyntaxExpander):
@@ -49,13 +50,14 @@ class TextureInterface(SyntaxExpander):
         self.name = input.binding_name
 
     def sampler_type(self, target:str) -> str:
-        if target == "GL_TEXTURE_2D":
+        if target == TextureType.TEXTURE_2D:
             return "2D"
-        elif target == "GL_TEXTURE_3D":
+        elif target == TextureType.TEXTURE_3D:
             return "3D"
-        else:
-            assert(target == "GL_TEXTURE_CUBE_MAP")
+        elif target == TextureType.TEXTURE_CUBE_MAP:
             return "Cube"
+        else:
+            raise NotImplementedError(target.name)
 
 
 class TargetInterface(SyntaxExpander):

@@ -358,11 +358,18 @@ class Format(Syntax):
 
     def __init__(self, *args, **kargs):
         Syntax.__init__(self, *args, **kargs)
-        ignore, self.name, self.target, self.format_str, self._sampler = map(str, cast(TokenList, self.tokens))
+        ignore, self.name, self.target_str, self.format_str, self._sampler = map(str, cast(TokenList, self.tokens))
 
     @property
     def sampler(self) -> Sampler:
         return CAST(Sampler, self.env.samplers.get(self._sampler))
+
+    @property
+    def target(self) -> TextureType:
+        try:
+            return TextureType[self.target_str]
+        except:
+            self.error(f'Unknown texture type: "{self.target_str}"')
 
     @property
     def format(self) -> TextureFormats:
@@ -373,8 +380,6 @@ class Format(Syntax):
 
     def validate(self):
         Syntax.validate(self)
-        if self.target != "GL_TEXTURE_2D":
-            self.error(f'Unsupported texture target: "{self.target}"')
         if self.sampler is None:
             self.error(f'Unknown sampler: "{self._sampler}"')
         if self.name in self.env.structs:

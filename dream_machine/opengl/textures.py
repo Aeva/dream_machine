@@ -20,6 +20,7 @@ from ..expanders import SyntaxExpander
 from .cpp_expressions import solve_expression
 from ..handy import CAST
 from ..syntax.grammar import Texture, Format, TextureDimension, PipelineInput, Program
+from ..syntax.constants import TextureType, TextureFormats
 
 
 class InternalFormats(IntEnum):
@@ -142,7 +143,7 @@ class Texture2DSetup(SyntaxExpander):
 
     def __init__(self, texture:Texture):
         SyntaxExpander.__init__(self)
-        assert(texture.format.target == "GL_TEXTURE_2D")
+        assert(texture.format.target == TextureType.TEXTURE_2D)
         self.name = texture.name
         self.handle = texture.handle
         self.format = GLFormat(texture.format)
@@ -162,7 +163,7 @@ class Texture3DSetup(SyntaxExpander):
 
     def __init__(self, texture:Texture):
         SyntaxExpander.__init__(self)
-        assert(texture.format.target == "GL_TEXTURE_3D")
+        assert(texture.format.target == TextureType.TEXTURE_3D)
         self.name = texture.name
         self.handle = texture.handle
         self.format = GLFormat(texture.format)
@@ -196,10 +197,10 @@ class ResizeTexture3D(Texture3DSetup):
 
 
 def ResizeTexture(texture:Texture) -> SyntaxExpander:
-    if texture.format.target == "GL_TEXTURE_2D":
+    if texture.format.target == TextureType.TEXTURE_2D:
         return ResizeTexture2D(texture)
     else:
-        assert(texture.format.target == "GL_TEXTURE_3D")
+        assert(texture.format.target == TextureType.TEXTURE_3D)
         return ResizeTexture3D(texture)
 
 
@@ -220,13 +221,17 @@ class SetupTextures(SyntaxExpander):
         self.wrapped:List[SyntaxExpander] = []
         for texture in env.textures.values():
             if texture.src:
+                if texture.format.target != TextureType.TEXTURE_2D:
+                    texture.format.error(f'Textures loaded must use a TEXTURE_2D format."')
                 self.wrapped.append(PngTextureSetup(texture))
-            elif texture.format.target == "GL_TEXTURE_2D":
+            elif texture.format.target == TextureType.TEXTURE_2D:
                 self.wrapped.append(Texture2DSetup(texture))
                 if texture.clear:
                     self.wrapped.append(ClearTexture(texture))
-            elif texture.format.target == "GL_TEXTURE_3D":
+            elif texture.format.target == TextureType.TEXTURE_3D:
                 self.wrapped.append(Texture3DSetup(texture))
+            else:
+                texture.format.error(f'Texture type not supported by the OpenGL backend: "{texture.format.target.name}"')
 
 
 class SwitchTextureHandles(SyntaxExpander):

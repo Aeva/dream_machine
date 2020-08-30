@@ -20,6 +20,7 @@ from ..expanders import SyntaxExpander
 from .js_expressions import solve_expression
 from ..handy import CAST
 from ..syntax.grammar import Texture, Format, TextureDimension, PipelineInput, Program
+from ..syntax.constants import TextureType, TextureFormats
 
 
 class InternalFormats(IntEnum):
@@ -84,7 +85,7 @@ class Texture2DSetup(SyntaxExpander):
 
     def __init__(self, texture:Texture):
         SyntaxExpander.__init__(self)
-        assert(texture.format.target == "GL_TEXTURE_2D")
+        assert(texture.format.target == TextureType.TEXTURE_2D)
         self.name = texture.name
         self.handle = texture.handle
         self.format = WebGLFormat(texture.format)
@@ -103,7 +104,7 @@ class Texture3DSetup(SyntaxExpander):
 
     def __init__(self, texture:Texture):
         SyntaxExpander.__init__(self)
-        assert(texture.format.target == "GL_TEXTURE_3D")
+        assert(texture.format.target == TextureType.TEXTURE_3D)
         self.name = texture.name
         self.handle = texture.handle
         self.format = WebGLFormat(texture.format)
@@ -135,10 +136,10 @@ class ResizeTexture3D(Texture3DSetup):
 
 
 def ResizeTexture(texture:Texture) -> SyntaxExpander:
-    if texture.format.target == "GL_TEXTURE_2D":
+    if texture.format.target == TextureType.TEXTURE_2D:
         return ResizeTexture2D(texture)
     else:
-        assert(texture.format.target == "GL_TEXTURE_3D")
+        assert(texture.format.target == TextureType.TEXTURE_3D)
         return ResizeTexture3D(texture)
 
 
@@ -154,7 +155,7 @@ gl.texParameteri(「target」, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 
     def __init__(self, binding:PipelineInput):
         SyntaxExpander.__init__(self)
-        self.target = "gl." + binding.format.target[3:]
+        self.target = "gl." + binding.format.target.name
         self.texture_unit = binding.texture_index
         self.handle = CAST(Texture, binding.texture).handle
         sampler = binding.format.sampler
@@ -170,8 +171,10 @@ class SetupTextures(SyntaxExpander):
         self.wrapped:List[SyntaxExpander] = []
         for texture in env.textures.values():
             if texture.src:
+                if texture.format.target != TextureType.TEXTURE_2D:
+                    texture.format.error(f'Textures loaded must use a TEXTURE_2D format."')
                 self.wrapped.append(PngTextureSetup(texture))
-            elif texture.format.target == "GL_TEXTURE_2D":
+            elif texture.format.target == TextureType.TEXTURE_2D:
                 self.wrapped.append(Texture2DSetup(texture))
-            elif texture.format.target == "GL_TEXTURE_3D":
+            elif texture.format.target == TextureType.TEXTURE_3D:
                 self.wrapped.append(Texture3DSetup(texture))

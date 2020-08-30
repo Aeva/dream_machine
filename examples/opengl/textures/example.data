@@ -38,7 +38,6 @@
 	(SomeArray array 10 float))
 
 
-
 (struct WhatsitType
 	(Moop SomeType))
 
@@ -56,10 +55,10 @@
 (buffer WindowParams WindowParamsType)
 
 
-(format ColorFormat GL_TEXTURE_2D RGBA_8_UNORM LinearSampler)
+(format ColorFormat TEXTURE_2D RGBA_8_UNORM LinearSampler)
 
 
-(format DepthFormat GL_TEXTURE_2D D_32_FLOAT PointSampler)
+(format DepthFormat TEXTURE_2D D_32_FLOAT PointSampler)
 
 
 (texture FancyTexture ColorFormat
