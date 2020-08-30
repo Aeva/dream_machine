@@ -131,7 +131,7 @@ def solve_shaders(env:Program, solved_structs:Dict[str,StructType]) -> Tuple[Sha
     return ShaderHandles(shader_count = len(shaders), program_count=len(programs)), compiles + links
 
 
-def solve_renderers(env:Program, rtv_rewrites:RenderTargetRewrites) -> Tuple[List[SyntaxExpander], Union[SyntaxExpander, str]]:
+def solve_renderers(env:Program) -> Tuple[List[SyntaxExpander], Union[SyntaxExpander, str]]:
     """
     """
 
@@ -180,10 +180,10 @@ def solve_renderers(env:Program, rtv_rewrites:RenderTargetRewrites) -> Tuple[Lis
                 event = cast(RendererDraw, event)
                 calls.append(solve_draw(event, previous_draw))
                 previous_draw = event
-                if rewrites := rtv_rewrites.get(event.pipeline_name):
-                    for source, target in rewrites:
-                        calls.append(SwitchTextureHandles(source, target))
-                        calls.append(RebuildFrameBuffer(event.pipeline))
+                if textures := event.requires_flip:
+                    for texture in textures:
+                        calls.append(SwitchTextureHandles(texture, texture.shadow_texture))
+                    calls.append(RebuildFrameBuffer(event.pipeline))
 
         if renderer.next:
             index = [r.name for r in env.renderers].index(renderer.next)
@@ -198,32 +198,10 @@ def solve_renderers(env:Program, rtv_rewrites:RenderTargetRewrites) -> Tuple[Lis
         return [], ""
 
 
-def shadow_name(group:dict, name:str, shadow:str):
-    new_name = f"{name}{shadow}"
-    attempts = 1
-    while new_name in group:
-        new_name = f"{name}{shadow}{attempts}"
-        attempts += 1
-    return new_name
-
-
 def solve(env:Program) -> SyntaxExpander:
     """
     Solve the program!
     """
-
-    # reflow
-    rtv_rewrites:RenderTargetRewrites = {}
-    for pipeline in env.pipelines.values():
-        if rw_targets := pipeline.rw_targets:
-            rtv_rewrites[pipeline.name] = []
-            for output in rw_targets:
-                source = output.texture
-                target = copy(source)
-                target.name = shadow_name(pipeline.textures, source.name, "Target")
-                env.append_child(target)
-                output.resource_name = target.name
-                rtv_rewrites[pipeline.name].append((source, target))
 
     # structs
     solved_structs:Dict[str,StructType] = {k:solve_struct(v, env) for (k,v) in env.structs.items()}
@@ -283,10 +261,10 @@ def solve(env:Program) -> SyntaxExpander:
     # expanders for the window resized event
     reallocate:List[SyntaxExpander] = []
     if env.pipelines:
-        reallocate.append(ResizeFrameBuffers(env, rtv_rewrites))
+        reallocate.append(ResizeFrameBuffers(env))
 
     # expanders defining the available renderers
-    renderers, switch = solve_renderers(env, rtv_rewrites)
+    renderers, switch = solve_renderers(env)
 
     # emit the generated program
     program = GeneratedMain()

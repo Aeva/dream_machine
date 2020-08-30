@@ -16,6 +16,7 @@
 
 from __future__ import annotations
 from math import *
+from copy import copy
 from weakref import ref, ReferenceType
 from ..handy import *
 from .tokens import *
@@ -422,6 +423,13 @@ class Pipeline(Syntax):
                 new_children.append(child)
         self.populate(new_children)
 
+        # create shadow targets where needed
+        input_textures = (i.texture for i in self.textures if i.texture)
+        input_handles = [t.handle for t in input_textures]
+        shadowed_targets = tuple([o for o in self.outputs if o.handle in input_handles])
+        for target in shadowed_targets:
+            target.texture.create_shadow_target()
+
     def validate(self):
         Syntax.validate(self)
         if "cs" in self.shaders:
@@ -453,6 +461,12 @@ class Pipeline(Syntax):
         return tuple([i for i in self.inputs if i.is_texture])
 
     @property
+    def all_target_textures(self) -> List[Texture]:
+        explicit_textures = [o.texture for o in self.outputs]
+        implicit_textures = [t.shadow_texture for t in explicit_textures if t.shadow_texture]
+        return explicit_textures + implicit_textures
+
+    @property
     def color_targets(self) -> Tuple[PipelineOutput, ...]:
         return tuple([i for i in self.outputs if i.is_color])
 
@@ -463,15 +477,6 @@ class Pipeline(Syntax):
             return targets[0]
         else:
             return None
-
-    @property
-    def rw_targets(self) -> Tuple[PipelineOutput, ...]:
-        """
-        Returns a tuple of pipeline outputs which share a texture with one of this pipeline's inputs.
-        """
-        input_textures = (i.texture for i in self.textures if i.texture)
-        input_handles = [t.handle for t in input_textures]
-        return tuple([o for o in self.outputs if o.handle in input_handles])
 
     @property
     def uses_backbuffer(self) -> bool:
@@ -642,6 +647,10 @@ class PipelineOutput(Syntax):
         return self.env.textures[self.resource_name]
 
     @property
+    def requires_flip(self) -> bool:
+        return self.texture.shadow_texture != None
+
+    @property
     def handle(self) -> int:
         return self.texture.handle
 
@@ -714,6 +723,27 @@ class Texture(Syntax):
     def __init__(self, *args, **kargs):
         Syntax.__init__(self, *args, **kargs)
         buffer, self.name, self._format = map(str, cast(TokenList, self.tokens[:3]))
+        self.shadow_texture:Optional[Texture] = None
+        self.copies_from:Optional[str] = None
+
+    def new_shadow_name(self):
+        assert(self.shadow_texture != None)
+        assert(self.copies_from == None)
+        new_name = f"{self.name}Target"
+        attempts = 1
+        while new_name in self.env.textures:
+            new_name = f"{self.name}Target{attempts}"
+            attempts += 1
+        return new_name
+
+    def create_shadow_target(self) -> Texture:
+        assert(self.copies_from == None)
+        if self.shadow_texture == None:
+            self.shadow_texture = copy(self)
+            self.shadow_texture.copies_from = self.name
+            self.shadow_texture.name = self.new_shadow_name()
+            self.env.append_child(self.shadow_texture)
+        return self.shadow_texture
 
     @property
     def format(self) -> Format:
@@ -894,6 +924,11 @@ class RendererDraw(Syntax):
             self.error(f'Unknown pipeline: "{self.pipeline}"')
 
     @property
+    def requires_flip(self) -> List[Texture]:
+        outputs = (o for o in self.pipeline.outputs if o.requires_flip)
+        return [o.texture for o in outputs]
+
+    @property
     def pipeline(self) -> Pipeline:
         return self.env.pipelines[self.pipeline_name]
 
@@ -950,6 +985,15 @@ class Program(Syntax):
     textures:Dict[str,Texture]
     pipelines:Dict[str,Pipeline]
     renderers:List[Renderer]
+
+    @property
+    def all_target_textures(self) -> List[Texture]:
+        """
+        Returns a list of all textures which may be used as render targets.
+        """
+        pipelines = (p for p in self.pipelines.values() if not p.uses_backbuffer)
+        texture_names = sorted(set([t.name for p in pipelines for t in p.all_target_textures]))
+        return [self.textures[t] for t in texture_names]
 
     def __init__(self, error_handler:ErrorCallback, *args, **kargs):
         Syntax.__init__(self, None, *args, **kargs)

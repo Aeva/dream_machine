@@ -81,7 +81,8 @@ class TargetInterface(SyntaxExpander):
         SyntaxExpander.__init__(self)
         if output is not None:
             self.index = output.color_index
-            self.name = output.texture.name
+            texture = output.texture.shadow_texture or output.texture
+            self.name = texture.name
             self.type = "vec4"
         else:
             self.index = 0

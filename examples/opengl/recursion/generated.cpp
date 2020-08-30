@@ -129,7 +129,7 @@ void InitialSetup()
 	{
 		{
 			glCreateFramebuffers(1, &FrameBufferHandles[0]);
-			glNamedFramebufferTexture(FrameBufferHandles[0], GL_COLOR_ATTACHMENT0, TextureHandles[1], 0);
+			glNamedFramebufferTexture(FrameBufferHandles[0], GL_COLOR_ATTACHMENT0, TextureHandles[0], 0);
 			glObjectLabel(GL_FRAMEBUFFER, FrameBufferHandles[0], -1, "Accumulate");
 		}
 		{
@@ -193,7 +193,7 @@ namespace Renderer
 			// recreate framebuffer "Accumulate"
 			glDeleteFramebuffers(1, &FrameBufferHandles[0]);
 			glCreateFramebuffers(1, &FrameBufferHandles[0]);
-			glNamedFramebufferTexture(FrameBufferHandles[0], GL_COLOR_ATTACHMENT0, TextureHandles[1], 0);
+			glNamedFramebufferTexture(FrameBufferHandles[0], GL_COLOR_ATTACHMENT0, TextureHandles[0], 0);
 			glObjectLabel(GL_FRAMEBUFFER, FrameBufferHandles[0], -1, "Accumulate");
 		}
 		{
@@ -226,17 +226,6 @@ void DrawFrame(int FrameIndex, double CurrentTime, double DeltaTime)
 void WindowResized()
 {
 	{
-		// resize texture "AccumulatorTarget"
-		glDeleteTextures(1, &TextureHandles[1]);
-		glCreateTextures(GL_TEXTURE_2D, 1, &TextureHandles[1]);
-		glTextureStorage2D(TextureHandles[1], 1, GL_RGBA32F, (GLsizei)ScreenWidth, (GLsizei)ScreenHeight);
-		glObjectLabel(GL_TEXTURE, TextureHandles[1], -1, "AccumulatorTarget");
-	}
-	{
-		const float ClearColor[] = {0.0, 0.0, 0.0, 1.0};
-		glClearTexImage(TextureHandles[1], 0, GL_RGBA32F, GL_FLOAT, &ClearColor[0]);
-	}
-	{
 		// resize texture "Accumulator"
 		glDeleteTextures(1, &TextureHandles[0]);
 		glCreateTextures(GL_TEXTURE_2D, 1, &TextureHandles[0]);
@@ -248,10 +237,21 @@ void WindowResized()
 		glClearTexImage(TextureHandles[0], 0, GL_RGBA32F, GL_FLOAT, &ClearColor[0]);
 	}
 	{
+		// resize texture "AccumulatorTarget"
+		glDeleteTextures(1, &TextureHandles[1]);
+		glCreateTextures(GL_TEXTURE_2D, 1, &TextureHandles[1]);
+		glTextureStorage2D(TextureHandles[1], 1, GL_RGBA32F, (GLsizei)ScreenWidth, (GLsizei)ScreenHeight);
+		glObjectLabel(GL_TEXTURE, TextureHandles[1], -1, "AccumulatorTarget");
+	}
+	{
+		const float ClearColor[] = {0.0, 0.0, 0.0, 1.0};
+		glClearTexImage(TextureHandles[1], 0, GL_RGBA32F, GL_FLOAT, &ClearColor[0]);
+	}
+	{
 		// recreate framebuffer "Accumulate"
 		glDeleteFramebuffers(1, &FrameBufferHandles[0]);
 		glCreateFramebuffers(1, &FrameBufferHandles[0]);
-		glNamedFramebufferTexture(FrameBufferHandles[0], GL_COLOR_ATTACHMENT0, TextureHandles[1], 0);
+		glNamedFramebufferTexture(FrameBufferHandles[0], GL_COLOR_ATTACHMENT0, TextureHandles[0], 0);
 		glObjectLabel(GL_FRAMEBUFFER, FrameBufferHandles[0], -1, "Accumulate");
 	}
 }
