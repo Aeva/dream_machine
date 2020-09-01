@@ -409,6 +409,7 @@ class Pipeline(Syntax):
     def __init__(self, *args, **kargs):
         Syntax.__init__(self, *args, **kargs)
         pipeline, self.name = map(str, cast(TokenList, self.tokens)[:2])
+        self.requires_flip:List[Texture] = []
 
     def rewrite(self):
         Syntax.rewrite(self)
@@ -430,6 +431,7 @@ class Pipeline(Syntax):
         input_handles = [t.handle for t in input_textures]
         shadowed_targets = tuple([o for o in self.outputs if o.handle in input_handles])
         for target in shadowed_targets:
+            self.requires_flip.append(target.texture)
             target.texture.create_shadow_target()
 
     def validate(self):
@@ -483,6 +485,13 @@ class Pipeline(Syntax):
     @property
     def uses_backbuffer(self) -> bool:
         return self.depth_target is None and len(self.color_targets) == 0
+
+    @property
+    def any_output_double_buffered(self) -> bool:
+        for output in self.outputs:
+            if output.texture.shadow_texture:
+                return True
+        return False
 
     def compatible_with(self, other) -> bool:
         """
@@ -873,14 +882,22 @@ class Renderer(Syntax):
     def solve_implicit_steps(self):
         events = []
         for event in self.children:
-            events.append(event)
             if type(event) == RendererDraw:
+                # update the frame buffer if the event writes to a double buffered texture
                 event = cast(RendererDraw, event)
-                shadowed = event.requires_flip
-                if shadowed:
-                    for texture in shadowed:
-                        events.append(RendererTextureSwap(texture))
+                if event.pipeline.any_output_double_buffered:
                     events.append(RendererRegenFrameBuffer(event.pipeline))
+
+                # process the event
+                events.append(event)
+
+                # flip double buffered textures that were used as both inputs and outputs in the event
+                double_buffered = event.pipeline.requires_flip
+                if double_buffered:
+                    for texture in double_buffered:
+                        events.append(RendererTextureSwap(texture))
+            else:
+                events.append(event)
         self.populate(events)
         self.children = events
 
@@ -938,11 +955,6 @@ class RendererDraw(Syntax):
         # verify that the referenced pipeline exists
         if self.pipeline_name not in self.env.pipelines:
             self.error(f'Unknown pipeline: "{self.pipeline}"')
-
-    @property
-    def requires_flip(self) -> List[Texture]:
-        outputs = (o for o in self.pipeline.outputs if o.requires_flip)
-        return [o.texture for o in outputs]
 
     @property
     def pipeline(self) -> Pipeline:

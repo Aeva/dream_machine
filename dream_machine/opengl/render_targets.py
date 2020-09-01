@@ -84,8 +84,6 @@ class RebuildFrameBuffer(CreateFrameBuffer):
     template = """
 {
 	// recreate framebuffer "「name:str」"
-	glDeleteFramebuffers(1, &FrameBufferHandles[「handle:int」]);
-	glCreateFramebuffers(1, &FrameBufferHandles[「handle:int」]);
 「expanders」
 }
 """.strip()

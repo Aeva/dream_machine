@@ -175,6 +175,11 @@ namespace Renderer
 			Upload::WindowParamsType(BufferHandles[0], Data);
 		}
 		{
+			// recreate framebuffer "Accumulate"
+			glNamedFramebufferTexture(FrameBufferHandles[0], GL_COLOR_ATTACHMENT0, TextureHandles[0], 0);
+			glObjectLabel(GL_FRAMEBUFFER, FrameBufferHandles[0], -1, "Accumulate");
+		}
+		{
 			glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Accumulate");
 			glUseProgram(ShaderPrograms[0]);
 			glBindFramebuffer(GL_FRAMEBUFFER, FrameBufferHandles[0]);
@@ -188,13 +193,6 @@ namespace Renderer
 			GLuint Tmp = TextureHandles[0];
 			TextureHandles[0] = TextureHandles[1];
 			TextureHandles[1] = Tmp;
-		}
-		{
-			// recreate framebuffer "Accumulate"
-			glDeleteFramebuffers(1, &FrameBufferHandles[0]);
-			glCreateFramebuffers(1, &FrameBufferHandles[0]);
-			glNamedFramebufferTexture(FrameBufferHandles[0], GL_COLOR_ATTACHMENT0, TextureHandles[0], 0);
-			glObjectLabel(GL_FRAMEBUFFER, FrameBufferHandles[0], -1, "Accumulate");
 		}
 		{
 			glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "Resolve");
@@ -249,8 +247,6 @@ void WindowResized()
 	}
 	{
 		// recreate framebuffer "Accumulate"
-		glDeleteFramebuffers(1, &FrameBufferHandles[0]);
-		glCreateFramebuffers(1, &FrameBufferHandles[0]);
 		glNamedFramebufferTexture(FrameBufferHandles[0], GL_COLOR_ATTACHMENT0, TextureHandles[0], 0);
 		glObjectLabel(GL_FRAMEBUFFER, FrameBufferHandles[0], -1, "Accumulate");
 	}

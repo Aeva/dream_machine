@@ -100,8 +100,6 @@ class RebuildFrameBuffer(CreateFrameBuffer):
     template = """
 {
 	// recreate framebuffer "「name:str」"
-	gl.deleteFramebuffer(FrameBufferHandles[「handle:int」]);
-	FrameBufferHandles[「handle:int」] = gl.createFramebuffer();
 「expanders」
 }
 """.strip()
@@ -132,9 +130,9 @@ class ResizeFrameBuffers(SyntaxExpander):
         pipelines = [p for p in env.pipelines.values() if not p.uses_backbuffer]
         texture_names = sorted({out.texture.name for p in pipelines for out in p.outputs})
 
-        for name in texture_names:
-            self.wrapped.append(ResizeTexture(env.textures[name]))
+        for texture in env.all_target_textures:
+            self.wrapped.append(ResizeTexture(texture))
 
-        for pipeline in pipelines:
+        for pipeline in env.pipelines.values():
             if not pipeline.uses_backbuffer:
                 self.wrapped.append(RebuildFrameBuffer(pipeline))

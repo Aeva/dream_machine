@@ -392,16 +392,12 @@ void WindowResized()
 	}
 	{
 		// recreate framebuffer "SplatRed"
-		glDeleteFramebuffers(1, &FrameBufferHandles[1]);
-		glCreateFramebuffers(1, &FrameBufferHandles[1]);
 		glNamedFramebufferTexture(FrameBufferHandles[1], GL_COLOR_ATTACHMENT0, TextureHandles[1], 0);
 		glNamedFramebufferTexture(FrameBufferHandles[1], GL_COLOR_ATTACHMENT1, TextureHandles[3], 0);
 		glObjectLabel(GL_FRAMEBUFFER, FrameBufferHandles[1], -1, "SplatRed");
 	}
 	{
 		// recreate framebuffer "SplatBlue"
-		glDeleteFramebuffers(1, &FrameBufferHandles[2]);
-		glCreateFramebuffers(1, &FrameBufferHandles[2]);
 		glNamedFramebufferTexture(FrameBufferHandles[2], GL_COLOR_ATTACHMENT0, TextureHandles[2], 0);
 		glNamedFramebufferTexture(FrameBufferHandles[2], GL_COLOR_ATTACHMENT1, TextureHandles[3], 0);
 		glObjectLabel(GL_FRAMEBUFFER, FrameBufferHandles[2], -1, "SplatBlue");

@@ -213,8 +213,6 @@ let gl = null;
 		}
 		{
 			// recreate framebuffer "TextureSplat"
-			gl.deleteFramebuffer(FrameBufferHandles[0]);
-			FrameBufferHandles[0] = gl.createFramebuffer();
 			gl.bindFramebuffer(gl.FRAMEBUFFER, FrameBufferHandles[0]);
 			gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, TextureHandles[1], 0);
 			gl.bindFramebuffer(gl.FRAMEBUFFER, null);

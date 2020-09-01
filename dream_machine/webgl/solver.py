@@ -129,6 +129,12 @@ def solve_renderers(env:Program) -> Tuple[List[SyntaxExpander], SyntaxExpander]:
                 event = cast(RendererDraw, event)
                 calls.append(solve_draw(event, previous_draw))
                 previous_draw = event
+            elif type(event) is RendererTextureSwap:
+                event = cast(RendererTextureSwap, event)
+                calls.append(SwitchTextureHandles(event.texture))
+            elif type(event) is RendererRegenFrameBuffer:
+                event = cast(RendererRegenFrameBuffer, event)
+                calls.append(RebuildFrameBuffer(event.pipeline))
         return RendererCall(name=renderer.name, calls=calls)
 
     callbacks = list(map(solve_renderer, env.renderers))

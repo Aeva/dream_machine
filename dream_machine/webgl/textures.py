@@ -228,3 +228,17 @@ class SetupTextures(SyntaxExpander):
                 self.wrapped.append(Texture2DSetup(texture))
             elif texture.format.target == TextureType.TEXTURE_3D:
                 self.wrapped.append(Texture3DSetup(texture))
+
+
+class SwitchTextureHandles(SyntaxExpander):
+    template = """
+{
+	let Tmp = TextureHandles[「first:int」];
+	TextureHandles[「first:int」] = TextureHandles[「second:int」];
+	TextureHandles[「second:int」] = Tmp;
+}
+""".strip()
+    def __init__(self, texture:Texture):
+        SyntaxExpander.__init__(self)
+        self.first = texture.handle
+        self.second = texture.shadow_texture.handle
