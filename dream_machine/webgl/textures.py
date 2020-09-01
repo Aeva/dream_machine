@@ -44,6 +44,18 @@ class InternalFormats(IntEnum):
     DEPTH_COMPONENT = 55
 
 
+FORMAT_CHANNELS = \
+{
+    InternalFormats.RGBA32F : 4,
+    InternalFormats.RGB32F : 3,
+    InternalFormats.RGBA16F : 4,
+    InternalFormats.RGBA : 4,
+    InternalFormats.FLOAT : 1,
+    InternalFormats.HALF_FLOAT : 1,
+    InternalFormats.DEPTH_COMPONENT : 1,
+}
+
+
 def WebGLFormat(format:Format):
     generic:TextureFormat = format.format
     try:
@@ -81,12 +93,41 @@ class PngTextureSetup(SyntaxExpander):
         self.src = texture.src
 
 
+class WritePixelChannel(SyntaxExpander):
+    template = "		Upload[i + 「offset」] = 「channel」;"
+
+    def __init__(self, offset, channel):
+        SyntaxExpander.__init__(self)
+        self.offset = offset
+        self.channel = round(max(min(channel, 1.0), 0.0) * 255.0)
+
+
+class Texture2DClearData(SyntaxExpander):
+    template = """
+	let Size = 「width」 * 「height」 * 「channels」;
+	let Upload = new Uint8Array(Size);
+	for (let i=0; i < Size; i += 「channels」)
+	{
+「writes」
+	}
+    """.strip()
+
+    def __init__(self, texture:Texture):
+        SyntaxExpander.__init__(self)
+        assert(texture.format.target == TextureType.TEXTURE_2D)
+        self.width = solve_expression(texture.width)
+        self.height = solve_expression(texture.height)
+        self.channels = FORMAT_CHANNELS[texture.format.format]
+        self.writes = [WritePixelChannel(i, c) for (i, c) in enumerate(texture.clear.channels)]
+
+
 class Texture2DSetup(SyntaxExpander):
     template = """
 {
 	TextureHandles[「handle:int」] = gl.createTexture();
 	gl.bindTexture(gl.TEXTURE_2D, TextureHandles[「handle:int」]);
-	gl.texImage2D(gl.TEXTURE_2D, 0, 「format:str」, 「width」, 「height」, 0, 「format:str」, gl.UNSIGNED_BYTE, null);
+	「upload」
+	gl.texImage2D(gl.TEXTURE_2D, 0, 「format:str」, 「width」, 「height」, 0, 「format:str」, gl.UNSIGNED_BYTE, Upload);
 }
 """.strip()
 
@@ -98,6 +139,7 @@ class Texture2DSetup(SyntaxExpander):
         self.format = WebGLFormat(texture.format)
         self.width = solve_expression(texture.width)
         self.height = solve_expression(texture.height)
+        self.upload = Texture2DClearData(texture) if texture.clear else "let Upload = null;";
 
 
 class Texture3DSetup(SyntaxExpander):
@@ -126,7 +168,8 @@ class ResizeTexture2D(Texture2DSetup):
 	gl.deleteTexture(TextureHandles[「handle:int」]);
 	TextureHandles[「handle:int」] = gl.createTexture();
 	gl.bindTexture(gl.TEXTURE_2D, TextureHandles[「handle:int」]);
-	gl.texImage2D(gl.TEXTURE_2D, 0, 「format:str」, 「width」, 「height」, 0, 「format:str」, gl.UNSIGNED_BYTE, null);
+	「upload」
+	gl.texImage2D(gl.TEXTURE_2D, 0, 「format:str」, 「width」, 「height」, 0, 「format:str」, gl.UNSIGNED_BYTE, Upload);
 }
 """.strip()
 

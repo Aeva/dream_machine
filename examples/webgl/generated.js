@@ -121,7 +121,8 @@ let gl = null;
 		{
 			TextureHandles[1] = gl.createTexture();
 			gl.bindTexture(gl.TEXTURE_2D, TextureHandles[1]);
-			gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, ScreenWidth, ScreenHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+			let Upload = null;
+			gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, ScreenWidth, ScreenHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, Upload);
 		}
 		{
 			FrameBufferHandles[0] = gl.createFramebuffer();
@@ -207,7 +208,8 @@ let gl = null;
 			gl.deleteTexture(TextureHandles[1]);
 			TextureHandles[1] = gl.createTexture();
 			gl.bindTexture(gl.TEXTURE_2D, TextureHandles[1]);
-			gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, ScreenWidth, ScreenHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+			let Upload = null;
+			gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, ScreenWidth, ScreenHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, Upload);
 		}
 		{
 			// recreate framebuffer "TextureSplat"
