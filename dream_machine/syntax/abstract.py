@@ -70,11 +70,13 @@ class Syntax:
     many:Optional[str] = None
     primary:Optional[str] = None
 
-    def __init__(self, tokens:Optional[TokenList], children:List[Syntax], child_types:List[Type[Syntax]]):
+    def __init__(self, tokens:Optional[TokenList], children:List[Syntax], child_types:List[Type[Syntax]], extra_types:Optional[List[Type[Syntax]]] = None):
         assert((type(self.one) is str and self.many is None) or (type(self.many) is str and self.one is None))
         self.tokens = tokens
         self.children = children
         self.child_types = child_types
+        if extra_types:
+            self.child_types += extra_types
         self._keys = dedupe([cast(str, c.many or c.one) for c in child_types])
         self._env:Optional[ReferenceType] = None
         self._parent:Optional[ReferenceType] = None
@@ -865,8 +867,22 @@ class Renderer(Syntax):
     many = "renderers"
 
     def __init__(self, *args, **kargs):
-        Syntax.__init__(self, *args, **kargs)
+        Syntax.__init__(self, *args, extra_types = [RendererTextureSwap, RendererRegenFrameBuffer], **kargs)
         renderer, self.name = map(str, cast(TokenList, self.tokens)[:2])
+
+    def solve_implicit_steps(self):
+        events = []
+        for event in self.children:
+            events.append(event)
+            if type(event) == RendererDraw:
+                event = cast(RendererDraw, event)
+                shadowed = event.requires_flip
+                if shadowed:
+                    for texture in shadowed:
+                        events.append(RendererTextureSwap(texture))
+                    events.append(RendererRegenFrameBuffer(event.pipeline))
+        self.populate(events)
+        self.children = events
 
     @property
     def next(self) -> Optional[str]:
@@ -936,6 +952,31 @@ class RendererDraw(Syntax):
         return f'<RendererDraw {self.pipeline_name}>'
 
 
+class RendererTextureSwap(Syntax):
+    """
+    Represents when the texture handles for a double buffered texture should be swapped.
+    This is not controlled directly by the user, but rather is populated automatically.
+    """
+    many = "texture_swaps"
+
+    def __init__(self, texture:Texture):
+        Syntax.__init__(self, None, [], [])
+        self.texture = texture
+
+
+class RendererRegenFrameBuffer(Syntax):
+    """
+    Represent when a framebuffer or equivalent construction needs to be recreated.
+    Might only be applicable to the OpenGL and WebGL backends.
+    This is not controlled directly by the user, but rather is populated automatically.
+    """
+    many = "regen_framebuffers"
+
+    def __init__(self, pipeline:Pipeline):
+        Syntax.__init__(self, None, [], [])
+        self.pipeline = pipeline
+
+
 class RendererNext(Syntax):
     """
     A command to switch to a different renderer after the current one finishes.
@@ -1000,3 +1041,5 @@ class Program(Syntax):
         self.set_env(self, error_handler)
         self.rewrite()
         self.validate()
+        for renderer in self.renderers:
+            renderer.solve_implicit_steps()

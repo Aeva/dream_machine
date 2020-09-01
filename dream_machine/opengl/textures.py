@@ -242,7 +242,7 @@ class SwitchTextureHandles(SyntaxExpander):
 	TextureHandles[「second:int」] = Tmp;
 }
 """.strip()
-    def __init__(self, first:Texture, second:Texture):
+    def __init__(self, texture:Texture):
         SyntaxExpander.__init__(self)
-        self.first = first.handle
-        self.second = second.handle
+        self.first = texture.handle
+        self.second = texture.shadow_texture.handle

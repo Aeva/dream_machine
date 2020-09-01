@@ -180,10 +180,12 @@ def solve_renderers(env:Program) -> Tuple[List[SyntaxExpander], Union[SyntaxExpa
                 event = cast(RendererDraw, event)
                 calls.append(solve_draw(event, previous_draw))
                 previous_draw = event
-                if textures := event.requires_flip:
-                    for texture in textures:
-                        calls.append(SwitchTextureHandles(texture, texture.shadow_texture))
-                    calls.append(RebuildFrameBuffer(event.pipeline))
+            elif type(event) is RendererTextureSwap:
+                event = cast(RendererTextureSwap, event)
+                calls.append(SwitchTextureHandles(event.texture))
+            elif type(event) is RendererRegenFrameBuffer:
+                event = cast(RendererRegenFrameBuffer, event)
+                calls.append(RebuildFrameBuffer(event.pipeline))
 
         if renderer.next:
             index = [r.name for r in env.renderers].index(renderer.next)
