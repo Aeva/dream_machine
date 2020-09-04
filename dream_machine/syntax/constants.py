@@ -19,6 +19,7 @@ from enum import Enum, auto, IntEnum
 
 class BackendAPI(Enum):
     INVALID = -1
+    GNDN = auto()
     OpenGL = auto()
     WebGL = auto()
 

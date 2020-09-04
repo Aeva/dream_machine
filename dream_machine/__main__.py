@@ -18,6 +18,9 @@ import sys
 from .syntax.parser import Parser
 from .syntax.grammar import validate, ValidationError
 from .syntax.constants import BackendAPI
+from .gndn.solver import solve as solve_for_gndn
+from .gndn.validate import validate as validate_for_gndn
+from .gndn.build import build as build_for_gndn
 from .opengl.solver import solve as solve_for_opengl
 from .opengl.validate import validate as validate_for_opengl
 from .opengl.build import build as build_for_opengl
@@ -37,6 +40,17 @@ if __name__ == "__main__":
 
     if not env.backend:
         raise ValidationError("No backend specified.")
+
+    elif env.backend.api == BackendAPI.GNDN:
+        validate_for_gndn(env)
+        program, header, dependencies = solve_for_gndn(env)
+        assert(program is not None)
+        with open("generated.cpp", "w", encoding="utf-8") as outfile:
+            outfile.write(str(program))
+        with open("generated.h", "w", encoding="utf-8") as outfile:
+            outfile.write(str(header))
+        user_sources = ["generated.cpp", "user_code.cpp"]
+        build_for_gndn(user_sources, dependencies, out_path="generated.exe", debug=True)
 
     elif env.backend.api == BackendAPI.OpenGL:
         validate_for_opengl(env)
