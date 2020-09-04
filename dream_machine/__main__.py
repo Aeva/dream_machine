@@ -20,9 +20,9 @@ from .syntax.grammar import validate, ValidationError
 from .syntax.constants import BackendAPI
 from .opengl.solver import solve as solve_for_opengl
 from .opengl.validate import validate as validate_for_opengl
+from .opengl.build import build as build_for_opengl
 from .webgl.solver import solve as solve_for_webgl
 from .webgl.validate import validate as validate_for_webgl
-from .build import build
 
 
 if __name__ == "__main__":
@@ -40,14 +40,14 @@ if __name__ == "__main__":
 
     elif env.backend.api == BackendAPI.OpenGL:
         validate_for_opengl(env)
-        program, header, dependencies = solve_for_opengl(env)
+        program, header, dependencies, extensions = solve_for_opengl(env)
         assert(program is not None)
         with open("generated.cpp", "w", encoding="utf-8") as outfile:
             outfile.write(str(program))
         with open("generated.h", "w", encoding="utf-8") as outfile:
             outfile.write(str(header))
         user_sources = ["generated.cpp", "user_code.cpp"]
-        build(user_sources, dependencies, "OpenGL", out_path="generated.exe", debug=True)
+        build_for_opengl(user_sources, dependencies, extensions, out_path="generated.exe", debug=True)
 
     elif env.backend.api == BackendAPI.WebGL:
         validate_for_webgl(env)
