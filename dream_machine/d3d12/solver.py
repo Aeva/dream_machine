@@ -32,17 +32,7 @@ def solve(env:Program):
     """
 
     # expanders for various things in the global scope
-    globals:List[SyntaxExpander] = \
-    [
-        "ComPtr<IDXGIAdapter1> Adapter;",
-        "DXGI_ADAPTER_DESC1 AdapterInfo = { 0 };",
-        "ComPtr<ID3D12Device> Device;",
-        "ComPtr<ID3D12CommandQueue> DirectQueue;",
-        "ComPtr<IDXGISwapChain1> SwapChain;",
-        "ComPtr<ID3D12DescriptorHeap> RtvDescriptorHeap;",
-        "ComPtr<ID3D12Resource> BackBuffers[2];",
-        "ComPtr<ID3D12CommandAllocator> CommandAllocators[2];",
-    ]
+    globals:List[SyntaxExpander] = []
 
     # expanders for generated code which is called after GL is initialized before rendering starts
     setup:List[SyntaxExpander] = []

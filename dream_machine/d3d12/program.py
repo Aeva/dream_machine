@@ -17,14 +17,6 @@
 from ..expanders import SyntaxExpander, external
 
 
-class D3D12Setup(SyntaxExpander):
-    template = external("d3d12/bootstrap.cpp")
-
-    def __init__(self, *args, **kargs):
-        SyntaxExpander.__init__(self, *args, **kargs)
-        self.rtv_heap_size = 2
-
-
 class GeneratedMain(SyntaxExpander):
     template = external("cpp_templates/dream_machine.cpp")
     indent = ("initial_setup_hook", "resize_hook", "draw_frame_hook", "renderers", "struct_definitions", "uploader_definitions")
@@ -33,7 +25,14 @@ class GeneratedMain(SyntaxExpander):
         SyntaxExpander.__init__(self, *args, **kargs)
         self.structs_namespace = "HLSL"
         self.sdl_window_flags = ""
-        self.after_sdl_window = D3D12Setup()
+        self.after_sdl_window = \
+"""
+	if (SetupD3D12(2) != 0)
+	{
+		std::cout << "Fatal Error: Failed to Initialize D3D12.\\n";
+		return 1;
+	}
+""".strip()
         self.set_viewport = ""
         self.present = 'RETURN_ON_FAIL("Present", SwapChain->Present(1, 0))'
 
