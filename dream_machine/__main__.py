@@ -19,6 +19,7 @@ from .syntax.parser import Parser
 from .syntax.grammar import validate, ValidationError
 from .syntax.constants import BackendAPI
 from .gndn import build as gndn_backend
+from .d3d12 import build as d3d12_backend
 from .opengl import build as opengl_backend
 from .webgl import build as webgl_backend
 
@@ -26,6 +27,7 @@ from .webgl import build as webgl_backend
 CPP_BACKENDS = \
 {
     BackendAPI.GNDN : gndn_backend,
+    BackendAPI.D3D12 : d3d12_backend,
     BackendAPI.OpenGL : opengl_backend,
 }
 

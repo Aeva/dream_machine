@@ -19,6 +19,33 @@
 #include <string>
 
 
+#define RETURN_ON_FAIL(hint, hr) \
+if (FAILED(hr)) \
+{\
+	std::cout << "Failed: " << hint << "\n"; \
+return 1; \
+}
+
+
+std::string SquashW(const wchar_t* Bluuurg)
+{
+	std::string NewString;
+	while (*Bluuurg)
+	{
+		if ((*Bluuurg) <= 255)
+		{
+			NewString.push_back((char)(*Bluuurg));
+		}
+		else
+		{
+			NewString.push_back('?');
+		}
+		Bluuurg++;
+	}
+	return NewString;
+}
+
+
 inline void HaltAndCatchFire()
 {
 	__fastfail(7);
