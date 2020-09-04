@@ -14,10 +14,5 @@
 # limitations under the License.
 
 
-from ..build_common import *
 from .solver import solve
 from .validate import validate
-
-
-def build(user_sources, dependencies, out_path=None, copy_dlls=True, debug=False):
-    clang(user_sources, dependencies, [], [], [], out_path, copy_dlls, debug)

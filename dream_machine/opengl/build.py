@@ -15,6 +15,8 @@
 
 
 from ..build_common import *
+from .solver import solve
+from .validate import validate
 
 
 def find_glad() -> bool:
