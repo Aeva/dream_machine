@@ -64,7 +64,7 @@ def solve(env:Program):
     program.renderers = renderers
     program.draw_frame_hook = switch
 
-    dependencies:List[str] = []
+    dependencies:List[str] = ["d3d12_util"]
     if len([t for t in env.textures.values() if t.src]):
         dependencies.append("images")
     header = GeneratedHeader(dependencies)
