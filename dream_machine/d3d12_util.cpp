@@ -31,7 +31,11 @@ ComPtr<ID3D12CommandQueue> DirectQueue;
 ComPtr<IDXGISwapChain1> SwapChain;
 ComPtr<ID3D12DescriptorHeap> RtvDescriptorHeap;
 ComPtr<ID3D12Resource> BackBuffers[2];
+
 ComPtr<ID3D12CommandAllocator> CommandAllocators[2];
+HANDLE FrameFenceEvent;
+ComPtr<ID3D12Fence> FrameFence;
+UINT64 FrameFenceValue;
 
 
 std::string SquashW(const wchar_t* Bluuurg)
@@ -142,6 +146,11 @@ int SetupD3D12(size_t RtvHeapSize)
 
 			Device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&CommandAllocators[i]));
 		}
+	}
+
+	{
+		Device->CreateFence(FrameFenceValue++, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&FrameFence));
+		FrameFenceEvent = CreateEvent(nullptr, false, false, nullptr);
 	}
 
 	return 0;

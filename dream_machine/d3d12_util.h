@@ -31,7 +31,6 @@ extern ComPtr<ID3D12CommandQueue> DirectQueue;
 extern ComPtr<IDXGISwapChain1> SwapChain;
 extern ComPtr<ID3D12DescriptorHeap> RtvDescriptorHeap;
 extern ComPtr<ID3D12Resource> BackBuffers[2];
-extern ComPtr<ID3D12CommandAllocator> CommandAllocators[2];
 
 
 #define RETURN_ON_FAIL(hint, hr) \
