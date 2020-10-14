@@ -119,12 +119,10 @@
 
 
 (renderer TextureTest
-	(update WindowParams)
 	(draw TextureTest))
 
 
 (renderer Multipass
-	(update WindowParams)
 	(draw SplatRed)
 	(draw SplatBlue)
 	(draw Combiner))

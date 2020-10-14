@@ -22,7 +22,7 @@
 void main()
 {
 	vec2 UV = gl_FragCoord.xy * WindowSize.zw;
-	UV.x += sin(UV.y + ElapsedTime);
-	UV.y += cos(UV.x + ElapsedTime);
+	UV.x += sin(UV.y + ElapsedTime * 0.1);
+	UV.y += cos(UV.x + ElapsedTime * 0.1);
 	OutColor = texture(FancyTexture, UV);
 }

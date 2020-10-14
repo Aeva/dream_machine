@@ -72,7 +72,7 @@ def solve_struct_reflow(struct, offset: int = 0, base: str = "") -> list:
     return copies
 
 
-class BufferUpload(SyntaxExpander):
+class BufferUploadAction(SyntaxExpander):
     template = """
 void 「struct_name」 (GLuint Handle, Glsl::「struct_name」& Data)
 {

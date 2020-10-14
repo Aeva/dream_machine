@@ -32,30 +32,6 @@ from .cpp_interfaces import *
 from .cpp_expressions import *
 
 
-class FakeUpload(SyntaxExpander):
-    template = """
-{
-	Glsl::「struct_name」 Data = \
-	{
-		{
-			(float)(ScreenWidth),
-			(float)(ScreenHeight),
-			1.0f / (float)(ScreenWidth),
-			1.0f / (float)(ScreenHeight),
-		},
-		{
-			ScreenScaleX,
-			ScreenScaleY,
-			1.0f / ScreenScaleX,
-			1.0f / ScreenScaleY,
-		},
-		(float)(CurrentTime * 0.1),
-	};
-	Upload::「struct_name」(BufferHandles[「handle」], Data);
-}
-""".strip()
-
-
 def solve_struct(struct:Struct, env:Program) -> StructType:
     """
     Attempt to solve a struct's layout.  When the struct references other
@@ -135,12 +111,6 @@ def solve_renderers(env:Program) -> Tuple[List[SyntaxExpander], Union[SyntaxExpa
     """
     """
 
-    def solve_uploader(event:RendererUpdate) -> SyntaxExpander:
-        buffer = CAST(Buffer, event.buffer)
-        return FakeUpload(
-            struct_name = buffer.struct,
-            handle = buffer.handle)
-
     def solve_draw(event:RendererDraw, previous:Optional[RendererDraw]) -> SyntaxExpander:
         pipeline = event.pipeline
         setup:List[SyntaxExpander] = \
@@ -173,10 +143,7 @@ def solve_renderers(env:Program) -> Tuple[List[SyntaxExpander], Union[SyntaxExpa
         ]
         previous_draw:Optional[RendererDraw] = None
         for event in renderer.children:
-            if type(event) is RendererUpdate:
-                event = cast(RendererUpdate, event)
-                calls.append(solve_uploader(event))
-            elif type(event) is RendererDraw:
+            if type(event) is RendererDraw:
                 event = cast(RendererDraw, event)
                 calls.append(solve_draw(event, previous_draw))
                 previous_draw = event
@@ -234,9 +201,9 @@ def solve(env:Program) -> SyntaxExpander:
         globals.append(BufferHandles(len(env.buffers)))
 
     # expanders for buffer uploaders
-    uploaders:List[SyntaxExpander] = []
-    if env.buffers:
-        uploaders += [BufferUpload(s) for s in solved_structs.values()]
+    upload_actions:List[SyntaxExpander] = [BufferUploadAction(s) for s in solved_structs.values()]
+    upload_decls:List[SyntaxExpander] = [BufferUploadDecl(b, solved_structs) for b in env.buffers.values()]
+    upload_defs:List[SyntaxExpander] = [BufferUploadDef(b, solved_structs) for b in env.buffers.values()]
 
     # user-defined variables
     user_vars:List[SyntaxExpander] = [ExternUserVar(v) for v in env.user_vars.values()]
@@ -275,9 +242,9 @@ def solve(env:Program) -> SyntaxExpander:
     program.window_height = 512
     program.after_sdl_init = InitGL(4, 2)
     program.globals = globals
-    program.struct_definitions = structs
     program.user_var_definitions = user_vars
-    program.uploader_definitions = uploaders
+    program.uploader_definitions = upload_defs
+    program.upload_type_handlers = upload_actions
     program.initial_setup_hook = setup
     program.resize_hook = reallocate
     program.renderers = renderers
@@ -287,6 +254,8 @@ def solve(env:Program) -> SyntaxExpander:
     if len([t for t in env.textures.values() if t.src]):
         dependencies.append("images")
     header = GeneratedHeader(dependencies)
+    header.struct_declarations = structs
+    header.uploader_declarations = upload_decls
 
     extensions = \
     sorted([

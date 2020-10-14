@@ -42,19 +42,19 @@ vec2 GridUV(vec2 UV)
 void main()
 {
 	vec2 UV = gl_FragCoord.xy * WindowSize.zw;
-	UV.x += sin(UV.y + ElapsedTime);
-	UV.y += cos(UV.x + ElapsedTime);
+	UV.x += sin(UV.y + ElapsedTime * 0.1);
+	UV.y += cos(UV.x + ElapsedTime * 0.1);
 	ivec2 Tile = ivec2(GridUV(UV) * WindowSize.xy) / 32;
 	vec3 Red = texture(RedColorTarget, UV).rgb;
 	vec3 Blue = texture(BlueColorTarget, UV).rgb;
 	float Alpha;
 	if (Tile.x % 2 == Tile.y % 2)
 	{
-		Alpha = sin(ElapsedTime * 9.0) * 0.5 + 0.5;
+		Alpha = sin(ElapsedTime * 0.9) * 0.5 + 0.5;
 	}
 	else
 	{
-		Alpha = sin(ElapsedTime * 9.0 + 1.5) * 0.5 + 0.5;
+		Alpha = sin(ElapsedTime * 0.9 + 1.5) * 0.5 + 0.5;
 	}
 	OutColor = vec4(mix(Red, Blue, Alpha), 1.0);
 }

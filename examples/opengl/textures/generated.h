@@ -26,7 +26,21 @@
 
 namespace Glsl
 {
-
+	struct WindowParamsType
+	{
+		vec4 WindowSize;
+		vec4 WindowScale;
+		float ElapsedTime;
+	};
+	struct SomeType
+	{
+		mat4 Whatever;
+		float SomeArray[10];
+	};
+	struct WhatsitType
+	{
+		SomeType Moop;
+	};
 }
 
 
@@ -38,5 +52,5 @@ namespace UserVars
 
 namespace Upload
 {
-
+	void WindowParams(Glsl::WindowParamsType& Data);
 }

@@ -87,3 +87,29 @@ class SetupBuffers(SyntaxExpander):
         for buffer in env.buffers.values():
             struct = solved_structs[buffer.struct]
             self.wrapped.append(BufferSetup(buffer, struct))
+
+
+class BufferUploadDecl(SyntaxExpander):
+    template = "void 「buffer_name:str」(Glsl::「struct_name」& Data);"
+
+    def __init__(self, buffer:Buffer, solved_structs:Dict[str,StructType]):
+        SyntaxExpander.__init__(self)
+        struct = solved_structs[buffer.struct]
+        self.buffer_name = buffer.name
+        self.struct_name = struct.name
+
+
+class BufferUploadDef(SyntaxExpander):
+    template = """
+void 「buffer_name:str」(Glsl::「struct_name:str」& Data)
+{
+	UploadAction::「struct_name:str」(BufferHandles[「handle:int」], Data);
+}
+""".strip()
+
+    def __init__(self, buffer:Buffer, solved_structs:Dict[str,StructType]):
+        SyntaxExpander.__init__(self)
+        struct = solved_structs[buffer.struct]
+        self.buffer_name = buffer.name
+        self.struct_name = struct.name
+        self.handle = buffer.handle

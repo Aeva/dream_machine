@@ -83,7 +83,7 @@ AFTER_SDL_CREATE_WINDOW = """
 
 class GeneratedMain(SyntaxExpander):
     template = external("cpp_templates/dream_machine.cpp")
-    indent = ("initial_setup_hook", "resize_hook", "draw_frame_hook", "renderers", "struct_definitions", "uploader_definitions")
+    indent = ("initial_setup_hook", "resize_hook", "draw_frame_hook", "renderers", "upload_type_handlers", "uploader_definitions")
 
     def __init__(self, *args, **kargs):
         SyntaxExpander.__init__(self, *args, **kargs)

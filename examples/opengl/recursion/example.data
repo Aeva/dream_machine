@@ -63,6 +63,5 @@
 
 
 (renderer Accumulate
-	(update WindowParams)
 	(draw Accumulate)
 	(draw Resolve))

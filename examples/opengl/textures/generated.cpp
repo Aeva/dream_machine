@@ -3,26 +3,6 @@
 #include "generated.h"
 
 
-namespace Glsl
-{
-	struct WindowParamsType
-	{
-		vec4 WindowSize;
-		vec4 WindowScale;
-		float ElapsedTime;
-	};
-	struct SomeType
-	{
-		mat4 Whatever;
-		float SomeArray[10];
-	};
-	struct WhatsitType
-	{
-		SomeType Moop;
-	};
-}
-
-
 const char* WindowTitle = "Hello World!";
 int ScreenWidth = 512;
 int ScreenHeight = 512;
@@ -30,6 +10,13 @@ float ScreenScaleX = 1.0;
 float ScreenScaleY = 1.0;
 bool WindowIsDirty = true;
 SDL_Window* Window;
+
+
+WindowParams GetWindowInfo()
+{
+	WindowParams ScreenInfo = { ScreenWidth, ScreenHeight, 1.0, 1.0 };
+	return ScreenInfo;
+}
 
 
 extern int CurrentRenderer = 0;
@@ -46,7 +33,7 @@ GLuint FrameBufferHandles[4] = { 0 };
 GLuint BufferHandles[1] = { 0 };
 
 
-namespace Upload
+namespace UploadAction
 {
 	void WindowParamsType (GLuint Handle, Glsl::WindowParamsType& Data)
 	{
@@ -112,6 +99,15 @@ namespace Upload
 }
 
 
+namespace Upload
+{
+	void WindowParams(Glsl::WindowParamsType& Data)
+	{
+		UploadAction::WindowParamsType(BufferHandles[0], Data);
+	}
+}
+
+
 void UpdateWindowSize()
 {
 	int Width;
@@ -139,7 +135,7 @@ void InitialSetup()
 		Shaders[0] = CompileShader(ShaderSource, GL_VERTEX_SHADER);
 	}
 	{
-		std::string ShaderSource = DecodeBase64("I3ZlcnNpb24gNDIwCgovKgoJQ29weXJpZ2h0IDIwMjAgQWV2YSBQYWxlY2VrCgoJTGljZW5zZWQgdW5kZXIgdGhlIEFwYWNoZSBMaWNlbnNlLCBWZXJzaW9uIDIuMCAodGhlICJMaWNlbnNlIik7Cgl5b3UgbWF5IG5vdCB1c2UgdGhpcyBmaWxlIGV4Y2VwdCBpbiBjb21wbGlhbmNlIHdpdGggdGhlIExpY2Vuc2UuCglZb3UgbWF5IG9idGFpbiBhIGNvcHkgb2YgdGhlIExpY2Vuc2UgYXQKCgkJaHR0cDovL3d3dy5hcGFjaGUub3JnL2xpY2Vuc2VzL0xJQ0VOU0UtMi4wCgoJVW5sZXNzIHJlcXVpcmVkIGJ5IGFwcGxpY2FibGUgbGF3IG9yIGFncmVlZCB0byBpbiB3cml0aW5nLCBzb2Z0d2FyZQoJZGlzdHJpYnV0ZWQgdW5kZXIgdGhlIExpY2Vuc2UgaXMgZGlzdHJpYnV0ZWQgb24gYW4gIkFTIElTIiBCQVNJUywKCVdJVEhPVVQgV0FSUkFOVElFUyBPUiBDT05ESVRJT05TIE9GIEFOWSBLSU5ELCBlaXRoZXIgZXhwcmVzcyBvciBpbXBsaWVkLgoJU2VlIHRoZSBMaWNlbnNlIGZvciB0aGUgc3BlY2lmaWMgbGFuZ3VhZ2UgZ292ZXJuaW5nIHBlcm1pc3Npb25zIGFuZAoJbGltaXRhdGlvbnMgdW5kZXIgdGhlIExpY2Vuc2UuCiovCgpzdHJ1Y3QgU29tZVR5cGUKewoJbWF0NCBXaGF0ZXZlcjsKCWZsb2F0IFNvbWVBcnJheVsxMF07Cn07CmxheW91dChzdGQxNDAsIGJpbmRpbmcgPSAwKQp1bmlmb3JtIFdpbmRvd1BhcmFtcwp7Cgl2ZWM0IFdpbmRvd1NpemU7Cgl2ZWM0IFdpbmRvd1NjYWxlOwoJZmxvYXQgRWxhcHNlZFRpbWU7Cn07CmxheW91dChiaW5kaW5nID0gMCkKdW5pZm9ybSBzYW1wbGVyMkQgRmFuY3lUZXh0dXJlOwpsYXlvdXQobG9jYXRpb24gPSAwKQogb3V0IHZlYzQgT3V0Q29sb3I7CgoKdm9pZCBtYWluKCkKewoJdmVjMiBVViA9IGdsX0ZyYWdDb29yZC54eSAqIFdpbmRvd1NpemUuenc7CglVVi54ICs9IHNpbihVVi55ICsgRWxhcHNlZFRpbWUpOwoJVVYueSArPSBjb3MoVVYueCArIEVsYXBzZWRUaW1lKTsKCU91dENvbG9yID0gdGV4dHVyZShGYW5jeVRleHR1cmUsIFVWKTsKfQo=");
+		std::string ShaderSource = DecodeBase64("I3ZlcnNpb24gNDIwCgovKgoJQ29weXJpZ2h0IDIwMjAgQWV2YSBQYWxlY2VrCgoJTGljZW5zZWQgdW5kZXIgdGhlIEFwYWNoZSBMaWNlbnNlLCBWZXJzaW9uIDIuMCAodGhlICJMaWNlbnNlIik7Cgl5b3UgbWF5IG5vdCB1c2UgdGhpcyBmaWxlIGV4Y2VwdCBpbiBjb21wbGlhbmNlIHdpdGggdGhlIExpY2Vuc2UuCglZb3UgbWF5IG9idGFpbiBhIGNvcHkgb2YgdGhlIExpY2Vuc2UgYXQKCgkJaHR0cDovL3d3dy5hcGFjaGUub3JnL2xpY2Vuc2VzL0xJQ0VOU0UtMi4wCgoJVW5sZXNzIHJlcXVpcmVkIGJ5IGFwcGxpY2FibGUgbGF3IG9yIGFncmVlZCB0byBpbiB3cml0aW5nLCBzb2Z0d2FyZQoJZGlzdHJpYnV0ZWQgdW5kZXIgdGhlIExpY2Vuc2UgaXMgZGlzdHJpYnV0ZWQgb24gYW4gIkFTIElTIiBCQVNJUywKCVdJVEhPVVQgV0FSUkFOVElFUyBPUiBDT05ESVRJT05TIE9GIEFOWSBLSU5ELCBlaXRoZXIgZXhwcmVzcyBvciBpbXBsaWVkLgoJU2VlIHRoZSBMaWNlbnNlIGZvciB0aGUgc3BlY2lmaWMgbGFuZ3VhZ2UgZ292ZXJuaW5nIHBlcm1pc3Npb25zIGFuZAoJbGltaXRhdGlvbnMgdW5kZXIgdGhlIExpY2Vuc2UuCiovCgpzdHJ1Y3QgU29tZVR5cGUKewoJbWF0NCBXaGF0ZXZlcjsKCWZsb2F0IFNvbWVBcnJheVsxMF07Cn07CmxheW91dChzdGQxNDAsIGJpbmRpbmcgPSAwKQp1bmlmb3JtIFdpbmRvd1BhcmFtcwp7Cgl2ZWM0IFdpbmRvd1NpemU7Cgl2ZWM0IFdpbmRvd1NjYWxlOwoJZmxvYXQgRWxhcHNlZFRpbWU7Cn07CmxheW91dChiaW5kaW5nID0gMCkKdW5pZm9ybSBzYW1wbGVyMkQgRmFuY3lUZXh0dXJlOwpsYXlvdXQobG9jYXRpb24gPSAwKQogb3V0IHZlYzQgT3V0Q29sb3I7CgoKdm9pZCBtYWluKCkKewoJdmVjMiBVViA9IGdsX0ZyYWdDb29yZC54eSAqIFdpbmRvd1NpemUuenc7CglVVi54ICs9IHNpbihVVi55ICsgRWxhcHNlZFRpbWUgKiAwLjEpOwoJVVYueSArPSBjb3MoVVYueCArIEVsYXBzZWRUaW1lICogMC4xKTsKCU91dENvbG9yID0gdGV4dHVyZShGYW5jeVRleHR1cmUsIFVWKTsKfQo=");
 		Shaders[1] = CompileShader(ShaderSource, GL_FRAGMENT_SHADER);
 	}
 	{
@@ -159,7 +155,7 @@ void InitialSetup()
 		Shaders[5] = CompileShader(ShaderSource, GL_VERTEX_SHADER);
 	}
 	{
-		std::string ShaderSource = DecodeBase64("I3ZlcnNpb24gNDIwCgovKgoJQ29weXJpZ2h0IDIwMjAgQWV2YSBQYWxlY2VrCgoJTGljZW5zZWQgdW5kZXIgdGhlIEFwYWNoZSBMaWNlbnNlLCBWZXJzaW9uIDIuMCAodGhlICJMaWNlbnNlIik7Cgl5b3UgbWF5IG5vdCB1c2UgdGhpcyBmaWxlIGV4Y2VwdCBpbiBjb21wbGlhbmNlIHdpdGggdGhlIExpY2Vuc2UuCglZb3UgbWF5IG9idGFpbiBhIGNvcHkgb2YgdGhlIExpY2Vuc2UgYXQKCgkJaHR0cDovL3d3dy5hcGFjaGUub3JnL2xpY2Vuc2VzL0xJQ0VOU0UtMi4wCgoJVW5sZXNzIHJlcXVpcmVkIGJ5IGFwcGxpY2FibGUgbGF3IG9yIGFncmVlZCB0byBpbiB3cml0aW5nLCBzb2Z0d2FyZQoJZGlzdHJpYnV0ZWQgdW5kZXIgdGhlIExpY2Vuc2UgaXMgZGlzdHJpYnV0ZWQgb24gYW4gIkFTIElTIiBCQVNJUywKCVdJVEhPVVQgV0FSUkFOVElFUyBPUiBDT05ESVRJT05TIE9GIEFOWSBLSU5ELCBlaXRoZXIgZXhwcmVzcyBvciBpbXBsaWVkLgoJU2VlIHRoZSBMaWNlbnNlIGZvciB0aGUgc3BlY2lmaWMgbGFuZ3VhZ2UgZ292ZXJuaW5nIHBlcm1pc3Npb25zIGFuZAoJbGltaXRhdGlvbnMgdW5kZXIgdGhlIExpY2Vuc2UuCiovCgpsYXlvdXQoc3RkMTQwLCBiaW5kaW5nID0gMCkKdW5pZm9ybSBXaW5kb3dQYXJhbXMKewoJdmVjNCBXaW5kb3dTaXplOwoJdmVjNCBXaW5kb3dTY2FsZTsKCWZsb2F0IEVsYXBzZWRUaW1lOwp9OwpsYXlvdXQoYmluZGluZyA9IDApCnVuaWZvcm0gc2FtcGxlcjJEIFJlZENvbG9yVGFyZ2V0OwpsYXlvdXQoYmluZGluZyA9IDEpCnVuaWZvcm0gc2FtcGxlcjJEIEJsdWVDb2xvclRhcmdldDsKbGF5b3V0KGxvY2F0aW9uID0gMCkKIG91dCB2ZWM0IE91dENvbG9yOwoKCmZsb2F0IEdyaWRGaXgoZmxvYXQgQ29vcmQpCnsKCWlmIChDb29yZCA8IDAuMCkKCXsKCQlDb29yZCA9IDEuMCAtIGZyYWN0KGFicyhDb29yZCkpOwoJfQoJaWYgKENvb3JkID4gMS4wKQoJewoJCUNvb3JkID0gZnJhY3QoQ29vcmQpOwoJfQoJcmV0dXJuIENvb3JkOwp9CgoKdmVjMiBHcmlkVVYodmVjMiBVVikKewoJcmV0dXJuIHZlYzIoR3JpZEZpeChVVi54KSwgR3JpZEZpeChVVi55KSk7Cn0KCgp2b2lkIG1haW4oKQp7Cgl2ZWMyIFVWID0gZ2xfRnJhZ0Nvb3JkLnh5ICogV2luZG93U2l6ZS56dzsKCVVWLnggKz0gc2luKFVWLnkgKyBFbGFwc2VkVGltZSk7CglVVi55ICs9IGNvcyhVVi54ICsgRWxhcHNlZFRpbWUpOwoJaXZlYzIgVGlsZSA9IGl2ZWMyKEdyaWRVVihVVikgKiBXaW5kb3dTaXplLnh5KSAvIDMyOwoJdmVjMyBSZWQgPSB0ZXh0dXJlKFJlZENvbG9yVGFyZ2V0LCBVVikucmdiOwoJdmVjMyBCbHVlID0gdGV4dHVyZShCbHVlQ29sb3JUYXJnZXQsIFVWKS5yZ2I7CglmbG9hdCBBbHBoYTsKCWlmIChUaWxlLnggJSAyID09IFRpbGUueSAlIDIpCgl7CgkJQWxwaGEgPSBzaW4oRWxhcHNlZFRpbWUgKiA5LjApICogMC41ICsgMC41OwoJfQoJZWxzZQoJewoJCUFscGhhID0gc2luKEVsYXBzZWRUaW1lICogOS4wICsgMS41KSAqIDAuNSArIDAuNTsKCX0KCU91dENvbG9yID0gdmVjNChtaXgoUmVkLCBCbHVlLCBBbHBoYSksIDEuMCk7Cn0K");
+		std::string ShaderSource = DecodeBase64("I3ZlcnNpb24gNDIwCgovKgoJQ29weXJpZ2h0IDIwMjAgQWV2YSBQYWxlY2VrCgoJTGljZW5zZWQgdW5kZXIgdGhlIEFwYWNoZSBMaWNlbnNlLCBWZXJzaW9uIDIuMCAodGhlICJMaWNlbnNlIik7Cgl5b3UgbWF5IG5vdCB1c2UgdGhpcyBmaWxlIGV4Y2VwdCBpbiBjb21wbGlhbmNlIHdpdGggdGhlIExpY2Vuc2UuCglZb3UgbWF5IG9idGFpbiBhIGNvcHkgb2YgdGhlIExpY2Vuc2UgYXQKCgkJaHR0cDovL3d3dy5hcGFjaGUub3JnL2xpY2Vuc2VzL0xJQ0VOU0UtMi4wCgoJVW5sZXNzIHJlcXVpcmVkIGJ5IGFwcGxpY2FibGUgbGF3IG9yIGFncmVlZCB0byBpbiB3cml0aW5nLCBzb2Z0d2FyZQoJZGlzdHJpYnV0ZWQgdW5kZXIgdGhlIExpY2Vuc2UgaXMgZGlzdHJpYnV0ZWQgb24gYW4gIkFTIElTIiBCQVNJUywKCVdJVEhPVVQgV0FSUkFOVElFUyBPUiBDT05ESVRJT05TIE9GIEFOWSBLSU5ELCBlaXRoZXIgZXhwcmVzcyBvciBpbXBsaWVkLgoJU2VlIHRoZSBMaWNlbnNlIGZvciB0aGUgc3BlY2lmaWMgbGFuZ3VhZ2UgZ292ZXJuaW5nIHBlcm1pc3Npb25zIGFuZAoJbGltaXRhdGlvbnMgdW5kZXIgdGhlIExpY2Vuc2UuCiovCgpsYXlvdXQoc3RkMTQwLCBiaW5kaW5nID0gMCkKdW5pZm9ybSBXaW5kb3dQYXJhbXMKewoJdmVjNCBXaW5kb3dTaXplOwoJdmVjNCBXaW5kb3dTY2FsZTsKCWZsb2F0IEVsYXBzZWRUaW1lOwp9OwpsYXlvdXQoYmluZGluZyA9IDApCnVuaWZvcm0gc2FtcGxlcjJEIFJlZENvbG9yVGFyZ2V0OwpsYXlvdXQoYmluZGluZyA9IDEpCnVuaWZvcm0gc2FtcGxlcjJEIEJsdWVDb2xvclRhcmdldDsKbGF5b3V0KGxvY2F0aW9uID0gMCkKIG91dCB2ZWM0IE91dENvbG9yOwoKCmZsb2F0IEdyaWRGaXgoZmxvYXQgQ29vcmQpCnsKCWlmIChDb29yZCA8IDAuMCkKCXsKCQlDb29yZCA9IDEuMCAtIGZyYWN0KGFicyhDb29yZCkpOwoJfQoJaWYgKENvb3JkID4gMS4wKQoJewoJCUNvb3JkID0gZnJhY3QoQ29vcmQpOwoJfQoJcmV0dXJuIENvb3JkOwp9CgoKdmVjMiBHcmlkVVYodmVjMiBVVikKewoJcmV0dXJuIHZlYzIoR3JpZEZpeChVVi54KSwgR3JpZEZpeChVVi55KSk7Cn0KCgp2b2lkIG1haW4oKQp7Cgl2ZWMyIFVWID0gZ2xfRnJhZ0Nvb3JkLnh5ICogV2luZG93U2l6ZS56dzsKCVVWLnggKz0gc2luKFVWLnkgKyBFbGFwc2VkVGltZSAqIDAuMSk7CglVVi55ICs9IGNvcyhVVi54ICsgRWxhcHNlZFRpbWUgKiAwLjEpOwoJaXZlYzIgVGlsZSA9IGl2ZWMyKEdyaWRVVihVVikgKiBXaW5kb3dTaXplLnh5KSAvIDMyOwoJdmVjMyBSZWQgPSB0ZXh0dXJlKFJlZENvbG9yVGFyZ2V0LCBVVikucmdiOwoJdmVjMyBCbHVlID0gdGV4dHVyZShCbHVlQ29sb3JUYXJnZXQsIFVWKS5yZ2I7CglmbG9hdCBBbHBoYTsKCWlmIChUaWxlLnggJSAyID09IFRpbGUueSAlIDIpCgl7CgkJQWxwaGEgPSBzaW4oRWxhcHNlZFRpbWUgKiAwLjkpICogMC41ICsgMC41OwoJfQoJZWxzZQoJewoJCUFscGhhID0gc2luKEVsYXBzZWRUaW1lICogMC45ICsgMS41KSAqIDAuNSArIDAuNTsKCX0KCU91dENvbG9yID0gdmVjNChtaXgoUmVkLCBCbHVlLCBBbHBoYSksIDEuMCk7Cn0K");
 		Shaders[6] = CompileShader(ShaderSource, GL_FRAGMENT_SHADER);
 	}
 	{
@@ -261,24 +257,6 @@ namespace Renderer
 		glClearDepth(0);
 		glClear(GL_DEPTH_BUFFER_BIT);
 		{
-			Glsl::WindowParamsType Data = 	{
-				{
-					(float)(ScreenWidth),
-					(float)(ScreenHeight),
-					1.0f / (float)(ScreenWidth),
-					1.0f / (float)(ScreenHeight),
-				},
-				{
-					ScreenScaleX,
-					ScreenScaleY,
-					1.0f / ScreenScaleX,
-					1.0f / ScreenScaleY,
-				},
-				(float)(CurrentTime * 0.1),
-			};
-			Upload::WindowParamsType(BufferHandles[0], Data);
-		}
-		{
 			glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "TextureTest");
 			glUseProgram(ShaderPrograms[0]);
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -297,24 +275,6 @@ namespace Renderer
 		glClear(GL_COLOR_BUFFER_BIT);
 		glClearDepth(0);
 		glClear(GL_DEPTH_BUFFER_BIT);
-		{
-			Glsl::WindowParamsType Data = 	{
-				{
-					(float)(ScreenWidth),
-					(float)(ScreenHeight),
-					1.0f / (float)(ScreenWidth),
-					1.0f / (float)(ScreenHeight),
-				},
-				{
-					ScreenScaleX,
-					ScreenScaleY,
-					1.0f / ScreenScaleX,
-					1.0f / ScreenScaleY,
-				},
-				(float)(CurrentTime * 0.1),
-			};
-			Upload::WindowParamsType(BufferHandles[0], Data);
-		}
 		{
 			glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, -1, "SplatRed");
 			glUseProgram(ShaderPrograms[1]);

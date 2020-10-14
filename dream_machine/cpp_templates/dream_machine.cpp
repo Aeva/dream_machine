@@ -3,12 +3,6 @@
 #include "generated.h"
 
 
-namespace 「structs_namespace」
-{
-「struct_definitions」
-}
-
-
 const char* WindowTitle = "「window_title」";
 int ScreenWidth = 「window_width」;
 int ScreenHeight = 「window_height」;
@@ -18,12 +12,25 @@ bool WindowIsDirty = true;
 SDL_Window* Window;
 
 
+WindowParams GetWindowInfo()
+{
+	WindowParams ScreenInfo = { ScreenWidth, ScreenHeight, 1.0, 1.0 };
+	return ScreenInfo;
+}
+
+
 extern int CurrentRenderer = 0;
 extern void UserSetupCallback(SDL_Window* Window);
 extern void UserFrameCallback(unsigned int FrameIndex, double StartTime, double DeltaTime);
 
 
 「globals」
+
+
+namespace UploadAction
+{
+「upload_type_handlers」
+}
 
 
 namespace Upload

@@ -58,7 +58,7 @@ namespace Glsl
 }
 
 
-namespace Upload
+namespace UploadAction
 {
 	using _int = std::int32_t;
 	using _bool = std::int32_t;

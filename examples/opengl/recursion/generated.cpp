@@ -3,17 +3,6 @@
 #include "generated.h"
 
 
-namespace Glsl
-{
-	struct WindowParamsType
-	{
-		vec4 WindowSize;
-		vec4 WindowScale;
-		float ElapsedTime;
-	};
-}
-
-
 const char* WindowTitle = "Hello World!";
 int ScreenWidth = 512;
 int ScreenHeight = 512;
@@ -21,6 +10,13 @@ float ScreenScaleX = 1.0;
 float ScreenScaleY = 1.0;
 bool WindowIsDirty = true;
 SDL_Window* Window;
+
+
+WindowParams GetWindowInfo()
+{
+	WindowParams ScreenInfo = { ScreenWidth, ScreenHeight, 1.0, 1.0 };
+	return ScreenInfo;
+}
 
 
 extern int CurrentRenderer = 0;
@@ -37,7 +33,7 @@ GLuint FrameBufferHandles[2] = { 0 };
 GLuint BufferHandles[1] = { 0 };
 
 
-namespace Upload
+namespace UploadAction
 {
 	void WindowParamsType (GLuint Handle, Glsl::WindowParamsType& Data)
 	{
@@ -51,6 +47,15 @@ namespace Upload
 		Reflow< vec4>(Mapped, 4, Data.WindowScale);
 		Reflow<float>(Mapped, 8, Data.ElapsedTime);
 		glUnmapNamedBuffer(Handle);
+	}
+}
+
+
+namespace Upload
+{
+	void WindowParams(Glsl::WindowParamsType& Data)
+	{
+		UploadAction::WindowParamsType(BufferHandles[0], Data);
 	}
 }
 
@@ -156,24 +161,6 @@ namespace Renderer
 		glClear(GL_COLOR_BUFFER_BIT);
 		glClearDepth(0);
 		glClear(GL_DEPTH_BUFFER_BIT);
-		{
-			Glsl::WindowParamsType Data = 	{
-				{
-					(float)(ScreenWidth),
-					(float)(ScreenHeight),
-					1.0f / (float)(ScreenWidth),
-					1.0f / (float)(ScreenHeight),
-				},
-				{
-					ScreenScaleX,
-					ScreenScaleY,
-					1.0f / ScreenScaleX,
-					1.0f / ScreenScaleY,
-				},
-				(float)(CurrentTime * 0.1),
-			};
-			Upload::WindowParamsType(BufferHandles[0], Data);
-		}
 		{
 			// recreate framebuffer "Accumulate"
 			glNamedFramebufferTexture(FrameBufferHandles[0], GL_COLOR_ATTACHMENT0, TextureHandles[0], 0);

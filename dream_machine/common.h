@@ -52,3 +52,15 @@ inline std::string DecodeBase64(const char* Encoded)
 	}
 	return Decoded;
 }
+
+
+struct WindowParams
+{
+	int Width;
+	int Height;
+	float ScaleX;
+	float ScaleY;
+};
+
+
+WindowParams GetWindowInfo();
