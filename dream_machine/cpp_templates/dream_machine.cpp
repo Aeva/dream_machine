@@ -20,7 +20,7 @@ SDL_Window* Window;
 
 extern int CurrentRenderer = 0;
 extern void UserSetupCallback(SDL_Window* Window);
-extern void UserFrameCallback();
+extern void UserFrameCallback(unsigned int FrameIndex, double StartTime, double DeltaTime);
 
 
 「globals」
@@ -97,6 +97,7 @@ int main()
 
 	while (!SDL_QuitRequested())
 	{
+		SDL_PumpEvents();
 		UpdateWindowSize();
 		if (WindowIsDirty)
 		{
@@ -104,18 +105,21 @@ int main()
 			WindowIsDirty = false;
 			「set_viewport」
 		}
-		static int FrameIndex = 0;
-		static unsigned int DeltaTime = 0.0;
-		static unsigned int StartTime = SDL_GetTicks();
+		static unsigned int FrameIndex = 0;
+		static unsigned int DeltaTimeTicks = 0.0;
+		static unsigned int StartTimeTicks = SDL_GetTicks();
 		{
-			DrawFrame(FrameIndex++, (double)StartTime / 1000.0, (double)DeltaTime / 1000.0);
+			// Times are in seconds
+			const double StartTime = (double)StartTimeTicks / 1000.0;
+			const double DeltaTime = (double)DeltaTimeTicks / 1000.0;
+			UserFrameCallback(FrameIndex, StartTime, DeltaTime);
+			DrawFrame(FrameIndex, StartTime, DeltaTime);
 			「present」
-			SDL_PumpEvents();
-			UserFrameCallback();
 		}
-		unsigned int EndTime = SDL_GetTicks();
-		DeltaTime = EndTime - StartTime;
-		StartTime = EndTime;
+		++FrameIndex;
+		unsigned int EndTimeTicks = SDL_GetTicks();
+		DeltaTimeTicks = EndTimeTicks - StartTimeTicks;
+		StartTimeTicks = EndTimeTicks;
 	}
 
 	「teardown」

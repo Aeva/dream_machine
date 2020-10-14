@@ -10,6 +10,6 @@ extern void UserSetupCallback(SDL_Window* Window)
 }
 
 
-extern void UserFrameCallback()
+extern void UserFrameCallback(unsigned int FrameIndex, double StartTime, double DeltaTime)
 {
 }
