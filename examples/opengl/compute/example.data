@@ -1,0 +1,64 @@
+
+; Copyright 2020 Aeva Palecek
+;
+; Licensed under the Apache License, Version 2.0 (the "License");
+; you may not use this file except in compliance with the License.
+; You may obtain a copy of the License at
+;
+;	http://www.apache.org/licenses/LICENSE-2.0
+;
+; Unless required by applicable law or agreed to in writing, software
+; distributed under the License is distributed on an "AS IS" BASIS,
+; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+; See the License for the specific language governing permissions and
+; limitations under the License.
+
+
+; semicolons are comments
+; all of this is data
+; sequences of numbers are numbers
+; all sequences of alphanumeric characters are strings
+; some sequeces of alphanumeric characters have to be wrapped in quotation marks for Reasons
+
+
+(backend OpenGL)
+
+
+(struct WindowParamsType
+	(WindowSize vec4)
+	(WindowScale vec4)
+	(ElapsedTime float))
+
+
+(sampler PointSampler
+	(min POINT)
+	(mag POINT))
+
+
+(buffer WindowParams WindowParamsType)
+
+
+(format ColorFormat TEXTURE_2D RGBA_32_FLOAT PointSampler)
+
+
+(texture SomeResource ColorFormat
+	(width 1024)
+	(height 1024))
+
+
+(pipeline ComputeDemo
+	(cs "shaders/fnord.cs.glsl")
+	(in WindowParams)
+	(side SomeResource))
+
+
+(pipeline Resolve
+	(vs "shaders/splat.vs.glsl")
+	(fs "shaders/resolve.fs.glsl")
+	(in WindowParams)
+	(side SomeResource))
+
+
+(renderer ComputeDemo
+	(dispatch ComputeDemo 128 128 1)
+	(draw Resolve))

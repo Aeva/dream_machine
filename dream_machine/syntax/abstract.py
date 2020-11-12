@@ -440,6 +440,8 @@ class Pipeline(Syntax):
         if "cs" in self.shaders:
             if len(self.shaders.keys()) > 1:
                 self.error("Compute pipelines can't use non-compute shaders.")
+            if len(self.outputs) > 0:
+                self.error("Compute pipelines can't output to render targets.")
 
         # Note: API backends must perform their own validation for raster pipeline configurations.
 
@@ -1038,6 +1040,27 @@ class RendererNext(Syntax):
         # verify that such a renderer exists
         if len([r for r in self.env.renderers if r.name == self.name]) == 0:
             self.error(f'Unknown renderer: "{self.name}"')
+
+
+class RendererDispatch(Syntax):
+    """
+    """
+    many = "dispatches"
+
+    def __init__(self, *args, **kargs):
+        Syntax.__init__(self, *args, **kargs)
+        draw, self.pipeline_name = map(str, cast(TokenList, self.tokens)[:2])
+        self.size = [t.value for t in cast(TokenList, self.tokens[2:5])]
+
+    def validate(self):
+        Syntax.validate(self)
+
+    @property
+    def pipeline(self) -> Pipeline:
+        return self.env.pipelines[self.pipeline_name]
+
+    def __repr__(self):
+        return f'<RendererDispatch {self.pipeline_name}>'
 
 
 class Backend(Syntax):

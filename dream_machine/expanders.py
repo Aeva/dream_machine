@@ -67,7 +67,7 @@ class SyntaxExpander:
         """
         super().__init_subclass__()
         if template := newclass.__dict__.get("template"):
-            found = re.findall(r"「([a-zA-Z]\w+)(:[a-zA-Z]\w+)?」", template)
+            found = re.findall(r"「([a-zA-Z]\w*)(:[a-zA-Z]\w*)?」", template)
             params = [f[0] for f in found]
             newclass._types = {}
             for param, _type in found:

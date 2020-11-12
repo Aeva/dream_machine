@@ -51,6 +51,10 @@ class InstancedDraw(SyntaxExpander):
     template = "glDrawArraysInstanced(GL_TRIANGLES, 0, 「vertices」, 「instances」);"
 
 
+class Dispatch(SyntaxExpander):
+    template = "glDispatchCompute(「x」, 「y」, 「z」);"
+
+
 class Drawspatch(SyntaxExpander):
     template = """
 {

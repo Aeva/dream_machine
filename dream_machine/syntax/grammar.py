@@ -60,6 +60,8 @@ PIPELINE_VS_RULE = ListRule(PipelineShader, Exactly("vs"), StringRule("shader pa
 
 PIPELINE_FS_RULE = ListRule(PipelineShader, Exactly("fs"), StringRule("shader path"))
 
+PIPELINE_CS_RULE = ListRule(PipelineShader, Exactly("cs"), StringRule("shader path"))
+
 PIPELINE_USE_RULE = ListRule(PipelineUse, Exactly("use"), WordRule("struct or interface or texture name"))
 
 PIPELINE_ENABLE_RULE = ListRule(PipelineFlag, Exactly("enable"), WordRule("opengl capability enum"))
@@ -98,7 +100,9 @@ TEXTURE_RULE = \
 
 RENDERER_UPDATE_RULE = ListRule(RendererUpdate, Exactly("update"), WordRule("handle name"))
 
-RENDERER_DRAW_RULE = ListRule(RendererDraw, Exactly("draw"), WordRule("draw name"))
+RENDERER_DRAW_RULE = ListRule(RendererDraw, Exactly("draw"), WordRule("pipeline name"))
+
+RENDERER_DISPATCH_RULE = ListRule(RendererDispatch, Exactly("dispatch"), WordRule("pipeline name"), ArithmeticRule("x"), ArithmeticRule("y"), ArithmeticRule("z"))
 
 RENDERER_NEXT_RULE = ListRule(RendererNext, Exactly("next"), WordRule("renderer name"))
 

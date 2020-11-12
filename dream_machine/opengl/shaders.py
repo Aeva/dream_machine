@@ -69,7 +69,7 @@ class ShaderStage:
     calls "glCreateShader" and "glShaderSource".
     """
     def __init__(self, stage: str, path: str, shader_expanders: List[SyntaxExpander]) -> None:
-        assert(stage in ["vertex", "fragment"])
+        assert(stage in ["vertex", "fragment", "compute"])
         self.path = path
         self.stage = f"GL_{stage.upper()}_SHADER"
         class GlslTransform(SyntaxExpander):

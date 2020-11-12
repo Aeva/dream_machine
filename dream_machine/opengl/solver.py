@@ -112,7 +112,7 @@ def solve_renderers(env:Program) -> Tuple[List[SyntaxExpander], Union[SyntaxExpa
     """
     """
 
-    def solve_draw(event:RendererDraw, previous:Optional[RendererDraw]) -> SyntaxExpander:
+    def solve_draw(event:RendererDraw) -> SyntaxExpander:
         pipeline = event.pipeline
         setup:List[SyntaxExpander] = \
         [
@@ -138,17 +138,38 @@ def solve_renderers(env:Program) -> Tuple[List[SyntaxExpander], Union[SyntaxExpa
             setup = setup,
             draw = InstancedDraw(vertices=3, instances=1))
 
+    def solve_dispatch(event:RendererDispatch) -> SyntaxExpander:
+        pipeline = event.pipeline
+        setup:List[SyntaxExpander] = \
+        [
+            ChangeProgram(pipeline.index),
+        ]
+        setup += [BindUniformBuffer(u) for u in pipeline.uniforms]
+        setup += [BindTexture(t) for t in pipeline.textures]
+        setup += [BindSampler(t) for t in pipeline.textures]
+        setup += [BindTextureImage(s) for s in pipeline.sideputs]
+        setup += \
+        [
+            Capability(flag.flag, flag.value())
+            for flag in pipeline.flags.values()
+        ]
+        return Drawspatch(
+            name = pipeline.name,
+            setup = setup,
+            draw = Dispatch(**dict(zip("xyz", event.size))))
+
     def solve_renderer(renderer:Renderer) -> SyntaxExpander:
         calls:List[SyntaxExpander] = [
             ColorClear(0, 0, 0),
             DepthClear(0),
         ]
-        previous_draw:Optional[RendererDraw] = None
         for event in renderer.children:
             if type(event) is RendererDraw:
                 event = cast(RendererDraw, event)
-                calls.append(solve_draw(event, previous_draw))
-                previous_draw = event
+                calls.append(solve_draw(event))
+            elif type(event) is RendererDispatch:
+                event = cast(RendererDispatch, event)
+                calls.append(solve_dispatch(event))
             elif type(event) is RendererTextureSwap:
                 event = cast(RendererTextureSwap, event)
                 calls.append(SwitchTextureHandles(event.texture))
