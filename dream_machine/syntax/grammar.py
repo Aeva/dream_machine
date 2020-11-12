@@ -100,7 +100,7 @@ TEXTURE_RULE = \
 
 RENDERER_UPDATE_RULE = ListRule(RendererUpdate, Exactly("update"), WordRule("handle name"))
 
-RENDERER_DRAW_RULE = ListRule(RendererDraw, Exactly("draw"), WordRule("pipeline name"))
+RENDERER_DRAW_RULE = ListRule(RendererDraw, Exactly("draw"), WordRule("pipeline name"), ArithmeticRule("vertices"))
 
 RENDERER_DISPATCH_RULE = ListRule(RendererDispatch, Exactly("dispatch"), WordRule("pipeline name"), ArithmeticRule("x"), ArithmeticRule("y"), ArithmeticRule("z"))
 

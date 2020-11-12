@@ -63,5 +63,5 @@
 
 
 (renderer Accumulate
-	(draw Accumulate)
-	(draw Resolve))
+	(draw Accumulate 3)
+	(draw Resolve 3))

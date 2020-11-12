@@ -983,6 +983,7 @@ class RendererDraw(Syntax):
     def __init__(self, *args, **kargs):
         Syntax.__init__(self, *args, **kargs)
         draw, self.pipeline_name = map(str, cast(TokenList, self.tokens)[:2])
+        self.vertices = self.tokens[2].value
 
     def validate(self):
         Syntax.validate(self)

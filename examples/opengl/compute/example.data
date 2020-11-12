@@ -61,4 +61,4 @@
 
 (renderer ComputeDemo
 	(dispatch ComputeDemo 128 128 1)
-	(draw Resolve))
+	(draw Resolve 3))

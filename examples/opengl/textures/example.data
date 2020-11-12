@@ -119,10 +119,10 @@
 
 
 (renderer TextureTest
-	(draw TextureTest))
+	(draw TextureTest 3))
 
 
 (renderer Multipass
-	(draw SplatRed)
-	(draw SplatBlue)
-	(draw Combiner))
+	(draw SplatRed 3)
+	(draw SplatBlue 3)
+	(draw Combiner 3))

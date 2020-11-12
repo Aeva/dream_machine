@@ -67,5 +67,5 @@
 
 (renderer Fnord
 	(update WindowParams)
-	(draw TextureSplat)
-	(draw Resolve))
+	(draw TextureSplat 3)
+	(draw Resolve 3))
