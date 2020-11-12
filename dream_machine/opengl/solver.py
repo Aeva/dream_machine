@@ -84,13 +84,14 @@ def solve_shaders(env:Program, solved_structs:Dict[str,StructType]) -> Tuple[Sha
         structs:List[SyntaxExpander] = [GlslStruct(solved_structs[use.struct]) for use in pipeline.structs]
         uniforms:List[SyntaxExpander] = [UniformInterface(solved_structs[u.struct], u) for u in pipeline.uniforms]
         textures:List[SyntaxExpander] = [TextureInterface(t) for t in pipeline.textures]
+        images:List[SyntaxExpander] = [ImageInterface(s) for s in pipeline.sideputs]
         targets:List[SyntaxExpander] = []
         if stage == "fragment":
             if pipeline.uses_backbuffer:
                 targets = [TargetInterface(None)]
             else:
                 targets = [TargetInterface(c) for c in pipeline.color_targets]
-        return ShaderStage(stage, shader.path, structs + uniforms + textures + targets)
+        return ShaderStage(stage, shader.path, structs + uniforms + textures + images + targets)
 
     shaders:List[ShaderStage] = []
     programs:List[ShaderProgram] = []
@@ -126,6 +127,7 @@ def solve_renderers(env:Program) -> Tuple[List[SyntaxExpander], Union[SyntaxExpa
         setup += [BindUniformBuffer(u) for u in pipeline.uniforms]
         setup += [BindTexture(t) for t in pipeline.textures]
         setup += [BindSampler(t) for t in pipeline.textures]
+        setup += [BindTextureImage(s) for s in pipeline.sideputs]
         setup += \
         [
             Capability(flag.flag, flag.value())

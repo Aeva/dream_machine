@@ -72,6 +72,8 @@ PIPELINE_IN_RULE = ListRule(PipelineInput, Exactly("in"), WordRule("resource nam
 
 PIPELINE_OUT_RULE = ListRule(PipelineOutput, Exactly("out"), WordRule("resource name"))
 
+PIPELINE_SIDE_RULE = ListRule(PipelineSideput, Exactly("side"), WordRule("resource name"))
+
 PIPELINE_RULE = ListRule(Pipeline, Exactly("pipeline"), WordRule("draw name"),
                          SPLAT = MatchSplat(r'PIPELINE_[A-Z]+?_RULE'))
 

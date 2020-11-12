@@ -19,7 +19,7 @@ from enum import IntEnum
 from ..expanders import SyntaxExpander
 from .cpp_expressions import solve_expression
 from ..handy import CAST
-from ..syntax.grammar import Texture, Format, TextureDimension, PipelineInput, Program
+from ..syntax.grammar import Texture, Format, TextureDimension, PipelineInput, PipelineSideput, Program
 from ..syntax.constants import TextureType, TextureFormats
 
 
@@ -211,6 +211,17 @@ class BindTexture(SyntaxExpander):
         SyntaxExpander.__init__(self)
         self.texture_unit = binding.texture_index
         self.handle = CAST(Texture, binding.texture).handle
+
+
+class BindTextureImage(SyntaxExpander):
+    template = "glBindImageTexture(「unit:int」, TextureHandles[「handle:int」], 0, GL_FALSE, 0, GL_READ_WRITE, 「format:str」);"
+
+    def __init__(self, binding:PipelineSideput):
+        SyntaxExpander.__init__(self)
+        texture = CAST(Texture, binding.texture)
+        self.unit = binding.binding_index
+        self.handle = texture.handle
+        self.format = GLFormat(texture.format)
 
 
 class SetupTextures(SyntaxExpander):

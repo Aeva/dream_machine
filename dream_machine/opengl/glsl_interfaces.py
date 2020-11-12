@@ -15,7 +15,8 @@
 
 
 from .glsl_types import *
-from ..syntax.grammar import PipelineInput, PipelineOutput
+from .textures import GLFormat
+from ..syntax.grammar import PipelineInput, PipelineOutput, PipelineSideput, Format
 from ..syntax.constants import TextureType
 
 
@@ -72,6 +73,34 @@ class TextureInterface(SyntaxExpander):
             return "Buffer"
         else:
             raise NotImplementedError(target.name)
+
+
+class ImageInterface(SyntaxExpander):
+    template = "layout(「format:str」, binding = 「unit」)\nuniform image「mode:str」 「name:str」;"
+
+    def __init__(self, sideput: PipelineSideput):
+        SyntaxExpander.__init__(self)
+        self.format = self.image_format(sideput.format)
+        self.unit = sideput.binding_index
+        self.mode = self.image_type(sideput.format.target)
+        self.name = sideput.resource_name
+
+    def image_type(self, target:TextureType) -> str:
+        if target == TextureType.TEXTURE_1D:
+            return "1D"
+        elif target == TextureType.TEXTURE_2D:
+            return "2D"
+        elif target == TextureType.TEXTURE_3D:
+            return "3D"
+        elif target == TextureType.TEXTURE_CUBE_MAP:
+            return "Cube"
+        elif target == TextureType.BUFFER:
+            return "Buffer"
+        else:
+            raise NotImplementedError(target.name)
+
+    def image_format(self, format:Format):
+        return GLFormat(format)[3:].lower()
 
 
 class TargetInterface(SyntaxExpander):

@@ -404,6 +404,7 @@ class Pipeline(Syntax):
     shaders:Dict[str,PipelineShader]
     inputs:List[PipelineInput]
     outputs:List[PipelineOutput]
+    sideputs:List[PipelineSideput]
     flags:Dict[str,PipelineFlag]
 
     def __init__(self, *args, **kargs):
@@ -691,6 +692,38 @@ class PipelineOutput(Syntax):
     def __repr__(self):
         mode = "color" if self.is_color else "depth"
         return f'<PipelineOutput {mode} {self.resource_name}>'
+
+
+class PipelineSideput(Syntax):
+    """
+    A UAV (D3D) or Image (OpenGL).
+    """
+
+    many = "sideputs"
+
+    def __init__(self, *args, **kargs):
+        Syntax.__init__(self, *args, **kargs)
+        cmd, self.resource_name = tuple(map(str, cast(TokenList, self.tokens[:2])))
+
+    @property
+    def texture(self) -> Optional[Texture]:
+        return self.env.textures.get(self.resource_name)
+
+    @property
+    def format(self) -> Format:
+        return CAST(Texture, self.texture).format
+
+    @property
+    def binding_index(self) -> int:
+        return cast(Pipeline, self.parent).sideputs.index(self)
+
+    def validate(self):
+        Syntax.validate(self)
+        if self.texture is None:
+            self.error(f'Can\'t find resource "{self.resource_name}".')
+
+    def __repr__(self):
+        return f'<PipelineSideput {self.resource_name}>'
 
 
 class Buffer(Syntax):
