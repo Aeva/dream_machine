@@ -18,6 +18,7 @@ cd dream_machine
 git submodule init
 git submodule update
 python setup.py develop --user
+pip install glad
 ```
 
 ### Usage
